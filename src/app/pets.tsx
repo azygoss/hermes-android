@@ -102,7 +102,10 @@ export default function PetsScreen() {
               accessibilityState={{ selected: on }}
               accessibilityLabel={p.displayName}
               onPress={() => select(p.slug)}
-              style={[styles.tile, { backgroundColor: c.surface, borderColor: on ? c.accent : c.border, opacity: busy && busy !== p.slug ? 0.6 : 1 }]}
+              style={[
+                styles.tile,
+                { backgroundColor: c.surface, borderColor: on ? c.accent : c.border, opacity: busy && busy !== p.slug ? 0.6 : 1 },
+              ]}
             >
               <PetThumb slug={p.slug} />
               <Text variant="small" weight="medium" numberOfLines={1}>

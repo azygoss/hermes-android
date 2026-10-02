@@ -16,6 +16,7 @@ import {
 } from '@/components/icons'
 
 import { ProfileSwitcher } from '@/components/ProfileSwitcher'
+import { FeatureSearchButton } from '@/components/FeatureSearch'
 import { TabHeader } from '@/components/TabHeader'
 import { Row, Screen, Section } from '@/components/ui'
 import { useT } from '@/i18n'
@@ -28,7 +29,7 @@ export default function AgentHub() {
   const go = (path: string) => () => router.push(path as never)
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <TabHeader title={t('Agent')} />
+      <TabHeader title={t('Agent')} right={<FeatureSearchButton />} />
       <Screen>
         <ProfileSwitcher />
         <Section title={t('Brain')}>

@@ -3,6 +3,7 @@ import { router } from 'expo-router'
 import { Activity, CalendarClock, KanbanSquare, MessagesSquare, UserCheck, Users, Webhook } from '@/components/icons'
 import { View } from 'react-native'
 
+import { FeatureSearchButton } from '@/components/FeatureSearch'
 import { TabHeader } from '@/components/TabHeader'
 import { Badge, Row, Screen, Section } from '@/components/ui'
 import { useT } from '@/i18n'
@@ -18,7 +19,7 @@ export default function AutomateHub() {
   const gw = status.data as { gateway_running?: boolean; gateway_platforms?: Record<string, unknown> } | undefined
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <TabHeader title={t('Automate')} />
+      <TabHeader title={t('Automate')} right={<FeatureSearchButton />} />
       <Screen refreshing={status.isRefetching} onRefresh={() => status.refetch()}>
         <Section title={t('Scheduling')}>
           <Row

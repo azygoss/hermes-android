@@ -16,6 +16,7 @@ import {
 import { View } from 'react-native'
 
 import { AccountLimitsSection, useAccountLimits } from '@/components/AccountLimits'
+import { FeatureSearchButton } from '@/components/FeatureSearch'
 import { TabHeader } from '@/components/TabHeader'
 import { Badge, Row, Screen, Section } from '@/components/ui'
 import { useT } from '@/i18n'
@@ -32,7 +33,7 @@ export default function MoreHub() {
   const go = (path: string) => () => router.push(path as never)
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <TabHeader title={t('More')} />
+      <TabHeader title={t('More')} right={<FeatureSearchButton />} />
       <Screen refreshing={limits.isRefetching} onRefresh={() => limits.refetch()}>
         <Section title={t('Connection')}>
           <Row

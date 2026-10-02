@@ -1259,4 +1259,8 @@ export const tr: Record<string, string> = {
   'Newer match': 'Daha yeni eşleşme',
   'Older match': 'Daha eski eşleşme',
   'Search this chat': 'Bu sohbette ara',
+  'Find a feature': 'Özellik bul',
+  'Nothing found': 'Bir şey bulunamadı',
+  'Search features': 'Özelliklerde ara',
+  'Telegram, backups, API keys…': 'Telegram, yedekler, API anahtarları…',
 }

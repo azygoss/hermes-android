@@ -2,16 +2,16 @@
   "expo": {
     "name": "Hermes",
     "slug": "hermes-android",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "hermes",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#0B0B0F",
+    "backgroundColor": "#0D0C0B",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0B0B0F"
+      "backgroundColor": "#0D0C0B"
     },
     "ios": {
       "supportsTablet": true,
@@ -19,9 +19,9 @@
     },
     "android": {
       "package": "com.azygoss.hermes",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
-        "backgroundColor": "#0B0B0F",
+        "backgroundColor": "#0D0C0B",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
@@ -70,7 +70,11 @@
         {
           "image": "./assets/splash-icon.png",
           "imageWidth": 160,
-          "backgroundColor": "#0B0B0F"
+          "backgroundColor": "#F7F5F0",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#0D0C0B"
+          }
         }
       ],
       "expo-sharing",

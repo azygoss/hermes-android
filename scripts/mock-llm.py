@@ -60,8 +60,9 @@ def plan(body):
             {"id": "2", "content": "Build the Android app", "status": "in_progress"},
             {"id": "3", "content": "Ship the APK", "status": "pending"},
         ]})}
-    if "title" in user or len(messages) <= 2 and body.get("max_tokens", 9999) < 200:
-        return {"text": "Mock conversation"}
+    system = " ".join(text_of(m) for m in messages if m.get("role") == "system").lower()
+    if not tools and "title" in system:
+        return {"text": "Mock conversation about " + (user.split()[0] if user.split() else "nothing")}
     return {
         "reasoning": "The user said something. I will answer with a short markdown sample.",
         "text": (

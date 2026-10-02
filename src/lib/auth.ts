@@ -56,7 +56,12 @@ export async function probe(baseUrl: string, headers: Record<string, string> = {
   try {
     const res = await fetchWithTimeout(`${baseUrl}/api/health`, { headers })
     if (!res.ok) {
-      return { reachable: false, authRequired: false, providers: [], error: `/api/health answered HTTP ${res.status}. Is this a Hermes backend (hermes serve)?` }
+      return {
+        reachable: false,
+        authRequired: false,
+        providers: [],
+        error: `/api/health answered HTTP ${res.status}. Is this a Hermes backend (hermes serve)?`,
+      }
     }
     const health = await res.json()
     const result: ProbeResult = {

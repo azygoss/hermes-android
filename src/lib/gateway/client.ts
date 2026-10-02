@@ -219,11 +219,9 @@ export class GatewayClient {
         Platform.OS === 'web'
           ? new WebSocket(url)
           : // React Native's WebSocket accepts headers as a third argument.
-            new (WebSocket as unknown as new (u: string, p: null, o: { headers?: Record<string, string> }) => WebSocket)(
-              url,
-              null,
-              { headers: this.options.headers },
-            )
+            new (WebSocket as unknown as new (u: string, p: null, o: { headers?: Record<string, string> }) => WebSocket)(url, null, {
+              headers: this.options.headers,
+            })
     } catch (e) {
       this.lastError = e instanceof Error ? e.message : String(e)
       this.scheduleReconnect()

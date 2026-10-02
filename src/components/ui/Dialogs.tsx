@@ -50,7 +50,18 @@ export async function confirm(title: string, message?: string, opts: { confirmLa
 }
 
 /** Text prompt. Resolves the entered string, or null when cancelled. */
-export async function prompt(title: string, opts: { message?: string; placeholder?: string; initial?: string; secret?: boolean; multiline?: boolean; confirmLabel?: string; label?: string } = {}) {
+export async function prompt(
+  title: string,
+  opts: {
+    message?: string
+    placeholder?: string
+    initial?: string
+    secret?: boolean
+    multiline?: boolean
+    confirmLabel?: string
+    label?: string
+  } = {},
+) {
   const { message, confirmLabel, ...input } = opts
   const v = await push({ title, message, confirmLabel, input })
   return typeof v === 'string' ? v : null
@@ -160,8 +171,24 @@ function ToastView({ item }: { item: ToastItem }) {
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xl },
-  dialog: { width: '100%', maxWidth: 420, borderRadius: radius.xl, borderWidth: StyleSheet.hairlineWidth, padding: space.xl, gap: space.md },
+  dialog: {
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: space.xl,
+    gap: space.md,
+  },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: space.sm, marginTop: space.xs },
   toastWrap: { position: 'absolute', left: space.lg, right: space.lg, gap: space.sm },
-  toast: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderRadius: radius.md, borderWidth: 1, paddingHorizontal: space.lg, paddingVertical: space.md, minHeight: 48 },
+  toast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    minHeight: 48,
+  },
 })

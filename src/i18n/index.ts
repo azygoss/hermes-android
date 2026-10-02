@@ -24,8 +24,7 @@ export function translate(lang: Language, text: string, vars?: Record<string, st
 }
 
 /** Non-hook access for stores and callbacks. */
-export const t = (text: string, vars?: Record<string, string | number>) =>
-  translate(useSettings.getState().language, text, vars)
+export const t = (text: string, vars?: Record<string, string | number>) => translate(useSettings.getState().language, text, vars)
 
 export function useT() {
   const lang = useSettings((s) => s.language)

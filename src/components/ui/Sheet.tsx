@@ -38,7 +38,12 @@ export function Sheet({ visible, onClose, title, children, noScroll, footer, hei
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: c.overlay }]} onPress={onClose} accessibilityLabel={t('Close')} accessibilityRole="button" />
+        <Pressable
+          style={[StyleSheet.absoluteFill, { backgroundColor: c.overlay }]}
+          onPress={onClose}
+          accessibilityLabel={t('Close')}
+          accessibilityRole="button"
+        />
         <View style={{ flex: 1 }} pointerEvents="box-none" />
         <Animated.View
           accessibilityViewIsModal
@@ -66,7 +71,11 @@ export function Sheet({ visible, onClose, title, children, noScroll, footer, hei
           {noScroll ? (
             <View style={{ flexShrink: 1, paddingHorizontal: space.lg }}>{children}</View>
           ) : (
-            <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.md, gap: space.md }} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              style={{ flexShrink: 1 }}
+              contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.md, gap: space.md }}
+              keyboardShouldPersistTaps="handled"
+            >
               {children}
             </ScrollView>
           )}

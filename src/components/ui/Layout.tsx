@@ -42,7 +42,13 @@ export function Screen({ children, scroll = true, refreshing, onRefresh, padded 
       keyboardShouldPersistTaps="handled"
       refreshControl={
         onRefresh ? (
-          <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={c.accent} colors={[c.accent]} progressBackgroundColor={c.surface} />
+          <RefreshControl
+            refreshing={!!refreshing}
+            onRefresh={onRefresh}
+            tintColor={c.accent}
+            colors={[c.accent]}
+            progressBackgroundColor={c.surface}
+          />
         ) : undefined
       }
     >
@@ -51,14 +57,32 @@ export function Screen({ children, scroll = true, refreshing, onRefresh, padded 
   )
 }
 
-export function Section({ title, action, children, footer, style }: { title?: string; action?: ReactNode; children: ReactNode; footer?: string; style?: StyleProp<ViewStyle> }) {
+export function Section({
+  title,
+  action,
+  children,
+  footer,
+  style,
+}: {
+  title?: string
+  action?: ReactNode
+  children: ReactNode
+  footer?: string
+  style?: StyleProp<ViewStyle>
+}) {
   const { c } = useTheme()
   return (
     <View style={[{ gap: space.sm }, style]}>
       {(title || action) && (
         <View style={styles.sectionHead}>
           {title ? (
-            <Text variant="small" weight="semibold" tone="muted" accessibilityRole="header" style={{ textTransform: 'uppercase', letterSpacing: 0.6 }}>
+            <Text
+              variant="small"
+              weight="semibold"
+              tone="muted"
+              accessibilityRole="header"
+              style={{ textTransform: 'uppercase', letterSpacing: 0.6 }}
+            >
               {title}
             </Text>
           ) : (
@@ -80,10 +104,19 @@ export function Section({ title, action, children, footer, style }: { title?: st
 /** Plain bordered surface without a heading. */
 export function Card({ children, style, onPress }: { children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void }) {
   const { c } = useTheme()
-  const body = <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, padding: space.lg, gap: space.sm }, style]}>{children}</View>
+  const body = (
+    <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, padding: space.lg, gap: space.sm }, style]}>
+      {children}
+    </View>
+  )
   if (!onPress) return body
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} android_ripple={{ color: c.accentSoft }} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      android_ripple={{ color: c.accentSoft }}
+      style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+    >
       {body}
     </Pressable>
   )
@@ -107,7 +140,23 @@ interface RowProps {
   accessibilityLabel?: string
 }
 
-export function Row({ title, subtitle, icon: Icon, iconColor, value, right, onPress, onLongPress, chevron, danger, disabled, last, numberOfLines = 2, mono, accessibilityLabel }: RowProps) {
+export function Row({
+  title,
+  subtitle,
+  icon: Icon,
+  iconColor,
+  value,
+  right,
+  onPress,
+  onLongPress,
+  chevron,
+  danger,
+  disabled,
+  last,
+  numberOfLines = 2,
+  mono,
+  accessibilityLabel,
+}: RowProps) {
   const { c } = useTheme()
   const content = (
     <View style={[styles.row, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}>
@@ -151,7 +200,23 @@ export function Row({ title, subtitle, icon: Icon, iconColor, value, right, onPr
   )
 }
 
-export function ToggleRow({ title, subtitle, value, onChange, icon, disabled, last }: { title: string; subtitle?: string; value: boolean; onChange: (v: boolean) => void; icon?: LucideIcon; disabled?: boolean; last?: boolean }) {
+export function ToggleRow({
+  title,
+  subtitle,
+  value,
+  onChange,
+  icon,
+  disabled,
+  last,
+}: {
+  title: string
+  subtitle?: string
+  value: boolean
+  onChange: (v: boolean) => void
+  icon?: LucideIcon
+  disabled?: boolean
+  last?: boolean
+}) {
   const { c } = useTheme()
   return (
     <Pressable
@@ -182,7 +247,13 @@ export function ToggleRow({ title, subtitle, value, onChange, icon, disabled, la
   )
 }
 
-export function Badge({ label, tone = 'default' }: { label: string; tone?: 'default' | 'accent' | 'success' | 'danger' | 'warn' | 'info' }) {
+export function Badge({
+  label,
+  tone = 'default',
+}: {
+  label: string
+  tone?: 'default' | 'accent' | 'success' | 'danger' | 'warn' | 'info'
+}) {
   const { c } = useTheme()
   const map = {
     default: [c.surfaceAlt, c.textMuted],
@@ -201,7 +272,17 @@ export function Badge({ label, tone = 'default' }: { label: string; tone?: 'defa
   )
 }
 
-export function Chip({ label, selected, onPress, icon: Icon }: { label: string; selected?: boolean; onPress?: () => void; icon?: LucideIcon }) {
+export function Chip({
+  label,
+  selected,
+  onPress,
+  icon: Icon,
+}: {
+  label: string
+  selected?: boolean
+  onPress?: () => void
+  icon?: LucideIcon
+}) {
   const { c } = useTheme()
   return (
     <Pressable
@@ -212,7 +293,11 @@ export function Chip({ label, selected, onPress, icon: Icon }: { label: string; 
       hitSlop={6}
       style={({ pressed }) => [
         styles.chip,
-        { backgroundColor: selected ? c.accentSoft : c.surfaceAlt, borderColor: selected ? c.accent : c.border, opacity: pressed ? 0.8 : 1 },
+        {
+          backgroundColor: selected ? c.accentSoft : c.surfaceAlt,
+          borderColor: selected ? c.accent : c.border,
+          opacity: pressed ? 0.8 : 1,
+        },
       ]}
     >
       {Icon ? <Icon size={14} color={selected ? c.accentText : c.textMuted} /> : null}
@@ -223,7 +308,15 @@ export function Chip({ label, selected, onPress, icon: Icon }: { label: string; 
   )
 }
 
-export function Segmented<T extends string>({ options, value, onChange }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[]
+  value: T
+  onChange: (v: T) => void
+}) {
   const { c } = useTheme()
   return (
     <View style={[styles.segment, { backgroundColor: c.surfaceAlt, borderColor: c.border }]} accessibilityRole="tablist">
@@ -294,7 +387,9 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
       <Text variant="small" tone="default" selectable>
         {message}
       </Text>
-      {onRetry ? <Button label={t('Try again')} variant="secondary" size="sm" onPress={onRetry} style={{ alignSelf: 'flex-start' }} /> : null}
+      {onRetry ? (
+        <Button label={t('Try again')} variant="secondary" size="sm" onPress={onRetry} style={{ alignSelf: 'flex-start' }} />
+      ) : null}
     </View>
   )
 }
@@ -324,12 +419,36 @@ export function KeyValue({ label, value, mono }: { label: string; value: ReactNo
 const styles = StyleSheet.create({
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.xs, minHeight: 24 },
   card: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md, minHeight: HIT + 8 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    minHeight: HIT + 8,
+  },
   rowIcon: { width: 34, height: 34, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
   badge: { borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 2, alignSelf: 'flex-start' },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: space.xs, borderRadius: radius.pill, borderWidth: 1, paddingHorizontal: space.md, minHeight: 36 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    paddingHorizontal: space.md,
+    minHeight: 36,
+  },
   segment: { flexDirection: 'row', borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, padding: 3, gap: 3 },
-  segmentItem: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: 'transparent', paddingHorizontal: space.sm },
+  segmentItem: {
+    flex: 1,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'transparent',
+    paddingHorizontal: space.sm,
+  },
   center: { alignItems: 'center', justifyContent: 'center', gap: space.md, padding: space.xl },
   emptyIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   errorBox: { borderRadius: radius.md, borderWidth: 1, padding: space.lg, gap: space.sm },

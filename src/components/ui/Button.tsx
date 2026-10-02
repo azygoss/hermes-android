@@ -20,7 +20,18 @@ interface Props {
   accessibilityHint?: string
 }
 
-export function Button({ label, onPress, variant = 'primary', size = 'md', icon: Icon, loading, disabled, full, style, accessibilityHint }: Props) {
+export function Button({
+  label,
+  onPress,
+  variant = 'primary',
+  size = 'md',
+  icon: Icon,
+  loading,
+  disabled,
+  full,
+  style,
+  accessibilityHint,
+}: Props) {
   const { c } = useTheme()
   const palette = {
     primary: { bg: c.accent, fg: c.onAccent, border: c.accent },

@@ -35,9 +35,7 @@ export const useConnections = create<ConnectionsState>()(
       activeId: null,
       upsert: (c) =>
         set((s) => ({
-          connections: s.connections.some((x) => x.id === c.id)
-            ? s.connections.map((x) => (x.id === c.id ? c : x))
-            : [...s.connections, c],
+          connections: s.connections.some((x) => x.id === c.id) ? s.connections.map((x) => (x.id === c.id ? c : x)) : [...s.connections, c],
         })),
       remove: async (id) => {
         await secrets.remove(tokenKey(id))
@@ -48,10 +46,8 @@ export const useConnections = create<ConnectionsState>()(
         }))
       },
       setActive: (id) => set({ activeId: id }),
-      setProfile: (id, profile) =>
-        set((s) => ({ connections: s.connections.map((x) => (x.id === id ? { ...x, profile } : x)) })),
-      touch: (id) =>
-        set((s) => ({ connections: s.connections.map((x) => (x.id === id ? { ...x, lastConnectedAt: Date.now() } : x)) })),
+      setProfile: (id, profile) => set((s) => ({ connections: s.connections.map((x) => (x.id === id ? { ...x, profile } : x)) })),
+      touch: (id) => set((s) => ({ connections: s.connections.map((x) => (x.id === id ? { ...x, lastConnectedAt: Date.now() } : x)) })),
     }),
     { name: 'hermes.connections', storage: persistStorage, version: 1 },
   ),
@@ -77,6 +73,5 @@ export const connectionSecrets = {
       return null
     }
   },
-  setSession: (id: string, session: PasswordSession | null) =>
-    secrets.set(sessionKey(id), session ? JSON.stringify(session) : null),
+  setSession: (id: string, session: PasswordSession | null) => secrets.set(sessionKey(id), session ? JSON.stringify(session) : null),
 }

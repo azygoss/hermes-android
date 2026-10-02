@@ -74,7 +74,12 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
           {...rest}
         />
         {secret ? (
-          <IconButton icon={hidden ? Eye : EyeOff} label={hidden ? t('Show value') : t('Hide value')} onPress={() => setHidden(!hidden)} size={18} />
+          <IconButton
+            icon={hidden ? Eye : EyeOff}
+            label={hidden ? t('Show value') : t('Hide value')}
+            onPress={() => setHidden(!hidden)}
+            size={18}
+          />
         ) : null}
       </View>
       {error ? (

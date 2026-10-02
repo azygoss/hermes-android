@@ -1,10 +1,24 @@
 import { Stack } from 'expo-router'
-import { Cpu, Layers, Plus, RotateCcw, Trash2, Users } from 'lucide-react-native'
+import { Plus, RotateCcw, Trash2 } from 'lucide-react-native'
 import { useState } from 'react'
-import { Switch, View } from 'react-native'
+import { View } from 'react-native'
 
 import { ModelChooser } from '@/components/ModelChooser'
-import { Badge, Button, Card, confirm, ErrorState, KeyValue, Loading, Row, Screen, Section, Text, toast, toastError } from '@/components/ui'
+import {
+  IconButton,
+  Button,
+  Card,
+  confirm,
+  ErrorState,
+  Loading,
+  Row,
+  Screen,
+  Section,
+  Text,
+  toast,
+  toastError,
+  Toggle,
+} from '@/components/ui'
 import { useT } from '@/i18n'
 import { compact } from '@/lib/format'
 import { useRest } from '@/lib/hooks'
@@ -112,23 +126,33 @@ export default function ModelsScreen() {
       {info.isLoading ? <Loading /> : null}
       {info.error ? <ErrorState error={info.error} onRetry={() => info.refetch()} /> : null}
       {info.data ? (
-        <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-            <Cpu size={20} color={c.accentText} />
-            <Text weight="semibold" style={{ flex: 1 }}>
-              {t('Main model')}
+        <>
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+              <Text variant="small" tone="muted" style={{ flex: 1 }}>
+                {t('Main model')}
+              </Text>
+              <Text variant="small" tone="faint">
+                {info.data.provider}
+              </Text>
+            </View>
+            <Text variant="h2" mono numberOfLines={2}>
+              {info.data.model || t('Not set')}
             </Text>
-            <Badge label={info.data.provider} tone="accent" />
-          </View>
-          <Text variant="h2" mono>
-            {info.data.model || t('Not set')}
-          </Text>
-          <KeyValue label={t('Context window')} value={compact(info.data.effective_context_length)} />
-          <Button label={t('Change main model')} onPress={() => setTarget({ kind: 'main' })} style={{ alignSelf: 'flex-start' }} />
-          <Text variant="caption" tone="faint">
+            <Text variant="small" tone="muted">
+              {t('{n} tokens of context', { n: compact(info.data.effective_context_length) })}
+            </Text>
+            <Button
+              label={t('Change main model')}
+              variant="secondary"
+              onPress={() => setTarget({ kind: 'main' })}
+              style={{ alignSelf: 'flex-start', marginTop: space.xs }}
+            />
+          </Card>
+          <Text variant="caption" tone="faint" style={{ marginTop: -space.sm, paddingHorizontal: space.xs }}>
             {t('The default for new chats and messaging platforms. A chat can still switch on its own from the model pill.')}
           </Text>
-        </Card>
+        </>
       ) : null}
 
       <Section
@@ -151,7 +175,6 @@ export default function ModelsScreen() {
         {(aux.data?.tasks ?? []).map((task, i, all) => (
           <Row
             key={task.task}
-            icon={Layers}
             title={task.task.replace(/_/g, ' ')}
             value={task.provider === 'auto' || !task.model ? t('main model') : `${task.model}`}
             subtitle={task.provider !== 'auto' ? task.provider : undefined}
@@ -168,11 +191,9 @@ export default function ModelsScreen() {
               key={name}
               title={t('Mixture of Agents · {name}', { name })}
               action={
-                <Switch
+                <Toggle
                   value={preset.enabled}
                   onValueChange={(v) => saveMoa({ ...moa.data!, presets: { ...moa.data!.presets, [name]: { ...preset, enabled: v } } })}
-                  trackColor={{ false: c.borderStrong, true: c.accent }}
-                  thumbColor={preset.enabled ? c.onAccent : c.textMuted}
                   accessibilityLabel={t('Enable preset {name}', { name })}
                 />
               }
@@ -181,15 +202,14 @@ export default function ModelsScreen() {
               {preset.reference_models.map((slot, i) => (
                 <Row
                   key={`${slot.provider}-${slot.model}-${i}`}
-                  icon={Users}
                   title={slot.model || t('(empty)')}
                   subtitle={slot.provider}
                   onPress={() => setTarget({ kind: 'moa-ref', preset: name, index: i })}
                   right={
-                    <Button
-                      size="sm"
-                      variant="dangerGhost"
+                    <IconButton
                       icon={Trash2}
+                      size={18}
+                      color={c.textMuted}
                       label={t('Remove')}
                       onPress={() =>
                         saveMoa({
@@ -210,7 +230,6 @@ export default function ModelsScreen() {
                 onPress={() => setTarget({ kind: 'moa-ref', preset: name, index: null })}
               />
               <Row
-                icon={Cpu}
                 title={t('Aggregator: {model}', { model: preset.aggregator.model || '—' })}
                 subtitle={preset.aggregator.provider}
                 onPress={() => setTarget({ kind: 'moa-agg', preset: name })}

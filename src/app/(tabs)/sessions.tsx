@@ -14,12 +14,11 @@ import {
   Search,
   Trash2,
 } from 'lucide-react-native'
-import { useMemo, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 
 import { TabHeader } from '@/components/TabHeader'
 import {
-  Badge,
   confirm,
   EmptyState,
   ErrorState,
@@ -38,7 +37,7 @@ import { relativeTime } from '@/lib/format'
 import { rest, rpc, useRuntime } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { closeRuntime, useChat } from '@/store/chat'
-import { radius, space, useTheme } from '@/theme'
+import { space, useTheme } from '@/theme'
 
 export interface SessionRow {
   id: string
@@ -94,7 +93,7 @@ export default function SessionsScreen() {
     return [...all.filter((s) => s.pinned), ...all.filter((s) => !s.pinned)]
   }, [list.data, searchQuery.data, search])
 
-  const open = (row: SessionRow) => router.navigate({ pathname: '/chat', params: { stored: row.id } })
+  const open = useCallback((row: SessionRow) => router.navigate({ pathname: '/chat', params: { stored: row.id } }), [])
 
   async function patch(row: SessionRow, body: Record<string, unknown>, message: string) {
     try {
@@ -136,7 +135,7 @@ export default function SessionsScreen() {
       <FlatList
         data={rows}
         keyExtractor={(r) => r.id}
-        contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.xxxl, gap: space.sm }}
+        contentContainerStyle={{ paddingBottom: space.xxxl }}
         refreshControl={
           <RefreshControl refreshing={list.isRefetching} onRefresh={() => list.refetch()} tintColor={c.accent} colors={[c.accent]} />
         }
@@ -156,7 +155,8 @@ export default function SessionsScreen() {
             />
           ) : null
         }
-        renderItem={({ item }) => <SessionCard row={item} onPress={() => open(item)} onLongPress={() => setSelected(item)} />}
+        ItemSeparatorComponent={Separator}
+        renderItem={({ item }) => <SessionCard row={item} onOpen={open} onMenu={setSelected} />}
       />
       <Sheet visible={!!selected} onClose={() => setSelected(null)} title={selected?.title || selected?.preview || t('Session')}>
         {selected ? (
@@ -257,47 +257,76 @@ export default function SessionsScreen() {
   )
 }
 
-function SessionCard({ row, onPress, onLongPress }: { row: SessionRow; onPress: () => void; onLongPress: () => void }) {
+const SessionCard = memo(function SessionCard({
+  row,
+  onOpen,
+  onMenu,
+}: {
+  row: SessionRow
+  onOpen: (row: SessionRow) => void
+  onMenu: (row: SessionRow) => void
+}) {
   const { c } = useTheme()
   const t = useT()
   const title = row.title || row.preview || t('Untitled')
   const snippet = row.snippet?.replace(/>>>|<<</g, '')
+  const body = snippet || (row.preview && row.preview !== title ? row.preview : null)
+  const meta = [
+    row.source,
+    row.message_count ? t('{n} messages', { n: row.message_count }) : null,
+    row.profile && row.profile !== 'default' ? row.profile : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${title}, ${relativeTime(row.last_active ?? row.started_at)}`}
       accessibilityHint={t('Long-press for more actions')}
-      onPress={onPress}
-      onLongPress={onLongPress}
-      android_ripple={{ color: c.accentSoft }}
-      style={({ pressed }) => [styles.card, { backgroundColor: c.surface, borderColor: c.border, opacity: pressed ? 0.85 : 1 }]}
+      onPress={() => onOpen(row)}
+      onLongPress={() => onMenu(row)}
+      android_ripple={{ color: c.surfaceAlt }}
+      style={({ pressed }) => [styles.row, pressed && { backgroundColor: c.surface }]}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-        {row.pinned ? <Pin size={14} color={c.accentText} /> : null}
-        {row.is_active ? <View style={[styles.live, { backgroundColor: c.success }]} accessibilityLabel={t('Live')} /> : null}
-        <Text weight="semibold" numberOfLines={1} style={{ flex: 1 }}>
-          {title}
-        </Text>
-        <Text variant="caption" tone="faint">
-          {relativeTime(row.last_active ?? row.started_at)}
-        </Text>
+      <View style={styles.marker}>
+        {row.is_active ? (
+          <View style={[styles.dot, { backgroundColor: c.success }]} accessibilityLabel={t('Live')} />
+        ) : row.unread ? (
+          <View style={[styles.dot, { backgroundColor: c.accent }]} accessibilityLabel={t('unread')} />
+        ) : null}
       </View>
-      {snippet || (row.preview && row.preview !== title) ? (
-        <Text variant="small" tone="muted" numberOfLines={2}>
-          {snippet || row.preview}
-        </Text>
-      ) : null}
-      <View style={{ flexDirection: 'row', gap: space.xs, flexWrap: 'wrap' }}>
-        {row.source ? <Badge label={row.source} tone={row.source === 'android' ? 'accent' : 'default'} /> : null}
-        {row.message_count ? <Badge label={t('{n} msgs', { n: row.message_count })} /> : null}
-        {row.unread ? <Badge label={t('unread')} tone="info" /> : null}
-        {row.profile && row.profile !== 'default' ? <Badge label={row.profile} tone="info" /> : null}
+      <View style={{ flex: 1, gap: 3 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+          <Text weight="medium" numberOfLines={1} style={{ flex: 1 }}>
+            {title}
+          </Text>
+          {row.pinned ? <Pin size={13} color={c.textFaint} strokeWidth={1.75} /> : null}
+          <Text variant="caption" tone="faint">
+            {relativeTime(row.last_active ?? row.started_at)}
+          </Text>
+        </View>
+        {body ? (
+          <Text variant="small" tone="muted" numberOfLines={2}>
+            {body}
+          </Text>
+        ) : null}
+        {meta ? (
+          <Text variant="caption" tone="faint" numberOfLines={1}>
+            {meta}
+          </Text>
+        ) : null}
       </View>
     </Pressable>
   )
+})
+
+function Separator() {
+  const { c } = useTheme()
+  return <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginLeft: space.lg + 14 }} />
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg, padding: space.md, gap: 6 },
-  live: { width: 8, height: 8, borderRadius: 4 },
+  row: { flexDirection: 'row', paddingVertical: space.md, paddingRight: space.lg },
+  marker: { width: space.lg + 14, alignItems: 'center', paddingTop: 8 },
+  dot: { width: 7, height: 7, borderRadius: 4 },
 })

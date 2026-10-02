@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
 import { Download, PackageCheck, Plus, RefreshCw, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
-import { Pressable, StyleSheet, Switch, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
 import { Markdown } from '@/components/chat/Markdown'
 import {
@@ -21,6 +21,7 @@ import {
   TextField,
   toast,
   toastError,
+  Toggle,
 } from '@/components/ui'
 import { useT } from '@/i18n'
 import { useRest } from '@/lib/hooks'
@@ -127,28 +128,35 @@ export default function SkillsScreen() {
       {tab === 'installed' ? (
         <>
           <TextField placeholder={t('Filter skills')} value={filter} onChangeText={setFilter} />
-          <View style={styles.chips}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginHorizontal: -space.lg }}
+            contentContainerStyle={styles.chips}
+          >
             <Chip label={t('All')} selected={!category} onPress={() => setCategory(null)} />
             {categories.map((cat) => (
               <Chip key={cat} label={cat} selected={category === cat} onPress={() => setCategory(category === cat ? null : cat)} />
             ))}
-          </View>
+          </ScrollView>
           {skills.isLoading ? <Loading /> : null}
           {skills.error ? <ErrorState error={skills.error} onRetry={() => skills.refetch()} /> : null}
           {shown.length ? (
             <Section>
               {shown.map((s, i) => (
-                <Pressable
+                <View
                   key={s.name}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${s.name}: ${s.description}`}
-                  onPress={() => router.push({ pathname: '/skills/[name]', params: { name: s.name } })}
-                  android_ripple={{ color: c.accentSoft }}
                   style={[styles.row, i < shown.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
                 >
-                  <View style={{ flex: 1, gap: 2 }}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`${s.name}: ${s.description}`}
+                    onPress={() => router.push({ pathname: '/skills/[name]', params: { name: s.name } })}
+                    android_ripple={{ color: c.surfaceAlt }}
+                    style={({ pressed }) => [styles.rowBody, pressed && { opacity: 0.7 }]}
+                  >
                     <View style={{ flexDirection: 'row', gap: space.xs, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <Text weight="semibold" mono>
+                      <Text weight="medium" mono>
                         {s.name}
                       </Text>
                       {s.provenance && s.provenance !== 'bundled' ? <Badge label={s.provenance} tone="info" /> : null}
@@ -160,16 +168,15 @@ export default function SkillsScreen() {
                       {s.category}
                       {s.usage ? ` · ${t('used {n}×', { n: s.usage })}` : ''}
                     </Text>
-                  </View>
-                  <Switch
+                  </Pressable>
+                  <Toggle
                     value={s.enabled}
                     disabled={busy === s.name}
                     onValueChange={(v) => toggle(s, v)}
-                    trackColor={{ false: c.borderStrong, true: c.accent }}
-                    thumbColor={s.enabled ? c.onAccent : c.textMuted}
                     accessibilityLabel={t('Enable {name}', { name: s.name })}
+                    style={{ marginRight: space.lg }}
                   />
-                </Pressable>
+                </View>
               ))}
             </Section>
           ) : !skills.isLoading ? (
@@ -405,7 +412,8 @@ function HubSheet({ item, installed, onClose }: { item: HubResult | null; instal
 }
 
 const styles = StyleSheet.create({
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, minHeight: 64 },
+  chips: { flexDirection: 'row', gap: space.xs, paddingHorizontal: space.lg },
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 64 },
+  rowBody: { flex: 1, gap: 2, padding: space.lg, paddingRight: space.md },
   hubCard: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg, padding: space.md, gap: 4 },
 })

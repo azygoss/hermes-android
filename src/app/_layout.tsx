@@ -15,7 +15,7 @@ import { useT } from '@/i18n'
 import { queryClient } from '@/lib/query'
 import { useConnections } from '@/store/connections'
 import { useSettings } from '@/store/settings'
-import { font, useTheme } from '@/theme'
+import { AppThemeProvider, font, useTheme } from '@/theme'
 
 SplashScreen.preventAutoHideAsync().catch(() => {})
 
@@ -44,19 +44,28 @@ export default function RootLayout() {
     JetBrainsMono_500Medium,
   })
   const hydrated = useHydrated()
-  const { c, isDark } = useTheme()
-  const t = useT()
   const ready = fontsLoaded && hydrated
-
-  useEffect(() => {
-    void SystemUI.setBackgroundColorAsync(c.bg)
-  }, [c.bg])
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {})
   }, [ready])
 
   if (!ready) return null
+
+  return (
+    <AppThemeProvider>
+      <AppShell />
+    </AppThemeProvider>
+  )
+}
+
+function AppShell() {
+  const { c, isDark } = useTheme()
+  const t = useT()
+
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(c.bg)
+  }, [c.bg])
 
   const navTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),

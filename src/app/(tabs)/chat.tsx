@@ -1,7 +1,17 @@
 import { router, useLocalSearchParams } from 'expo-router'
-import { Check, ChevronDown, EllipsisVertical, PenSquare, WifiOff } from 'lucide-react-native'
+import {
+  ArrowUpRight,
+  Brain,
+  Check,
+  ChevronDown,
+  EllipsisVertical,
+  History,
+  PenSquare,
+  WifiOff,
+  type LucideIcon,
+} from 'lucide-react-native'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Composer } from '@/components/chat/Composer'
@@ -12,10 +22,11 @@ import { RequestCard } from '@/components/chat/RequestCard'
 import { SessionMenu } from '@/components/chat/SessionMenu'
 import { BusyLine, SubagentChip, TodoPanel } from '@/components/chat/StatusStrip'
 import { HermesMark } from '@/components/HermesMark'
-import { Button, Chip, IconButton, Sheet, Text, toast, toastError } from '@/components/ui'
+import { Button, IconButton, Sheet, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
 import type { ChatMessage } from '@/lib/chat/types'
 import { textOf } from '@/lib/chat/types'
+import { relativeTime } from '@/lib/format'
 import { useRest, useRpc } from '@/lib/hooks'
 import { rpc, useProfile, useRuntime } from '@/lib/hermes'
 import {
@@ -36,6 +47,7 @@ import {
   setPrefill,
   useChat,
 } from '@/store/chat'
+import { useConnections } from '@/store/connections'
 import { radius, space, useTheme } from '@/theme'
 
 const LOCAL_COMMANDS: Record<string, string> = {
@@ -91,8 +103,10 @@ function ConnectionBanner() {
 
 function EmptyChat({ onPick }: { onPick: (text: string) => void }) {
   const t = useT()
+  const { c } = useTheme()
   const ready = useRuntime((s) => s.state === 'open')
   const profile = useProfile()
+  const host = useConnections((s) => s.connections.find((x) => x.id === s.activeId)?.name)
   const recent = useRpc(['session.most_recent', profile], 'session.most_recent', { profile })
   const suggestions = [
     t('What can you do?'),
@@ -100,29 +114,64 @@ function EmptyChat({ onPick }: { onPick: (text: string) => void }) {
     t('Check the disk usage on the server'),
     t('Schedule a daily news digest at 9am'),
   ]
+  const last = recent.data?.session_id ? recent.data : null
   return (
-    <View style={styles.empty}>
-      <HermesMark size={64} />
-      <Text variant="h2" center>
-        {t('How can Hermes help?')}
-      </Text>
-      <Text tone="muted" center style={{ maxWidth: 300 }}>
-        {t('Hermes runs on your machine with its tools, memory and skills. Ask anything, or type / for commands.')}
-      </Text>
-      {recent.data?.session_id ? (
-        <Button
-          label={t('Continue: {title}', { title: (recent.data.title || t('last chat')).slice(0, 40) })}
-          variant="secondary"
-          size="sm"
-          onPress={() => openStored(recent.data!.session_id!).catch(toastError)}
-        />
+    <ScrollView contentContainerStyle={styles.empty} keyboardShouldPersistTaps="handled">
+      <View style={{ gap: space.sm }}>
+        <HermesMark size={34} />
+        <Text variant="h2" style={{ marginTop: space.sm }}>
+          {t('What should Hermes work on?')}
+        </Text>
+        <Text tone="muted">
+          {host
+            ? t('Runs on {host} with its own tools, memory and skills. Type / for commands, @ for files.', { host })
+            : t('Hermes runs on your machine with its tools, memory and skills. Ask anything, or type / for commands.')}
+        </Text>
+      </View>
+      {last ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('Continue: {title}', { title: last.title || t('last chat') })}
+          onPress={() => openStored(last.session_id!).catch(toastError)}
+          style={({ pressed }) => [styles.resume, { borderColor: c.border, backgroundColor: pressed ? c.surfaceAlt : c.surface }]}
+        >
+          <History size={18} color={c.textMuted} strokeWidth={1.75} />
+          <View style={{ flex: 1 }}>
+            <Text variant="caption" tone="faint">
+              {t('Pick up where you left off')}
+            </Text>
+            <Text weight="medium" numberOfLines={1}>
+              {last.title || t('last chat')}
+            </Text>
+          </View>
+          {last.started_at ? (
+            <Text variant="caption" tone="faint">
+              {relativeTime(last.started_at)}
+            </Text>
+          ) : null}
+        </Pressable>
       ) : null}
-      <View style={styles.suggestions}>
-        {suggestions.map((s) => (
-          <Chip key={s} label={s} onPress={() => ready && onPick(s)} />
+      <View>
+        {suggestions.map((s, i) => (
+          <Pressable
+            key={s}
+            accessibilityRole="button"
+            disabled={!ready}
+            onPress={() => onPick(s)}
+            style={({ pressed }) => [
+              styles.suggestion,
+              i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+              { opacity: ready ? (pressed ? 0.6 : 1) : 0.4 },
+            ]}
+          >
+            <Text tone="muted" style={{ flex: 1 }}>
+              {s}
+            </Text>
+            <ArrowUpRight size={16} color={c.textFaint} strokeWidth={1.75} />
+          </Pressable>
         ))}
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
@@ -165,6 +214,17 @@ export default function ChatScreen() {
   }, [])
 
   const data = useMemo(() => (session ? [...session.messages].reverse() : []), [session?.messages])
+  // Stable callbacks so MessageItem's memo holds while another message streams.
+  const onReact = useCallback((m: ChatMessage, emoji: string) => {
+    const sid = useChat.getState().activeId
+    if (sid) react(sid, m, emoji).catch(toastError)
+  }, [])
+  const onEdit = useCallback((m: ChatMessage) => {
+    const sid = useChat.getState().activeId
+    if (!sid) return
+    setEditing(m)
+    setPrefill(sid, textOf(m))
+  }, [])
   const myRequests = requests.filter((r) => r.sessionId === activeId)
   const otherRequests = requests.filter((r) => r.sessionId !== activeId)
 
@@ -268,7 +328,7 @@ export default function ChatScreen() {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {opening && !session ? (
-          <View style={styles.empty}>
+          <View style={styles.loading}>
             <ActivityIndicator color={c.accent} />
           </View>
         ) : !session || (session.historyLoaded && !session.messages.length && !session.loadingHistory) ? (
@@ -279,15 +339,7 @@ export default function ChatScreen() {
             inverted
             keyExtractor={(m) => m.id}
             renderItem={({ item }) => (
-              <MessageItem
-                message={item}
-                streaming={item.id === session.streamingId}
-                onReact={(m, emoji) => react(session.runtimeId, m, emoji).catch(toastError)}
-                onEdit={(m) => {
-                  setEditing(m)
-                  setPrefill(session.runtimeId, textOf(m))
-                }}
-              />
+              <MessageItem message={item} streaming={item.id === session.streamingId} onReact={onReact} onEdit={onEdit} />
             )}
             contentContainerStyle={{ padding: space.lg, gap: space.lg }}
             keyboardShouldPersistTaps="handled"
@@ -339,10 +391,7 @@ export default function ChatScreen() {
             pills={
               <>
                 <Pill label={String(info.model ?? t('Model'))} onPress={() => setModelOpen(true)} />
-                <Pill
-                  label={t('Reasoning: {level}', { level: String(info.reasoning_effort || t('default')) })}
-                  onPress={() => setReasoningOpen(true)}
-                />
+                <Pill icon={Brain} label={String(info.reasoning_effort || t('default'))} onPress={() => setReasoningOpen(true)} />
                 {info.yolo ? <Pill label="YOLO" tone="danger" onPress={() => setMenuOpen(true)} /> : null}
                 {session ? (
                   <SubagentChip
@@ -415,28 +464,21 @@ export default function ChatScreen() {
   )
 }
 
-function Pill({ label, onPress, tone }: { label: string; onPress: () => void; tone?: 'danger' }) {
+function Pill({ label, onPress, tone, icon: Icon }: { label: string; onPress: () => void; tone?: 'danger'; icon?: LucideIcon }) {
   const { c } = useTheme()
+  const color = tone === 'danger' ? c.danger : c.textMuted
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      hitSlop={6}
-      style={[
-        styles.pill,
-        { backgroundColor: tone === 'danger' ? c.dangerSoft : c.surfaceAlt, borderColor: tone === 'danger' ? c.danger : c.border },
-      ]}
+      style={({ pressed }) => [styles.pill, { backgroundColor: pressed ? c.surfaceAlt : tone === 'danger' ? c.dangerSoft : 'transparent' }]}
     >
-      <Text
-        variant="caption"
-        weight="medium"
-        numberOfLines={1}
-        style={{ maxWidth: 180, color: tone === 'danger' ? c.danger : c.textMuted }}
-      >
+      {Icon ? <Icon size={14} color={color} strokeWidth={1.75} /> : null}
+      <Text variant="small" weight="medium" numberOfLines={1} style={{ maxWidth: 170, color }}>
         {label}
       </Text>
-      <ChevronDown size={12} color={tone === 'danger' ? c.danger : c.textFaint} />
+      <ChevronDown size={13} color={c.textFaint} strokeWidth={1.75} />
     </Pressable>
   )
 }
@@ -451,16 +493,18 @@ const styles = StyleSheet.create({
   },
   dot: { width: 7, height: 7, borderRadius: 4 },
   banner: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md, padding: space.xl },
-  suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, justifyContent: 'center', marginTop: space.sm },
-  pill: {
+  empty: { flexGrow: 1, justifyContent: 'flex-end', gap: space.xl, paddingHorizontal: space.xl, paddingVertical: space.lg },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  resume: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    borderRadius: radius.pill,
+    gap: space.md,
     borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: space.md,
-    height: 30,
+    borderRadius: radius.lg,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
   },
+  suggestion: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 48, paddingVertical: space.sm },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: radius.pill, paddingHorizontal: 10, height: 34 },
   option: { flexDirection: 'row', alignItems: 'center', minHeight: 48, borderRadius: radius.md, paddingHorizontal: space.lg },
 })

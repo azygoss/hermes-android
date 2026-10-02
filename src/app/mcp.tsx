@@ -2,7 +2,7 @@ import { Stack } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import { KeyRound, LogIn, Plus, RefreshCw, Server, Trash2, Zap } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
-import { StyleSheet, Switch, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import {
   Badge,
@@ -23,6 +23,7 @@ import {
   TextField,
   toast,
   toastError,
+  Toggle,
 } from '@/components/ui'
 import { useT } from '@/i18n'
 import type { McpProbeTool, McpServerSummary } from '@/lib/gateway/contract.generated'
@@ -124,11 +125,9 @@ export default function McpScreen() {
                     last
                   />
                 </View>
-                <Switch
+                <Toggle
                   value={s.enabled}
                   onValueChange={(v) => toggle(s, v)}
-                  trackColor={{ false: c.borderStrong, true: c.accent }}
-                  thumbColor={s.enabled ? c.onAccent : c.textMuted}
                   accessibilityLabel={t('Enable {name}', { name: s.name })}
                   style={{ marginRight: space.md }}
                 />

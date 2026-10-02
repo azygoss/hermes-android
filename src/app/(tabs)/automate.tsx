@@ -18,7 +18,7 @@ export default function AutomateHub() {
   const gw = status.data as { gateway_running?: boolean; gateway_platforms?: Record<string, unknown> } | undefined
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <TabHeader title={t('Automate')} subtitle={t('Work that happens without you')} />
+      <TabHeader title={t('Automate')} />
       <Screen refreshing={status.isRefetching} onRefresh={() => status.refetch()}>
         <Section title={t('Scheduling')}>
           <Row

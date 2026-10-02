@@ -61,6 +61,11 @@ function Reasoning({ text, live }: { text: string; live: boolean }) {
   )
 }
 
+/** Backend notices often start with their own ⚠️/ℹ️; the row already shows an icon. */
+function stripLeadingEmoji(text: string) {
+  return text.replace(/^\s*(?:\p{Extended_Pictographic}\uFE0F?\s*)+/u, '')
+}
+
 interface Props {
   message: ChatMessage
   streaming: boolean
@@ -77,13 +82,12 @@ export const MessageItem = memo(function MessageItem({ message, streaming, onEdi
     const tone = message.tone ?? 'info'
     const Icon = tone === 'error' ? XCircle : tone === 'warn' ? AlertTriangle : Info
     const color = tone === 'error' ? c.danger : tone === 'warn' ? c.warn : c.textMuted
-    const bg = tone === 'error' ? c.dangerSoft : tone === 'warn' ? c.warnSoft : c.surfaceAlt
     return (
-      <View style={[styles.system, { backgroundColor: bg }]} accessibilityRole={tone === 'error' ? 'alert' : undefined}>
-        <Icon size={16} color={color} style={{ marginTop: 2 }} />
+      <View style={[styles.system, { borderColor: c.border }]} accessibilityRole={tone === 'error' ? 'alert' : undefined}>
+        <Icon size={15} color={color} strokeWidth={1.75} style={{ marginTop: 2 }} />
         <View style={{ flex: 1, gap: 2 }}>
           {message.label ? <Badge label={message.label} /> : null}
-          <Markdown text={textOf(message)} muted={tone === 'info'} />
+          <Markdown text={stripLeadingEmoji(textOf(message))} muted small />
         </View>
       </View>
     )
@@ -170,7 +174,7 @@ export const MessageItem = memo(function MessageItem({ message, streaming, onEdi
         }
         if (part.kind === 'tool') return <ToolCard key={part.id} part={part} />
         if (!part.text) return null
-        return <Markdown key={i} text={part.text} />
+        return <Markdown key={i} text={part.text} live={streaming} />
       })}
       {message.images?.length ? (
         <View style={styles.attachRow}>
@@ -256,7 +260,14 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   assistant: { gap: space.sm },
-  system: { flexDirection: 'row', gap: space.sm, padding: space.md, borderRadius: radius.md },
+  system: {
+    flexDirection: 'row',
+    gap: space.sm,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   reasoning: { borderLeftWidth: 2, paddingLeft: space.md, gap: 4 },
   reasonHead: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 28 },
   cursor: { width: 8, height: 16, borderRadius: 2, opacity: 0.8 },

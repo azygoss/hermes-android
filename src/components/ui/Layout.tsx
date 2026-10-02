@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react-native'
 import type { ReactNode } from 'react'
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -76,13 +77,7 @@ export function Section({
       {(title || action) && (
         <View style={styles.sectionHead}>
           {title ? (
-            <Text
-              variant="small"
-              weight="semibold"
-              tone="muted"
-              accessibilityRole="header"
-              style={{ textTransform: 'uppercase', letterSpacing: 0.6 }}
-            >
+            <Text variant="small" weight="semibold" tone="muted" accessibilityRole="header">
               {title}
             </Text>
           ) : (
@@ -158,13 +153,13 @@ export function Row({
   accessibilityLabel,
 }: RowProps) {
   const { c } = useTheme()
-  const content = (
-    <View style={[styles.row, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}>
-      {Icon ? (
-        <View style={[styles.rowIcon, { backgroundColor: danger ? c.dangerSoft : c.surfaceAlt }]}>
-          <Icon size={18} color={iconColor ?? (danger ? c.danger : c.accentText)} strokeWidth={2} />
-        </View>
-      ) : null}
+  const pressable = !!(onPress || onLongPress)
+  // Interactive trailing controls sit beside the pressable area, never inside it (no nested buttons).
+  const splitRight = pressable && !!right
+  const rule = !last ? <View style={[styles.rowRule, { left: Icon ? ROW_TEXT_INSET : space.lg, backgroundColor: c.border }]} /> : null
+  const body = (
+    <>
+      {Icon ? <Icon size={20} color={iconColor ?? (danger ? c.danger : c.textMuted)} strokeWidth={1.75} /> : null}
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="body" weight="medium" tone={danger ? 'danger' : 'default'} numberOfLines={1} mono={mono}>
           {title}
@@ -180,23 +175,42 @@ export function Row({
           {value}
         </Text>
       ) : null}
-      {right}
-      {(chevron ?? (!!onPress && !right)) ? <ChevronRight size={18} color={c.textFaint} /> : null}
-    </View>
+      {splitRight ? null : right}
+      {(chevron ?? (pressable && !right)) ? <ChevronRight size={18} color={c.textFaint} strokeWidth={1.75} /> : null}
+    </>
   )
-  if (!onPress && !onLongPress) return content
-  return (
+  if (!pressable)
+    return (
+      <View style={styles.row}>
+        {body}
+        {rule}
+      </View>
+    )
+  const button = (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? (subtitle ? `${title}, ${subtitle}` : title)}
       accessibilityState={{ disabled: !!disabled }}
       onPress={disabled ? undefined : onPress}
       onLongPress={onLongPress}
-      android_ripple={{ color: c.accentSoft }}
-      style={({ pressed }) => ({ opacity: disabled ? 0.5 : pressed ? 0.8 : 1 })}
+      android_ripple={{ color: c.surfaceAlt }}
+      style={({ pressed }) => [
+        styles.row,
+        splitRight && { flex: 1, paddingRight: space.sm },
+        { opacity: disabled ? 0.45 : 1, backgroundColor: pressed ? c.surfaceAlt : 'transparent' },
+      ]}
     >
-      {content}
+      {body}
+      {splitRight ? null : rule}
     </Pressable>
+  )
+  if (!splitRight) return button
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      {button}
+      <View style={{ paddingRight: space.lg }}>{right}</View>
+      {rule}
+    </View>
   )
 }
 
@@ -224,7 +238,7 @@ export function ToggleRow({
       accessibilityLabel={title}
       accessibilityState={{ checked: value, disabled: !!disabled }}
       onPress={disabled ? undefined : () => onChange(!value)}
-      android_ripple={{ color: c.accentSoft }}
+      android_ripple={{ color: c.surfaceAlt }}
     >
       <Row
         title={title}
@@ -233,17 +247,42 @@ export function ToggleRow({
         last={last}
         chevron={false}
         right={
-          <Switch
-            value={value}
-            onValueChange={onChange}
-            disabled={disabled}
-            trackColor={{ false: c.borderStrong, true: c.accent }}
-            thumbColor={value ? c.onAccent : c.textMuted}
-            importantForAccessibility="no"
-          />
+          <View importantForAccessibility="no-hide-descendants">
+            <Toggle value={value} onValueChange={onChange} disabled={disabled} />
+          </View>
         }
       />
     </Pressable>
+  )
+}
+
+/** The app's switch: accent track, white thumb in both themes (react-native-web needs its own props). */
+export function Toggle({
+  value,
+  onValueChange,
+  disabled,
+  accessibilityLabel,
+  style,
+}: {
+  value: boolean
+  onValueChange: (v: boolean) => void
+  disabled?: boolean
+  accessibilityLabel?: string
+  style?: StyleProp<ViewStyle>
+}) {
+  const { c, isDark } = useTheme()
+  const thumb = value || !isDark ? '#FFFFFF' : '#CFC9BF'
+  return (
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      disabled={disabled}
+      trackColor={{ false: c.borderStrong, true: c.accent }}
+      thumbColor={thumb}
+      accessibilityLabel={accessibilityLabel}
+      style={style}
+      {...webSwitchColors(thumb, c.accent)}
+    />
   )
 }
 
@@ -265,7 +304,7 @@ export function Badge({
   }[tone]
   return (
     <View style={[styles.badge, { backgroundColor: map[0] }]}>
-      <Text variant="caption" weight="semibold" style={{ color: map[1] }} numberOfLines={1}>
+      <Text variant="caption" weight="medium" style={{ color: map[1] }} numberOfLines={1}>
         {label}
       </Text>
     </View>
@@ -294,14 +333,13 @@ export function Chip({
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: selected ? c.accentSoft : c.surfaceAlt,
-          borderColor: selected ? c.accent : c.border,
-          opacity: pressed ? 0.8 : 1,
+          backgroundColor: selected ? c.text : pressed ? c.surfaceAlt : 'transparent',
+          borderColor: selected ? c.text : c.border,
         },
       ]}
     >
-      {Icon ? <Icon size={14} color={selected ? c.accentText : c.textMuted} /> : null}
-      <Text variant="small" weight="medium" style={{ color: selected ? c.accentText : c.text }} numberOfLines={1}>
+      {Icon ? <Icon size={14} color={selected ? c.bg : c.textMuted} strokeWidth={1.75} /> : null}
+      <Text variant="small" weight="medium" style={{ color: selected ? c.bg : c.textMuted }} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -319,7 +357,7 @@ export function Segmented<T extends string>({
 }) {
   const { c } = useTheme()
   return (
-    <View style={[styles.segment, { backgroundColor: c.surfaceAlt, borderColor: c.border }]} accessibilityRole="tablist">
+    <View style={[styles.segment, { backgroundColor: c.surface, borderColor: c.border }]} accessibilityRole="tablist">
       {options.map((o) => {
         const on = o.value === value
         return (
@@ -328,7 +366,7 @@ export function Segmented<T extends string>({
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.value)}
-            style={[styles.segmentItem, on && { backgroundColor: c.elevated, borderColor: c.borderStrong }]}
+            style={[styles.segmentItem, on && { backgroundColor: c.elevated, borderColor: c.border }]}
           >
             <Text variant="small" weight={on ? 'semibold' : 'medium'} tone={on ? 'default' : 'muted'} numberOfLines={1}>
               {o.label}
@@ -357,11 +395,7 @@ export function EmptyState({ icon: Icon, title, body, action }: { icon?: LucideI
   const { c } = useTheme()
   return (
     <View style={[styles.center, { paddingVertical: space.xxxl }]}>
-      {Icon ? (
-        <View style={[styles.emptyIcon, { backgroundColor: c.surfaceAlt }]}>
-          <Icon size={26} color={c.textMuted} />
-        </View>
-      ) : null}
+      {Icon ? <Icon size={28} color={c.textFaint} strokeWidth={1.5} /> : null}
       <Text variant="title" center>
         {title}
       </Text>
@@ -416,27 +450,36 @@ export function KeyValue({ label, value, mono }: { label: string; value: ReactNo
   )
 }
 
+const ROW_GAP = 14
+/** Where row text starts when the row has a 20px icon; dividers begin here. */
+const ROW_TEXT_INSET = space.lg + 20 + ROW_GAP
+
+/** react-native-web ignores thumbColor for the on state and uses its own teal. */
+function webSwitchColors(thumb: string, track: string) {
+  return Platform.OS === 'web' ? ({ activeThumbColor: thumb, activeTrackColor: track } as object) : {}
+}
+
 const styles = StyleSheet.create({
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.xs, minHeight: 24 },
   card: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.md,
+    gap: ROW_GAP,
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
     minHeight: HIT + 8,
   },
-  rowIcon: { width: 34, height: 34, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
-  badge: { borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 2, alignSelf: 'flex-start' },
+  rowRule: { position: 'absolute', right: 0, bottom: 0, height: StyleSheet.hairlineWidth },
+  badge: { borderRadius: radius.xs, paddingHorizontal: 6, paddingVertical: 1, alignSelf: 'flex-start' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.xs,
     borderRadius: radius.pill,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: space.md,
-    minHeight: 36,
+    minHeight: 34,
   },
   segment: { flexDirection: 'row', borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, padding: 3, gap: 3 },
   segmentItem: {
@@ -450,7 +493,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.sm,
   },
   center: { alignItems: 'center', justifyContent: 'center', gap: space.md, padding: space.xl },
-  emptyIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   errorBox: { borderRadius: radius.md, borderWidth: 1, padding: space.lg, gap: space.sm },
   kv: { flexDirection: 'row', justifyContent: 'space-between', gap: space.lg, paddingVertical: space.xs },
 })

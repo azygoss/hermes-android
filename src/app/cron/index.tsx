@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
 import { CalendarClock, History, Pencil, Play, Plus, Trash2 } from 'lucide-react-native'
 import { useState } from 'react'
-import { Pressable, StyleSheet, Switch, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import {
   Badge,
@@ -19,6 +19,7 @@ import {
   Text,
   toast,
   toastError,
+  Toggle,
 } from '@/components/ui'
 import { useT } from '@/i18n'
 import { dateTime, relativeTime } from '@/lib/format'
@@ -79,66 +80,68 @@ export default function CronScreen() {
             />
           ) : null}
           {(jobs.data ?? []).map((job) => (
-            <Pressable
+            <View
               key={job.id}
-              accessibilityRole="button"
-              onPress={() => setSelected(job)}
-              style={[
-                styles.card,
-                {
-                  backgroundColor: c.surface,
-                  borderColor: job.last_status === 'error' ? c.danger : c.border,
-                  opacity: job.enabled ? 1 : 0.65,
-                },
-              ]}
+              style={[styles.card, { backgroundColor: c.surface, borderColor: job.last_status === 'error' ? c.danger : c.border }]}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-                <View style={{ flex: 1 }}>
-                  <Text weight="semibold" numberOfLines={1}>
-                    {job.name || job.prompt?.slice(0, 60) || job.id}
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setSelected(job)}
+                style={({ pressed }) => [styles.cardBody, { opacity: job.enabled ? (pressed ? 0.7 : 1) : 0.55 }]}
+              >
+                <Text weight="semibold" numberOfLines={1}>
+                  {job.name || job.prompt?.slice(0, 60) || job.id}
+                </Text>
+                <Text variant="small" tone="muted">
+                  {job.schedule_display || job.schedule?.display || job.schedule?.expr}
+                  {job.next_run_at && job.enabled
+                    ? ` · ${Date.parse(String(job.next_run_at)) > Date.now() ? t('next {when}', { when: relativeTime(job.next_run_at) }) : t('due now')}`
+                    : ''}
+                </Text>
+                {job.prompt ? (
+                  <Text variant="small" tone="faint" numberOfLines={2}>
+                    {job.prompt}
                   </Text>
-                  <Text variant="small" tone="accent">
-                    {job.schedule_display || job.schedule?.display || job.schedule?.expr}
+                ) : null}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  {job.last_status ? (
+                    <View
+                      style={[
+                        styles.dot,
+                        {
+                          backgroundColor:
+                            job.last_status === 'ok' || job.last_status === 'success'
+                              ? c.success
+                              : job.last_status === 'error'
+                                ? c.danger
+                                : c.textFaint,
+                        },
+                      ]}
+                    />
+                  ) : null}
+                  <Text variant="caption" tone="faint" numberOfLines={1}>
+                    {[
+                      job.last_status ? t('last: {s}', { s: job.last_status }) : null,
+                      job.deliver ? `→ ${job.deliver}` : null,
+                      job.no_agent ? t('script') : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </Text>
                 </View>
-                <Switch
-                  value={job.enabled}
-                  onValueChange={(v) => setEnabled(job, v)}
-                  trackColor={{ false: c.borderStrong, true: c.accent }}
-                  thumbColor={job.enabled ? c.onAccent : c.textMuted}
-                  accessibilityLabel={t('Enable {name}', { name: job.name ?? job.id })}
-                />
-              </View>
-              {job.prompt ? (
-                <Text variant="small" tone="muted" numberOfLines={2}>
-                  {job.prompt}
-                </Text>
-              ) : null}
-              <View style={{ flexDirection: 'row', gap: space.xs, flexWrap: 'wrap' }}>
-                {job.deliver ? <Badge label={`→ ${job.deliver}`} /> : null}
-                {job.next_run_at && job.enabled ? (
-                  <Badge label={t('next {when}', { when: dateTime(job.next_run_at) })} tone="info" />
+                {job.last_error ? (
+                  <Text variant="caption" tone="danger" numberOfLines={3}>
+                    {job.last_error}
+                  </Text>
                 ) : null}
-                {job.last_status ? (
-                  <Badge
-                    label={t('last: {s}', { s: job.last_status })}
-                    tone={
-                      job.last_status === 'ok' || job.last_status === 'success'
-                        ? 'success'
-                        : job.last_status === 'error'
-                          ? 'danger'
-                          : 'default'
-                    }
-                  />
-                ) : null}
-                {job.no_agent ? <Badge label={t('script')} /> : null}
-              </View>
-              {job.last_error ? (
-                <Text variant="caption" tone="danger" numberOfLines={3}>
-                  {job.last_error}
-                </Text>
-              ) : null}
-            </Pressable>
+              </Pressable>
+              <Toggle
+                value={job.enabled}
+                onValueChange={(v) => setEnabled(job, v)}
+                accessibilityLabel={t('Enable {name}', { name: job.name ?? job.id })}
+                style={{ marginTop: space.md, marginRight: space.md }}
+              />
+            </View>
           ))}
         </>
       )}
@@ -243,5 +246,7 @@ function JobSheet({ job, onClose, onChanged }: { job: CronJob | null; onClose: (
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg, padding: space.md, gap: space.sm },
+  card: { flexDirection: 'row', alignItems: 'flex-start', borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg },
+  cardBody: { flex: 1, padding: space.lg, gap: 4 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
 })

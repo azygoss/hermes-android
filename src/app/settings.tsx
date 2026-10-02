@@ -13,7 +13,7 @@ function Label({ icon: Icon, text }: { icon: typeof Moon; text: string }) {
   const { c } = useTheme()
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-      <Icon size={16} color={c.accentText} />
+      <Icon size={16} color={c.textMuted} strokeWidth={1.75} />
       <Text weight="medium">{text}</Text>
     </View>
   )

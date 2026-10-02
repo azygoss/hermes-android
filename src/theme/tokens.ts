@@ -26,73 +26,74 @@ export interface Palette {
   overlay: string
 }
 
-// Dark OLED base (ui-ux-pro-max "Dark Mode (OLED)") with the Hermes gold accent
-// from the default skin (ui_accent #FFBF00). Muted text is ~7:1 on bg.
+// Warm near-black neutrals so the gold accent reads as brass rather than neon. Surfaces step up
+// in small, even increments; the accent is kept for state and the one primary action per screen.
+// Muted text is ~7:1 and faint text ~4.6:1 on bg.
 export const dark: Palette = {
-  bg: '#0B0B0F',
-  surface: '#14141A',
-  surfaceAlt: '#1B1B23',
-  elevated: '#202029',
-  border: '#272731',
-  borderStrong: '#3A3A47',
-  text: '#F4F2EC',
-  textMuted: '#A8A499',
-  textFaint: '#77736A',
-  accent: '#FFBF00',
-  accentText: '#FFCA33',
-  onAccent: '#1A1300',
-  accentSoft: 'rgba(255,191,0,0.14)',
-  success: '#5BD17A',
-  successSoft: 'rgba(91,209,122,0.14)',
-  danger: '#FF6B66',
-  dangerSoft: 'rgba(255,107,102,0.14)',
-  warn: '#FFB454',
-  warnSoft: 'rgba(255,180,84,0.14)',
-  info: '#7CB7FF',
-  infoSoft: 'rgba(124,183,255,0.14)',
-  userBubble: '#262019',
-  codeBg: '#101015',
-  overlay: 'rgba(0,0,0,0.6)',
+  bg: '#0D0C0B',
+  surface: '#161513',
+  surfaceAlt: '#1D1C19',
+  elevated: '#24221F',
+  border: '#2A2825',
+  borderStrong: '#3D3A35',
+  text: '#EDE9E2',
+  textMuted: '#A7A096',
+  textFaint: '#857E73',
+  accent: '#E9B44C',
+  accentText: '#EDBD5E',
+  onAccent: '#1A1405',
+  accentSoft: 'rgba(233,180,76,0.13)',
+  success: '#6CC88A',
+  successSoft: 'rgba(108,200,138,0.12)',
+  danger: '#F07167',
+  dangerSoft: 'rgba(240,113,103,0.12)',
+  warn: '#E9A35A',
+  warnSoft: 'rgba(233,163,90,0.12)',
+  info: '#8DB4E8',
+  infoSoft: 'rgba(141,180,232,0.12)',
+  userBubble: '#211F1B',
+  codeBg: '#121110',
+  overlay: 'rgba(0,0,0,0.62)',
 }
 
 export const light: Palette = {
-  bg: '#FAF8F3',
+  bg: '#F7F5F0',
   surface: '#FFFFFF',
-  surfaceAlt: '#F2EFE7',
+  surfaceAlt: '#EFECE5',
   elevated: '#FFFFFF',
-  border: '#E5E1D6',
-  borderStrong: '#CFC9BA',
-  text: '#1B1A17',
-  textMuted: '#5F5B52',
-  textFaint: '#8A857A',
-  accent: '#E0A400',
-  accentText: '#8A5D00',
-  onAccent: '#1A1300',
-  accentSoft: 'rgba(224,164,0,0.14)',
-  success: '#1E8A3C',
-  successSoft: 'rgba(30,138,60,0.10)',
-  danger: '#C62828',
-  dangerSoft: 'rgba(198,40,40,0.10)',
-  warn: '#A65D00',
-  warnSoft: 'rgba(166,93,0,0.10)',
-  info: '#1F5FAD',
-  infoSoft: 'rgba(31,95,173,0.10)',
-  userBubble: '#F3E9CF',
-  codeBg: '#F2EFE7',
+  border: '#E2DED5',
+  borderStrong: '#CBC5B8',
+  text: '#1C1B18',
+  textMuted: '#5E5A51',
+  textFaint: '#7A756B',
+  accent: '#C98F1C',
+  accentText: '#875C08',
+  onAccent: '#1A1405',
+  accentSoft: 'rgba(201,143,28,0.12)',
+  success: '#1E7F3B',
+  successSoft: 'rgba(30,127,59,0.09)',
+  danger: '#BF2E26',
+  dangerSoft: 'rgba(191,46,38,0.08)',
+  warn: '#995500',
+  warnSoft: 'rgba(153,85,0,0.09)',
+  info: '#215DA6',
+  infoSoft: 'rgba(33,93,166,0.08)',
+  userBubble: '#ECE7DC',
+  codeBg: '#EFECE5',
   overlay: 'rgba(20,18,12,0.45)',
 }
 
 export const accents: Record<string, { dark: string; light: string; darkText: string; lightText: string }> = {
-  gold: { dark: '#FFBF00', light: '#E0A400', darkText: '#FFCA33', lightText: '#8A5D00' },
-  azure: { dark: '#5AA9FF', light: '#1F6FD1', darkText: '#7CB7FF', lightText: '#1A5CAD' },
-  emerald: { dark: '#3DDC84', light: '#1E9E5A', darkText: '#5BE39A', lightText: '#16774A' },
-  violet: { dark: '#B38CFF', light: '#7A4CE0', darkText: '#C2A3FF', lightText: '#5E35B8' },
-  coral: { dark: '#FF7A6B', light: '#E0523F', darkText: '#FF9486', lightText: '#AD3A2A' },
+  gold: { dark: '#E9B44C', light: '#C98F1C', darkText: '#EDBD5E', lightText: '#875C08' },
+  azure: { dark: '#7FA9E0', light: '#2F64A8', darkText: '#94B8E8', lightText: '#2A5A97' },
+  sage: { dark: '#8DBF8F', light: '#3D7A45', darkText: '#9DCA9F', lightText: '#356B3C' },
+  iris: { dark: '#A99BE0', light: '#5C4BAE', darkText: '#B8ACE6', lightText: '#53449D' },
+  clay: { dark: '#DE8C6E', light: '#A9502F', darkText: '#E49C81', lightText: '#97462A' },
 }
 
 export const space = { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32 } as const
 
-export const radius = { sm: 8, md: 12, lg: 16, xl: 20, pill: 999 } as const
+export const radius = { xs: 6, sm: 8, md: 10, lg: 14, xl: 20, pill: 999 } as const
 
 export const font = {
   regular: 'Inter_400Regular',
@@ -108,9 +109,9 @@ export const type = {
   small: { fontSize: 13, lineHeight: 18 },
   body: { fontSize: 15, lineHeight: 22 },
   bodyLg: { fontSize: 16, lineHeight: 24 },
-  title: { fontSize: 17, lineHeight: 24 },
-  h2: { fontSize: 20, lineHeight: 28 },
-  h1: { fontSize: 28, lineHeight: 34 },
+  title: { fontSize: 17, lineHeight: 24, letterSpacing: -0.2 },
+  h2: { fontSize: 21, lineHeight: 28, letterSpacing: -0.3 },
+  h1: { fontSize: 30, lineHeight: 36, letterSpacing: -0.6 },
 } as const
 
 /** Minimum touch target (ui-ux-pro-max: 44x44, Material: 48dp). */

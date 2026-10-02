@@ -119,10 +119,10 @@ export const ToolCard = memo(function ToolCard({ part }: { part: ToolPart }) {
         accessibilityLabel={`${toolLabel(part.name)} ${preview}`}
         accessibilityState={{ expanded: open, busy: part.status === 'running' }}
         onPress={() => setOpen(!open)}
-        android_ripple={{ color: c.accentSoft }}
+        android_ripple={{ color: c.surfaceAlt }}
         style={styles.head}
       >
-        <Icon size={16} color={c.accentText} />
+        <Icon size={16} color={c.textMuted} strokeWidth={1.75} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text variant="small" weight="semibold" numberOfLines={1}>
             {toolLabel(part.name)}
@@ -141,7 +141,7 @@ export const ToolCard = memo(function ToolCard({ part }: { part: ToolPart }) {
         {part.status === 'running' ? (
           <ActivityIndicator size="small" color={c.accent} />
         ) : (
-          <StatusIcon size={16} color={part.status === 'error' ? c.danger : c.success} />
+          <StatusIcon size={16} color={part.status === 'error' ? c.danger : c.textFaint} strokeWidth={1.75} />
         )}
         {open ? <ChevronDown size={16} color={c.textFaint} /> : <ChevronRight size={16} color={c.textFaint} />}
       </Pressable>

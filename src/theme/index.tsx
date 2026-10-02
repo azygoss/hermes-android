@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { useColorScheme } from 'react-native'
 
 import { useRuntime } from '@/lib/hermes'
@@ -35,13 +35,23 @@ function withAlpha(hex: string, alpha: number) {
   return rgb ? `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})` : hex
 }
 
-export function useTheme() {
+export interface Theme {
+  c: Palette
+  isDark: boolean
+  /** User text-size multiplier from Settings. */
+  fontScale: number
+}
+
+function useComputedTheme(): Theme {
   const scheme = useColorScheme()
-  const { themeMode, accent, useSkinAccent } = useSettings()
+  const themeMode = useSettings((s) => s.themeMode)
+  const accent = useSettings((s) => s.accent)
+  const useSkinAccent = useSettings((s) => s.useSkinAccent)
+  const fontScale = useSettings((s) => s.fontScale)
   const skinAccent = useRuntime((s) => (s.ready?.skin as { colors?: Record<string, string> } | undefined)?.colors?.ui_accent)
   const isDark = themeMode === 'system' ? scheme !== 'light' : themeMode === 'dark'
 
-  const c = useMemo<Palette>(() => {
+  return useMemo<Theme>(() => {
     const base = isDark ? dark : light
     const preset = accents[accent] ?? accents.gold
     let acc = isDark ? preset.dark : preset.light
@@ -52,8 +62,18 @@ export function useTheme() {
       accText = contrast(skinAccent, base.bg) >= 4.5 ? skinAccent : accText
     }
     const onAccent = luminance(acc) > 0.35 ? '#141008' : '#FFFFFF'
-    return { ...base, accent: acc, accentText: accText, onAccent, accentSoft: withAlpha(acc, isDark ? 0.14 : 0.12) }
-  }, [isDark, accent, useSkinAccent, skinAccent])
+    const c = { ...base, accent: acc, accentText: accText, onAccent, accentSoft: withAlpha(acc, isDark ? 0.13 : 0.12) }
+    return { c, isDark, fontScale }
+  }, [isDark, accent, useSkinAccent, skinAccent, fontScale])
+}
 
-  return { c, isDark }
+const ThemeContext = createContext<Theme>({ c: dark, isDark: true, fontScale: 1 })
+
+/** Computes the palette once for the whole tree; components read it with useTheme(). */
+export function AppThemeProvider({ children }: { children: ReactNode }) {
+  return <ThemeContext.Provider value={useComputedTheme()}>{children}</ThemeContext.Provider>
+}
+
+export function useTheme() {
+  return useContext(ThemeContext)
 }

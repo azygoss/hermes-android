@@ -28,7 +28,7 @@ export default function AgentHub() {
   const go = (path: string) => () => router.push(path as never)
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <TabHeader title={t('Agent')} subtitle={t('What Hermes knows and can do')} />
+      <TabHeader title={t('Agent')} />
       <Screen>
         <ProfileSwitcher />
         <Section title={t('Brain')}>

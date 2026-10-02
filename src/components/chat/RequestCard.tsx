@@ -23,17 +23,14 @@ function Shell({
 }) {
   const { c } = useTheme()
   const color = tone === 'warn' ? c.warn : tone === 'info' ? c.info : c.accentText
-  const bg = tone === 'warn' ? c.warnSoft : tone === 'info' ? c.infoSoft : c.accentSoft
   return (
     <View
-      style={[styles.card, { backgroundColor: c.elevated, borderColor: color }]}
+      style={[styles.card, { backgroundColor: c.surface, borderColor: c.borderStrong }]}
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
     >
       <View style={styles.head}>
-        <View style={[styles.iconWrap, { backgroundColor: bg }]}>
-          <Icon size={18} color={color} />
-        </View>
+        <Icon size={18} color={color} strokeWidth={1.75} />
         <Text weight="semibold" style={{ flex: 1 }}>
           {title}
         </Text>
@@ -219,7 +216,6 @@ export function RequestCard({ req }: { req: PendingRequest }) {
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: radius.lg, padding: space.lg, gap: space.md },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  iconWrap: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   cmd: { borderRadius: radius.sm, padding: space.md },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
 })

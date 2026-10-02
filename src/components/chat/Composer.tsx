@@ -8,9 +8,9 @@ import {
   CornerDownRight,
   FileText,
   Image as ImageIcon,
-  Loader2,
   Mic,
   Paperclip,
+  Plus,
   Sparkles,
   Square,
   X,
@@ -221,7 +221,7 @@ export function Composer(props: Props) {
   const SendIcon = showStop ? Square : ArrowUp
 
   return (
-    <View style={[styles.wrap, { backgroundColor: c.bg, borderTopColor: c.border }]}>
+    <View style={[styles.wrap, { backgroundColor: c.bg }]}>
       {items.length ? (
         <ScrollView style={[styles.suggest, { backgroundColor: c.elevated, borderColor: c.border }]} keyboardShouldPersistTaps="always">
           {items.map((item) => (
@@ -284,18 +284,7 @@ export function Composer(props: Props) {
         </ScrollView>
       ) : null}
 
-      {pills ? <View style={styles.pills}>{pills}</View> : null}
-
       <View style={[styles.box, { backgroundColor: c.surface, borderColor: recording ? c.danger : c.border }]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('Attach')}
-          onPress={() => setAttachOpen(true)}
-          style={styles.side}
-          hitSlop={4}
-        >
-          <Paperclip size={20} color={c.textMuted} />
-        </Pressable>
         <TextInput
           ref={input}
           value={text}
@@ -313,36 +302,59 @@ export function Composer(props: Props) {
           onSubmitEditing={sendOnEnter ? () => submit() : undefined}
           returnKeyType={sendOnEnter ? 'send' : 'default'}
         />
-        {!text.trim() && !attachments.length && !busy ? (
+        <View style={styles.toolbar}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={recording ? t('Stop recording') : t('Record a voice message')}
-            onPress={toggleRecording}
-            style={[styles.side, recording && { backgroundColor: c.dangerSoft, borderRadius: HIT / 2 }]}
+            accessibilityLabel={t('Attach')}
+            onPress={() => setAttachOpen(true)}
+            style={({ pressed }) => [styles.side, pressed && { backgroundColor: c.surfaceAlt }]}
           >
-            {transcribing ? <Loader2 size={20} color={c.textMuted} /> : <Mic size={20} color={recording ? c.danger : c.textMuted} />}
+            <Plus size={20} color={c.textMuted} strokeWidth={1.75} />
           </Pressable>
-        ) : null}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={showStop ? t('Stop the agent') : t('Send')}
-          accessibilityHint={busy && !showStop ? t('Long-press for steer and interrupt options') : undefined}
-          onPress={() => (showStop ? onStop() : submit())}
-          onLongPress={() => (busy && canSend ? setModeOpen(true) : undefined)}
-          disabled={!showStop && !canSend}
-          style={[styles.send, { backgroundColor: showStop ? c.danger : canSend ? c.accent : c.surfaceAlt }]}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color={c.onAccent} />
-          ) : (
-            <SendIcon
-              size={showStop ? 14 : 18}
-              color={showStop ? '#fff' : canSend ? c.onAccent : c.textFaint}
-              fill={showStop ? '#fff' : 'none'}
-              strokeWidth={2.5}
-            />
-          )}
-        </Pressable>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.pills}
+            keyboardShouldPersistTaps="handled"
+          >
+            {pills}
+          </ScrollView>
+          {!text.trim() && !attachments.length && !busy ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={recording ? t('Stop recording') : t('Record a voice message')}
+              onPress={toggleRecording}
+              style={({ pressed }) => [styles.side, (recording || pressed) && { backgroundColor: recording ? c.dangerSoft : c.surfaceAlt }]}
+            >
+              {transcribing ? (
+                <ActivityIndicator size="small" color={c.textMuted} />
+              ) : (
+                <Mic size={20} color={recording ? c.danger : c.textMuted} strokeWidth={1.75} />
+              )}
+            </Pressable>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={showStop ? t('Stop the agent') : t('Send')}
+            accessibilityHint={busy && !showStop ? t('Long-press for steer and interrupt options') : undefined}
+            onPress={() => (showStop ? onStop() : submit())}
+            onLongPress={() => (busy && canSend ? setModeOpen(true) : undefined)}
+            disabled={!showStop && !canSend}
+            style={[styles.send, { backgroundColor: showStop ? c.text : canSend ? c.accent : c.surfaceAlt }]}
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color={c.onAccent} />
+            ) : (
+              <SendIcon
+                size={showStop ? 12 : 18}
+                color={showStop ? c.bg : canSend ? c.onAccent : c.textFaint}
+                fill={showStop ? c.bg : 'none'}
+                strokeWidth={2.25}
+              />
+            )}
+          </Pressable>
+        </View>
       </View>
 
       <Sheet visible={attachOpen} onClose={() => setAttachOpen(false)} title={t('Attach')}>
@@ -403,19 +415,12 @@ export function Composer(props: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: space.md, paddingTop: space.sm, borderTopWidth: StyleSheet.hairlineWidth },
-  box: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    borderWidth: 1,
-    borderRadius: radius.xl,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-    gap: 2,
-  },
-  input: { flex: 1, fontSize: 16, lineHeight: 22, maxHeight: 160, minHeight: 40, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 4 },
-  side: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  send: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  wrap: { paddingHorizontal: space.md, paddingTop: space.xs },
+  box: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.xl, paddingTop: 4, paddingBottom: 6, paddingHorizontal: 6 },
+  input: { fontSize: 16, lineHeight: 22, maxHeight: 160, minHeight: 44, paddingTop: 10, paddingBottom: 6, paddingHorizontal: 10 },
+  toolbar: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  side: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  send: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginLeft: 2 },
   suggest: { maxHeight: 240, borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md, marginBottom: space.sm },
   suggestRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.md, minHeight: 44 },
   attachment: {
@@ -436,5 +441,5 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginBottom: space.sm,
   },
-  pills: { flexDirection: 'row', gap: space.xs, paddingBottom: space.sm, flexWrap: 'wrap' },
+  pills: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingRight: space.xs },
 })

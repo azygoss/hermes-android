@@ -3,7 +3,7 @@ import { Stack } from 'expo-router'
 import { Check, ExternalLink, Settings2, Wrench } from 'lucide-react-native'
 import * as WebBrowser from 'expo-web-browser'
 import { useState } from 'react'
-import { Pressable, StyleSheet, Switch, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import {
   Badge,
@@ -19,6 +19,7 @@ import {
   TextField,
   toast,
   toastError,
+  Toggle,
 } from '@/components/ui'
 import { useT } from '@/i18n'
 import { useRest } from '@/lib/hooks'
@@ -97,13 +98,7 @@ export default function ToolsetsScreen() {
                 </Text>
               </View>
               <IconButton icon={Settings2} label={t('Configure {name}', { name: ts.label })} onPress={() => setOpen(ts)} size={18} />
-              <Switch
-                value={ts.enabled}
-                onValueChange={(v) => toggle(ts, v)}
-                trackColor={{ false: c.borderStrong, true: c.accent }}
-                thumbColor={ts.enabled ? c.onAccent : c.textMuted}
-                accessibilityLabel={t('Enable {name}', { name: ts.label })}
-              />
+              <Toggle value={ts.enabled} onValueChange={(v) => toggle(ts, v)} accessibilityLabel={t('Enable {name}', { name: ts.label })} />
             </View>
           ))}
         </Section>

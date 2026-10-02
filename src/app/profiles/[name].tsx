@@ -2,7 +2,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { Cpu, Download, Pencil, Smartphone, Sparkles, Star, Terminal, Trash2, Wand2 } from 'lucide-react-native'
 import { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, Switch, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import { ModelChooser } from '@/components/ModelChooser'
 import { ProfileAvatar } from '@/components/ProfileAvatar'
@@ -20,6 +20,7 @@ import {
   TextField,
   toast,
   toastError,
+  Toggle as UiToggle,
 } from '@/components/ui'
 import { useT } from '@/i18n'
 import type { ProfilesConfigureParams } from '@/lib/gateway/contract.generated'
@@ -215,7 +216,7 @@ export default function ProfileDetail() {
       <Section>
         {tab === 'toolsets'
           ? (d?.toolsets ?? []).map((ts, i, all) => (
-              <Toggle
+              <ItemToggle
                 key={ts.name}
                 title={ts.label || ts.name}
                 subtitle={ts.description}
@@ -230,7 +231,7 @@ export default function ProfileDetail() {
             ))
           : tab === 'skills'
             ? (d?.skills ?? []).map((s, i, all) => (
-                <Toggle
+                <ItemToggle
                   key={s.name}
                   icon
                   title={s.name}
@@ -242,7 +243,7 @@ export default function ProfileDetail() {
                 />
               ))
             : (d?.mcp_servers ?? []).map((m, i, all) => (
-                <Toggle
+                <ItemToggle
                   key={m.name}
                   title={m.name}
                   subtitle={m.transport}
@@ -326,7 +327,7 @@ export default function ProfileDetail() {
   )
 }
 
-function Toggle({
+function ItemToggle({
   title,
   subtitle,
   value,
@@ -355,13 +356,7 @@ function Toggle({
           </Text>
         ) : null}
       </View>
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        trackColor={{ false: c.borderStrong, true: c.accent }}
-        thumbColor={value ? c.onAccent : c.textMuted}
-        accessibilityLabel={title}
-      />
+      <UiToggle value={value} onValueChange={onChange} accessibilityLabel={title} />
     </View>
   )
 }

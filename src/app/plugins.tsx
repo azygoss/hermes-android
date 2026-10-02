@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Stack } from 'expo-router'
 import { Download, Plug, Plus, RefreshCw, Settings2, Trash2 } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
-import { StyleSheet, Switch, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { FieldInput } from '@/components/FieldInput'
 import {
@@ -23,6 +23,7 @@ import {
   TextField,
   toast,
   toastError,
+  Toggle,
 } from '@/components/ui'
 import { useT } from '@/i18n'
 import type { AgentPluginRow } from '@/lib/gateway/contract.generated'
@@ -191,12 +192,10 @@ export default function PluginsScreen() {
                         </Text>
                       ))}
                     </View>
-                    <Switch
+                    <Toggle
                       value={enabled}
                       disabled={busy === p.key}
                       onValueChange={(v) => toggle(p, v)}
-                      trackColor={{ false: c.borderStrong, true: c.accent }}
-                      thumbColor={enabled ? c.onAccent : c.textMuted}
                       accessibilityLabel={t('Enable {name}', { name: p.name })}
                     />
                   </View>

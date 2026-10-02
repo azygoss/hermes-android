@@ -1,10 +1,12 @@
 import { t } from '@/i18n'
 
 /** Epoch seconds or ms → "5m ago" / "yesterday" / date. */
-export function relativeTime(ts?: number | null) {
+export function relativeTime(ts?: number | string | null) {
   if (!ts) return ''
-  const ms = ts < 1e12 ? ts * 1000 : ts
+  const ms = typeof ts === 'string' ? Date.parse(ts) : ts < 1e12 ? ts * 1000 : ts
+  if (Number.isNaN(ms)) return String(ts)
   const diff = Date.now() - ms
+  if (diff < -60000) return untilTime(-diff)
   const min = Math.round(diff / 60000)
   if (min < 1) return t('just now')
   if (min < 60) return t('{n}m ago', { n: min })
@@ -14,6 +16,14 @@ export function relativeTime(ts?: number | null) {
   if (d === 1) return t('yesterday')
   if (d < 7) return t('{n}d ago', { n: d })
   return new Date(ms).toLocaleDateString()
+}
+
+function untilTime(ms: number) {
+  const min = Math.round(ms / 60000)
+  if (min < 60) return t('in {n}m', { n: min })
+  const h = Math.round(min / 60)
+  if (h < 24) return t('in {n}h', { n: h })
+  return t('in {n}d', { n: Math.round(h / 24) })
 }
 
 export function dateTime(ts?: number | string | null) {

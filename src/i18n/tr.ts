@@ -1227,4 +1227,6 @@ export const tr: Record<string, string> = {
   'No signed-in provider reports limits': 'Giriş yapılmış sağlayıcılar limit bildirmiyor',
   'Shows how much is left on each plan': 'Her planda ne kadar kaldığını gösterir',
   'Updated {when}': 'Güncellendi: {when}',
+  'Share reply': 'Yanıtı paylaş',
+  'Worked for {time}': '{time} çalıştı',
 }

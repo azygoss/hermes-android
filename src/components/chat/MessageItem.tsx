@@ -9,13 +9,14 @@ import {
   FileText,
   Image as ImageIcon,
   Info,
+  Share2,
   ThumbsDown,
   ThumbsUp,
   Volume2,
   XCircle,
 } from 'lucide-react-native'
 import { memo, useState } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, Share, StyleSheet, View } from 'react-native'
 
 import { Badge, Text, toast } from '@/components/ui'
 import { useT } from '@/i18n'
@@ -59,6 +60,11 @@ function Reasoning({ text, live }: { text: string; live: boolean }) {
       ) : null}
     </View>
   )
+}
+
+function formatElapsed(ms: number) {
+  const s = Math.round(ms / 1000)
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`
 }
 
 /** Backend notices often start with their own ⚠️/ℹ️; the row already shows an icon. */
@@ -237,9 +243,23 @@ export const MessageItem = memo(function MessageItem({ message, streaming, onEdi
               </Pressable>
             </>
           ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('Share reply')}
+            hitSlop={10}
+            onPress={() => Share.share({ message: text }).catch(() => {})}
+            style={styles.action}
+          >
+            <Share2 size={15} color={c.textFaint} />
+          </Pressable>
           {message.interim ? (
             <Text variant="caption" tone="faint">
               {t('interim')}
+            </Text>
+          ) : null}
+          {message.elapsedMs && message.elapsedMs >= 2000 ? (
+            <Text variant="caption" tone="faint" style={{ marginLeft: 'auto' }}>
+              {t('Worked for {time}', { time: formatElapsed(message.elapsedMs) })}
             </Text>
           ) : null}
         </View>

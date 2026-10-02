@@ -26,6 +26,8 @@ export interface ChatMessage {
   /** User message not yet acknowledged, or queued locally while a turn runs. */
   pending?: 'sending' | 'queued' | null
   interim?: boolean
+  /** How long the turn ran, for turns finished while the app watched. */
+  elapsedMs?: number
   error?: string | null
   tone?: 'info' | 'warn' | 'error' | 'success'
   /** Paths/names of images queued with this user turn. */

@@ -1,12 +1,11 @@
 import { router, Stack } from 'expo-router'
-import { Plus, UserCircle2 } from 'lucide-react-native'
+import { Check, Plus, UserCircle2 } from 'lucide-react-native'
 import { useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { ProfileAvatar } from '@/components/ProfileAvatar'
 import { useProfiles } from '@/components/ProfileSwitcher'
 import {
-  Badge,
   Button,
   EmptyState,
   ErrorState,
@@ -55,17 +54,16 @@ export default function ProfilesScreen() {
             key={p.name}
             accessibilityRole="button"
             onPress={() => router.push({ pathname: '/profiles/[name]', params: { name: p.name } })}
-            style={[styles.card, { backgroundColor: c.surface, borderColor: onPhone ? c.accent : c.border }]}
+            style={({ pressed }) => [styles.card, { backgroundColor: pressed ? c.surfaceAlt : c.surface, borderColor: c.border }]}
           >
-            <ProfileAvatar name={p.name} size={48} />
+            <ProfileAvatar name={p.name} size={40} />
             <View style={{ flex: 1, gap: 2 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs, flexWrap: 'wrap' }}>
                 <Text weight="semibold">{p.display_name || p.name}</Text>
-                {p.is_default ? <Badge label={t('default')} /> : null}
-                {onPhone ? <Badge label={t('on this phone')} tone="accent" /> : null}
+                {onPhone ? <Check size={16} color={c.accentText} strokeWidth={2} accessibilityLabel={t('on this phone')} /> : null}
               </View>
               <Text variant="small" tone="muted" numberOfLines={2}>
-                {p.description || p.model || ''}
+                {[p.description || p.model, p.is_default ? t('default') : null].filter(Boolean).join(' · ')}
               </Text>
               {last?.title ? (
                 <Text variant="caption" tone="faint" numberOfLines={1}>

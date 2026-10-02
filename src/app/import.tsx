@@ -4,7 +4,7 @@ import { Download } from 'lucide-react-native'
 import { useState } from 'react'
 import { FlatList, Pressable, StyleSheet, View } from 'react-native'
 
-import { Badge, Button, EmptyState, ErrorState, Loading, Sheet, Text, toast, toastError } from '@/components/ui'
+import { Button, EmptyState, ErrorState, Loading, Sheet, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
 import { relativeTime } from '@/lib/format'
 import type { ForeignSessionRow } from '@/lib/gateway/contract.generated'
@@ -57,14 +57,11 @@ export default function ImportScreen() {
             onPress={() => setSelected(item)}
             style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
           >
-            <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
-              <Badge label={item.label} tone={item.source === 'claude' ? 'accent' : 'info'} />
-              <Text variant="caption" tone="faint" style={{ flex: 1 }}>
-                {relativeTime(item.mtime)} · {t('{n} turns', { n: item.turn_count ?? 0 })}
-              </Text>
-            </View>
-            <Text weight="semibold" numberOfLines={2}>
+            <Text weight="medium" numberOfLines={2}>
               {item.title || item.excerpt}
+            </Text>
+            <Text variant="caption" tone="faint">
+              {item.label} · {relativeTime(item.mtime)} · {t('{n} turns', { n: item.turn_count ?? 0 })}
             </Text>
             {item.cwd ? (
               <Text variant="caption" tone="muted" mono numberOfLines={1}>

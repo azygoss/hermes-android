@@ -1,11 +1,12 @@
 import { Stack } from 'expo-router'
 import { UserCheck, UserX } from 'lucide-react-native'
 
-import { Badge, Button, confirm, EmptyState, ErrorState, Loading, Row, Screen, Section, Text, toast, toastError } from '@/components/ui'
+import { Button, confirm, EmptyState, ErrorState, Loading, Row, Screen, Section, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
 import { useRest } from '@/lib/hooks'
 import { hermes, rest } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
+import { space } from '@/theme'
 
 interface PairingUser {
   platform: string
@@ -106,7 +107,11 @@ export default function PairingScreen() {
             last={i === all.length - 1}
           />
         ))}
-        {!q.data?.approved.length ? <Badge label={t('nobody yet')} /> : null}
+        {!q.data?.approved.length ? (
+          <Text variant="small" tone="muted" style={{ padding: space.lg }}>
+            {t('nobody yet')}
+          </Text>
+        ) : null}
       </Section>
     </Screen>
   )

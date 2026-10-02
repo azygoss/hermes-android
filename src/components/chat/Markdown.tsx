@@ -182,7 +182,7 @@ export const Markdown = memo(function Markdown({
     },
     styles: {
       text: base,
-      paragraph: { marginVertical: 4 },
+      paragraph: { marginVertical: small ? 0 : 4 },
       strong: { fontFamily: font.bold, color },
       em: { fontStyle: 'italic', color },
       link: { color: c.accentText, textDecorationLine: 'underline' },

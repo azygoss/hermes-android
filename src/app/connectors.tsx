@@ -49,7 +49,8 @@ export default function ConnectorsScreen() {
     }
   }
 
-  const error = catalog.error ?? accounts.error
+  // Without a Nous Portal sign-in the backend answers "not available"; the empty state explains that.
+  const error = [catalog.error, accounts.error].find((e) => e && !/not available/i.test(String((e as Error).message ?? e)))
   return (
     <Screen refreshing={catalog.isRefetching} onRefresh={refresh}>
       <Stack.Screen options={{ title: t('Connectors') }} />

@@ -379,6 +379,7 @@ export function handleEvent(event: AnyGatewayEvent) {
                 parts,
                 error,
                 rowId: p.persisted_turn?.final_assistant_row_id ?? m.rowId,
+                elapsedMs: s.turnStartedAt ? Date.now() - s.turnStartedAt : undefined,
               }
               return finished
             })

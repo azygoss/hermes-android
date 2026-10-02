@@ -28,7 +28,7 @@ export function useProfiles() {
   return useQuery({
     queryKey: ['profiles'],
     enabled: connected,
-    queryFn: async () => ((await rpc().request('profiles.list', {} as never)) as { profiles: ProfileRow[] }).profiles,
+    queryFn: async () => ((await rpc().request('profiles.list', {})) as { profiles: ProfileRow[] }).profiles,
   })
 }
 

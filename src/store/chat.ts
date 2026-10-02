@@ -585,7 +585,7 @@ export async function openStored(storedId: string) {
         session_id: known,
         cols: COLS,
         omit_messages: true,
-      } as never)) as SessionResumeResult
+      })) as SessionResumeResult
       applyResume(known, res)
       return known
     } catch {
@@ -796,9 +796,13 @@ export async function attachPdf(rid: string, base64: string, name: string) {
   const key = localId('att')
   update(rid, (s) => ({ attachments: [...s.attachments, { key, kind: 'pdf', name, uploading: true }] }))
   try {
-    const res = await hermes().gateway.request('pdf.attach', { session_id: rid, content_base64: base64, filename: name } as never, {
-      timeoutMs: 180_000,
-    })
+    const res = await hermes().gateway.request(
+      'pdf.attach',
+      { session_id: rid, content_base64: base64, filename: name },
+      {
+        timeoutMs: 180_000,
+      },
+    )
     const r = res as { attached: boolean; pages_attached: number }
     if (!r.attached) throw new Error(t('The PDF could not be attached.'))
     update(rid, (s) => ({
@@ -829,7 +833,7 @@ export async function removeAttachment(rid: string, key: string) {
   update(rid, (s) => ({ attachments: s.attachments.filter((x) => x.key !== key) }))
   if (a?.kind === 'image' && a.path)
     await hermes()
-      .gateway.request('image.detach', { session_id: rid, path: a.path } as never)
+      .gateway.request('image.detach', { session_id: rid, path: a.path })
       .catch(() => {})
 }
 

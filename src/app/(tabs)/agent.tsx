@@ -1,5 +1,17 @@
 import { router } from 'expo-router'
-import { Blocks, Brain, Cpu, FolderKanban, KeyRound, Map, Plug, Server, Sparkles, UserCircle2, Wrench } from 'lucide-react-native'
+import {
+  Blocks,
+  Brain,
+  Cpu,
+  FolderKanban,
+  KeyRound,
+  Map as MapIcon,
+  Plug,
+  Server,
+  Sparkles,
+  UserCircle2,
+  Wrench,
+} from 'lucide-react-native'
 
 import { ProfileSwitcher } from '@/components/ProfileSwitcher'
 import { TabHeader } from '@/components/TabHeader'
@@ -26,7 +38,7 @@ export default function AgentHub() {
           />
           <Row icon={Brain} title={t('Memory')} subtitle={t('What Hermes remembers about you and your work')} onPress={go('/memory')} />
           <Row
-            icon={Map}
+            icon={MapIcon}
             title={t('Learning journey')}
             subtitle={t('Timeline of skills and memories it picked up')}
             onPress={go('/journey')}

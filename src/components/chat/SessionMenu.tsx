@@ -124,7 +124,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
             onPress={run(async () => {
               const cwd = await prompt(t('Working directory'), { initial: String(info.cwd ?? ''), placeholder: '/home/me/project' })
               if (!cwd) return
-              await rpc().request('session.cwd.set', { session_id: sid, cwd } as never)
+              await rpc().request('session.cwd.set', { session_id: sid, cwd })
               toast(t('Working directory changed'), 'success')
             })}
             last
@@ -138,7 +138,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
             onPress={run(async () => {
               const title = await prompt(t('Rename chat'), { initial: session.title ?? '' })
               if (!title) return
-              await rpc().request('session.title', { session_id: sid, title } as never)
+              await rpc().request('session.title', { session_id: sid, title })
               useChat.setState((st) => ({ sessions: { ...st.sessions, [sid]: { ...st.sessions[sid], title } } }))
             })}
           />
@@ -147,7 +147,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
             icon={Undo2}
             title={t('Undo last turn')}
             onPress={run(async () => {
-              const res = await rpc().request('session.undo', { session_id: sid } as never)
+              const res = await rpc().request('session.undo', { session_id: sid })
               toast(t('Removed {n} messages', { n: (res as { removed?: number }).removed ?? 0 }), 'success')
               await loadHistory(sid)
             })}
@@ -157,7 +157,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
             title={t('Branch into a new chat')}
             subtitle={t('Fork with the history so far')}
             onPress={run(async () => {
-              const res = await rpc().request('session.branch', { session_id: sid } as never)
+              const res = await rpc().request('session.branch', { session_id: sid })
               const stored = (res as { stored_session_id?: string }).stored_session_id
               if (stored) await openStored(stored)
               toast(t('Branched'), 'success')
@@ -174,9 +174,13 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
               })
               if (focus === null) return
               addSystemMessage(sid, t('Compressing…'), 'info')
-              const res = await rpc().request('session.compress', { session_id: sid, ...(focus ? { focus } : {}) } as never, {
-                timeoutMs: 300_000,
-              })
+              const res = await rpc().request(
+                'session.compress',
+                { session_id: sid, ...(focus ? { focus_topic: focus } : {}) },
+                {
+                  timeoutMs: 300_000,
+                },
+              )
               const r = res as { before_tokens?: number; after_tokens?: number; message?: string }
               addSystemMessage(
                 sid,
@@ -192,7 +196,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
             onPress={run(async () => {
               const q = await prompt(t('Side question'), { multiline: true })
               if (!q) return
-              await rpc().request('prompt.btw', { session_id: sid, text: q } as never)
+              await rpc().request('prompt.btw', { session_id: sid, text: q })
               addSystemMessage(sid, t('Side question sent: {q}', { q }), 'info', 'btw')
             })}
           />
@@ -203,7 +207,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
             onPress={run(async () => {
               const q = await prompt(t('Background task'), { multiline: true })
               if (!q) return
-              await rpc().request('prompt.background', { session_id: sid, text: q } as never)
+              await rpc().request('prompt.background', { session_id: sid, text: q })
               addSystemMessage(sid, t('Background task started: {q}', { q }), 'info', 'background')
             })}
             last
@@ -219,7 +223,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
             icon={Info}
             title={t('Status')}
             onPress={run(async () => {
-              const res = await rpc().request('session.status', { session_id: sid } as never)
+              const res = await rpc().request('session.status', { session_id: sid })
               addSystemMessage(sid, '```\n' + String((res as { output?: string }).output ?? '') + '\n```', 'info', 'status')
             })}
             last
@@ -247,7 +251,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
             icon={ListRestart}
             title={t('Save on the backend (/save)')}
             onPress={run(async () => {
-              const res = await rpc().request('session.save', { session_id: sid } as never)
+              const res = await rpc().request('session.save', { session_id: sid })
               toast(t('Saved to {file}', { file: String((res as { file?: string }).file ?? '') }), 'success')
             })}
           />
@@ -258,7 +262,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
             onPress={run(async () => {
               const platform = await prompt(t('Hand off to'), { placeholder: 'telegram' })
               if (!platform) return
-              await rpc().request('handoff.request', { session_id: sid, platform } as never)
+              await rpc().request('handoff.request', { session_id: sid, platform })
               toast(t('Handoff queued'), 'success')
             })}
           />

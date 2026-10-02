@@ -372,9 +372,13 @@ export class GatewayClient {
     // Mark open before the handshake so request() can send it.
     this.setState('open')
     try {
-      this.capabilities = (await this.request('client.capabilities', { server_requests: true } as never, {
-        timeoutMs: 15_000,
-      })) as never
+      this.capabilities = (await this.request(
+        'client.capabilities',
+        { server_requests: true },
+        {
+          timeoutMs: 15_000,
+        },
+      )) as never
     } catch {
       // Older backends lack the method; server requests then go unanswered.
     }

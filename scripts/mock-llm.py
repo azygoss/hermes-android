@@ -9,6 +9,8 @@ The reply depends on keywords in the last user message:
   "#tool"    -> terminal tool with a harmless command
   "#clarify" -> clarify tool with two questions
   "#todo"    -> todo tool with a small plan
+  "#remember" -> memory tool adding a user fact
+  "#skill"   -> skill_manage creating a small skill
   anything else -> streamed markdown with reasoning
 After a tool result arrives the model streams a short summary.
 """
@@ -54,6 +56,11 @@ def plan(body):
             {"question": "Which flavour do you prefer?", "choices": ["Vanilla", "Chocolate"]},
             {"question": "Which toppings?", "choices": ["Nuts", "Sprinkles", "Cherry"], "multi_select": True},
         ]})}
+    if "#remember" in user and "memory" in tools:
+        return {"tool": ("memory", {"action": "add", "target": "user", "content": "Prefers concise answers and Turkish UI copy."})}
+    if "#skill" in user and "skill_manage" in tools:
+        return {"tool": ("skill_manage", {"action": "create", "name": "mock-release-notes", "category": "productivity",
+                                          "content": "---\nname: mock-release-notes\ndescription: Draft release notes from a git log.\n---\n\n# Release notes\n\n1. Read `git log`.\n2. Group by feature.\n"})}
     if "#todo" in user and "todo_list" in tools:
         return {"tool": ("todo_list", {"todos": [
             {"id": "1", "content": "Read the docs", "status": "completed"},

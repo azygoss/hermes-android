@@ -76,7 +76,7 @@ def plan(body):
             "# Hello from the mock model\n\n"
             "This reply is **streamed** token by token so the app can render it live.\n\n"
             "- Lists work\n- `inline code` works\n\n"
-            "```python\nprint('hermes')\n```\n\n"
+            "```python\n# Count the files Hermes touched today\nfrom pathlib import Path\n\ndef touched(root: str, limit: int = 20) -> list[str]:\n    files = sorted(Path(root).rglob('*.py'))\n    return [str(f) for f in files[:limit]]\n\nprint(touched('.'), True, None)\n```\n\n"
             "| Feature | Status |\n|---|---|\n| Streaming | ok |\n"
         ),
     }

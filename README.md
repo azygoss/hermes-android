@@ -8,6 +8,19 @@ Built with React Native (Expo SDK 57). English and Turkish UI.
 
 **[Download the latest APK](https://github.com/azygoss/hermes-android/releases/latest)**
 
+<p>
+  <img src="docs/screenshots/chat-markdown.png" width="200" alt="Streaming chat with markdown">
+  <img src="docs/screenshots/approval.png" width="200" alt="Approving a command">
+  <img src="docs/screenshots/sessions.png" width="200" alt="Sessions">
+  <img src="docs/screenshots/agent.png" width="200" alt="Agent hub">
+</p>
+<p>
+  <img src="docs/screenshots/skills.png" width="200" alt="Skills">
+  <img src="docs/screenshots/cron.png" width="200" alt="Scheduled jobs">
+  <img src="docs/screenshots/messaging.png" width="200" alt="Messaging platforms">
+  <img src="docs/screenshots/connect.png" width="200" alt="Connecting to a backend">
+</p>
+
 > This is an independent client. It talks to the same `hermes serve` backend that Hermes Desktop and the web dashboard use, over the same protocol. It is not affiliated with Nous Research.
 
 ## How it works

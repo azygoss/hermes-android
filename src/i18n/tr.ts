@@ -1224,4 +1224,7 @@ export const tr: Record<string, string> = {
   'Set up a screen lock on this phone first.': 'Önce bu telefonda bir ekran kilidi ayarla.',
   'Unlock Hermes': "Hermes'in kilidini aç",
   'Unlock with your fingerprint or screen lock.': 'Parmak izin veya ekran kilidinle aç.',
+  'No signed-in provider reports limits': 'Giriş yapılmış sağlayıcılar limit bildirmiyor',
+  'Shows how much is left on each plan': 'Her planda ne kadar kaldığını gösterir',
+  'Updated {when}': 'Güncellendi: {when}',
 }

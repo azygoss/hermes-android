@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { Gauge } from 'lucide-react-native'
-import { StyleSheet, View } from 'react-native'
+import { ChevronDown, ChevronUp, Gauge } from 'lucide-react-native'
+import { useState } from 'react'
+import { LayoutAnimation, Pressable, StyleSheet, View } from 'react-native'
 
 import { Button, Section, Text } from '@/components/ui'
 import { useT } from '@/i18n'
@@ -83,6 +84,14 @@ export function useAccountLimits() {
   })
 }
 
+const SHORT_NAMES: Record<string, string> = {
+  'openai-codex': 'Codex',
+  'opencode-go': 'OpenCode Go',
+  commandcode: 'Command Code',
+  anthropic: 'Claude',
+  openrouter: 'OpenRouter',
+}
+
 function Meter({ window: w }: { window: LimitWindow }) {
   const { c } = useTheme()
   const t = useT()
@@ -92,15 +101,16 @@ function Meter({ window: w }: { window: LimitWindow }) {
   const meta = [w.resets_at ? t('resets {when}', { when: relativeTime(w.resets_at) }) : null, w.detail].filter(Boolean).join(' · ')
   return (
     <View
-      style={{ gap: 6 }}
+      style={{ gap: 5 }}
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={t(w.label)}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(used), text: t('{n}% left', { n: left }) }}
     >
       <View style={styles.meterHead}>
-        <Text variant="small" style={{ flex: 1 }}>
+        <Text variant="small" style={{ flex: 1 }} numberOfLines={1}>
           {t(w.label)}
+          {meta ? <Text variant="caption" tone="faint">{`  ${meta}`}</Text> : null}
         </Text>
         {w.used_percent != null ? (
           <Text variant="small" weight="medium" style={{ color: used >= 90 ? c.danger : used >= 70 ? c.warn : c.text }}>
@@ -113,11 +123,6 @@ function Meter({ window: w }: { window: LimitWindow }) {
           <View style={[styles.fill, { width: `${100 - used}%`, backgroundColor: fill }]} />
         </View>
       ) : null}
-      {meta ? (
-        <Text variant="caption" tone="faint">
-          {meta}
-        </Text>
-      ) : null}
     </View>
   )
 }
@@ -128,7 +133,7 @@ function ProviderLimits({ limit, last }: { limit: AccountLimit; last: boolean })
     <View style={[styles.provider, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}>
       <View style={styles.meterHead}>
         <Text weight="semibold" style={{ flex: 1 }} numberOfLines={1}>
-          {limit.name}
+          {SHORT_NAMES[limit.provider] ?? limit.name}
         </Text>
         {limit.plan ? (
           <Text variant="small" tone="muted">
@@ -153,52 +158,105 @@ function ProviderLimits({ limit, last }: { limit: AccountLimit; last: boolean })
   )
 }
 
-/** "Plan limits" on the More tab: what is left on each subscription the backend is signed in to. */
+/** The tightest window of a provider: that is the one that stops you first. */
+function leftPercent(limit: AccountLimit) {
+  const used = limit.windows.map((w) => w.used_percent).filter((u): u is number => u != null)
+  return used.length ? Math.round(100 - Math.max(...used)) : null
+}
+
+/** "Plan limits" on the More tab: one summary row that opens into the per-window meters. */
 export function AccountLimitsSection() {
   const t = useT()
   const { c } = useTheme()
   const q = useAccountLimits()
   const connected = useRuntime((s) => s.state === 'open')
+  const [open, setOpen] = useState(false)
   if (!connected && !q.data) return null
-  const action = <Button size="sm" variant="ghost" label={t('Refresh')} loading={q.isFetching} onPress={() => q.refetch()} />
-  if (q.isLoading)
-    return (
-      <Section title={t('Plan limits')}>
-        <View style={styles.provider}>
-          <Text variant="small" tone="muted">
-            {t('Asking each provider…')}
+
+  const limits = q.data ?? []
+  const toggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.create(200, 'easeInEaseOut', 'opacity'))
+    setOpen((o) => !o)
+  }
+  const summary = q.isLoading ? (
+    <Text variant="small" tone="muted">
+      {t('Asking each provider…')}
+    </Text>
+  ) : q.error ? (
+    <Text variant="small" tone="muted">
+      {t('Could not load plan limits.')}
+    </Text>
+  ) : !limits.length ? (
+    <Text variant="small" tone="muted">
+      {t('No signed-in provider reports limits')}
+    </Text>
+  ) : (
+    <View style={styles.summary}>
+      {limits.map((l) => {
+        const left = leftPercent(l)
+        const color = left == null ? c.textMuted : left <= 10 ? c.danger : left <= 30 ? c.warn : c.textMuted
+        return (
+          <Text key={l.provider} variant="small" tone="muted" numberOfLines={1}>
+            {SHORT_NAMES[l.provider] ?? l.name}{' '}
+            <Text variant="small" weight="medium" style={{ color: left != null && left <= 30 ? color : c.text }}>
+              {left != null ? `${left}%` : '—'}
+            </Text>
           </Text>
-          {[0, 1].map((i) => (
-            <View key={i} style={[styles.track, { backgroundColor: c.surfaceAlt }]} />
-          ))}
-        </View>
-      </Section>
-    )
-  if (q.error || !q.data?.length)
-    return (
-      <Section title={t('Plan limits')} action={action}>
-        <View style={[styles.provider, { flexDirection: 'row', alignItems: 'center' }]}>
-          <Gauge size={20} color={c.textFaint} strokeWidth={1.75} />
-          <Text variant="small" tone="muted" style={{ flex: 1 }}>
-            {q.error
-              ? t('Could not load plan limits.')
-              : t('None of the signed-in providers report limits. Codex, OpenCode Go, Command Code, Anthropic and OpenRouter do.')}
-          </Text>
-        </View>
-      </Section>
-    )
+        )
+      })}
+    </View>
+  )
+
   return (
-    <Section title={t('Plan limits')} action={action}>
-      {q.data.map((limit, i) => (
-        <ProviderLimits key={limit.provider} limit={limit} last={i === q.data.length - 1} />
-      ))}
+    <Section>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={t('Plan limits')}
+        accessibilityHint={t('Shows how much is left on each plan')}
+        onPress={toggle}
+        android_ripple={{ color: c.surfaceAlt }}
+        style={({ pressed }) => [styles.head, pressed && { backgroundColor: c.surfaceAlt }]}
+      >
+        <Gauge size={20} color={c.textMuted} strokeWidth={1.75} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text weight="medium">{t('Plan limits')}</Text>
+          {summary}
+        </View>
+        {open ? (
+          <ChevronUp size={18} color={c.textFaint} strokeWidth={1.75} />
+        ) : (
+          <ChevronDown size={18} color={c.textFaint} strokeWidth={1.75} />
+        )}
+      </Pressable>
+      {open ? (
+        <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }}>
+          {limits.map((limit) => (
+            <ProviderLimits key={limit.provider} limit={limit} last={false} />
+          ))}
+          {!limits.length && !q.isLoading ? (
+            <Text variant="small" tone="muted" style={styles.provider}>
+              {t('None of the signed-in providers report limits. Codex, OpenCode Go, Command Code, Anthropic and OpenRouter do.')}
+            </Text>
+          ) : null}
+          <View style={styles.foot}>
+            <Text variant="caption" tone="faint" style={{ flex: 1 }}>
+              {q.dataUpdatedAt ? t('Updated {when}', { when: relativeTime(q.dataUpdatedAt) }) : ''}
+            </Text>
+            <Button size="sm" variant="ghost" label={t('Refresh')} loading={q.isFetching} onPress={() => q.refetch()} />
+          </View>
+        </View>
+      ) : null}
     </Section>
   )
 }
 
 const styles = StyleSheet.create({
-  provider: { padding: space.lg, gap: space.md },
+  provider: { paddingHorizontal: space.lg, paddingVertical: space.md, gap: space.md },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: space.lg, paddingVertical: space.md, minHeight: 64 },
+  summary: { flexDirection: 'row', flexWrap: 'wrap', columnGap: space.md, rowGap: 2 },
+  foot: { flexDirection: 'row', alignItems: 'center', paddingLeft: space.lg, paddingRight: space.sm, paddingVertical: space.xs },
   meterHead: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm },
-  track: { height: 6, borderRadius: radius.pill, overflow: 'hidden' },
+  track: { height: 4, borderRadius: radius.pill, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: radius.pill },
 })

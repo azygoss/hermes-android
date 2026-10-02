@@ -1,35 +1,99 @@
 {
   "expo": {
-    "name": "hermes-android-tmp",
-    "slug": "hermes-android-tmp",
+    "name": "Hermes",
+    "slug": "hermes-android",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "scheme": "hermes",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#0B0B0F",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B0B0F"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.azygoss.hermes"
     },
     "android": {
+      "package": "com.azygoss.hermes",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B0B0F",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "softwareKeyboardLayoutMode": "resize",
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Hermes uses the microphone for voice messages."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Hermes uses the camera to scan connection QR codes and take photos for the agent.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Hermes lets you attach photos to messages.",
+          "cameraPermission": "Hermes lets you take photos to send to the agent."
+        }
+      ],
       "expo-web-browser",
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#0B0B0F"
+        }
+      ],
       "expo-sharing",
-      "expo-image"
-    ]
+      "expo-image",
+      [
+        "expo-notifications",
+        {
+          "color": "#FFBF00"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "enableProguardInReleaseBuilds": false
+          }
+        }
+      ],
+      "expo-localization"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

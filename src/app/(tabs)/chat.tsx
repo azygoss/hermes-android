@@ -1,8 +1,21 @@
 import { router, useLocalSearchParams } from 'expo-router'
-import { ArrowDown, ArrowUpRight, Brain, Check, ChevronDown, EllipsisVertical, History, PenSquare, WifiOff } from '@/components/icons'
+import {
+  ArrowDown,
+  ArrowUpRight,
+  Brain,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  EllipsisVertical,
+  History,
+  PenSquare,
+  Search,
+  WifiOff,
+  X,
+} from '@/components/icons'
 import type { LucideIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, FlatList, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -40,7 +53,7 @@ import {
   useChat,
 } from '@/store/chat'
 import { useConnections } from '@/store/connections'
-import { centered, radius, space, useTheme } from '@/theme'
+import { centered, font, radius, space, useTheme } from '@/theme'
 
 const LOCAL_COMMANDS: Record<string, string> = {
   new: 'new',
@@ -209,6 +222,31 @@ export default function ChatScreen() {
   }, [])
 
   const data = useMemo(() => (session ? [...session.messages].reverse() : []), [session?.messages])
+
+  // In-chat search: hits are indexes into `data` (newest first), stepping "older" walks down the list.
+  const [searching, setSearching] = useState(false)
+  const [needle, setNeedle] = useState('')
+  const [hitIndex, setHitIndex] = useState(0)
+  const query = needle.trim().toLowerCase()
+  const hits = useMemo(() => {
+    if (!searching || query.length < 2) return [] as number[]
+    const out: number[] = []
+    data.forEach((m, i) => {
+      if (m.role !== 'system' && textOf(m).toLowerCase().includes(query)) out.push(i)
+    })
+    return out
+  }, [searching, query, data])
+  const hitId = hits.length ? data[hits[hitIndex]]?.id : undefined
+  useEffect(() => setHitIndex(0), [query])
+  useEffect(() => {
+    if (hits.length) listRef.current?.scrollToIndex({ index: hits[hitIndex], viewPosition: 0.4, animated: true })
+  }, [hits, hitIndex])
+  const stepHit = (d: number) => hits.length && setHitIndex((h) => (h + d + hits.length) % hits.length)
+  const closeSearch = () => {
+    setSearching(false)
+    setNeedle('')
+  }
+  useEffect(closeSearch, [activeId])
   // Stable callbacks so MessageItem's memo holds while another message streams.
   const onReact = useCallback((m: ChatMessage, emoji: string) => {
     const sid = useChat.getState().activeId
@@ -302,38 +340,61 @@ export default function ChatScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: insets.top }}>
-      <View style={[styles.header, { borderBottomColor: c.border }]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('Chat options')}
-          onPress={() => session && setMenuOpen(true)}
-          style={{ flex: 1, minHeight: 48, justifyContent: 'center', paddingLeft: space.lg }}
-        >
-          <Text variant="title" numberOfLines={1}>
-            {session?.title || t('New chat')}
+      {searching ? (
+        <View style={[styles.header, { borderBottomColor: c.border }]}>
+          <IconButton icon={X} label={t('Close search')} onPress={closeSearch} />
+          <TextInput
+            value={needle}
+            onChangeText={setNeedle}
+            autoFocus
+            placeholder={t('Search this chat')}
+            placeholderTextColor={c.textFaint}
+            returnKeyType="search"
+            onSubmitEditing={() => stepHit(1)}
+            accessibilityLabel={t('Search this chat')}
+            style={[styles.searchInput, { color: c.text, fontFamily: font.regular }]}
+          />
+          <Text variant="small" tone="muted" style={{ minWidth: 40, textAlign: 'center' }} accessibilityLiveRegion="polite">
+            {needle.trim() ? (hits.length ? `${hitIndex + 1}/${hits.length}` : '0') : ''}
           </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <View
-              style={[styles.dot, { backgroundColor: connState === 'open' ? c.success : connState === 'closed' ? c.danger : c.warn }]}
-            />
-            <Text variant="caption" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>
-              {[
-                info.model,
-                ctxPct != null ? t('{pct}% context', { pct: ctxPct }) : null,
-                info.cwd ? String(info.cwd).split('/').pop() : null,
-              ]
-                .filter(Boolean)
-                .join(' · ') || t('Hermes Agent')}
+          <IconButton icon={ChevronUp} label={t('Older match')} onPress={() => stepHit(1)} disabled={!hits.length} />
+          <IconButton icon={ChevronDown} label={t('Newer match')} onPress={() => stepHit(-1)} disabled={!hits.length} />
+        </View>
+      ) : (
+        <View style={[styles.header, { borderBottomColor: c.border }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('Chat options')}
+            onPress={() => session && setMenuOpen(true)}
+            style={{ flex: 1, minHeight: 48, justifyContent: 'center', paddingLeft: space.lg }}
+          >
+            <Text variant="title" numberOfLines={1}>
+              {session?.title || t('New chat')}
             </Text>
-          </View>
-        </Pressable>
-        <IconButton icon={PenSquare} label={t('New chat')} onPress={() => setActive(null)} />
-        <IconButton
-          icon={EllipsisVertical}
-          label={t('Chat options')}
-          onPress={() => (session ? setMenuOpen(true) : toast(t('Start a chat first.'), 'info'))}
-        />
-      </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View
+                style={[styles.dot, { backgroundColor: connState === 'open' ? c.success : connState === 'closed' ? c.danger : c.warn }]}
+              />
+              <Text variant="caption" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>
+                {[
+                  info.model,
+                  ctxPct != null ? t('{pct}% context', { pct: ctxPct }) : null,
+                  info.cwd ? String(info.cwd).split('/').pop() : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || t('Hermes Agent')}
+              </Text>
+            </View>
+          </Pressable>
+          {session?.messages.length ? <IconButton icon={Search} label={t('Search this chat')} onPress={() => setSearching(true)} /> : null}
+          <IconButton icon={PenSquare} label={t('New chat')} onPress={() => setActive(null)} />
+          <IconButton
+            icon={EllipsisVertical}
+            label={t('Chat options')}
+            onPress={() => (session ? setMenuOpen(true) : toast(t('Start a chat first.'), 'info'))}
+          />
+        </View>
+      )}
 
       <ConnectionBanner />
 
@@ -367,6 +428,11 @@ export default function ChatScreen() {
             data={data}
             inverted
             onScroll={(e) => setAwayFromEnd(e.nativeEvent.contentOffset.y > 600)}
+            onScrollToIndexFailed={(info) => {
+              // Rows have different heights: jump near it, then aim again once it is measured.
+              listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: false })
+              setTimeout(() => listRef.current?.scrollToIndex({ index: info.index, viewPosition: 0.4, animated: true }), 120)
+            }}
             scrollEventThrottle={100}
             keyExtractor={(m) => m.id}
             renderItem={({ item, index }) => (
@@ -376,6 +442,7 @@ export default function ChatScreen() {
                 onReact={onReact}
                 onEdit={onEdit}
                 onRetry={index === 0 && item.role === 'assistant' && !session.busy ? onRetry : undefined}
+                highlighted={item.id === hitId}
               />
             )}
             contentContainerStyle={[centered, { padding: space.lg, gap: space.lg }]}
@@ -559,6 +626,7 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
   dot: { width: 7, height: 7, borderRadius: 4 },
+  searchInput: { flex: 1, minWidth: 0, fontSize: 16, height: 48, paddingHorizontal: space.xs },
   banner: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
   empty: { flexGrow: 1, justifyContent: 'flex-end', gap: space.xl, paddingHorizontal: space.xl, paddingVertical: space.lg },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },

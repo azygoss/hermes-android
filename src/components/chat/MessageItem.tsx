@@ -134,9 +134,19 @@ interface Props {
   onReact?: (m: ChatMessage, emoji: string) => void
   /** Only on the latest reply, when the agent is idle. */
   onRetry?: () => void
+  /** The current in-chat search hit. */
+  highlighted?: boolean
 }
 
-export const MessageItem = memo(function MessageItem({ message, streaming, onEdit, onReact, onRetry }: Props) {
+export const MessageItem = memo(function MessageItem(props: Props) {
+  const { highlighted } = props
+  const { c } = useTheme()
+  const body = <MessageBody {...props} />
+  if (!highlighted) return body
+  return <View style={[styles.hit, { borderColor: c.accent, backgroundColor: c.accentSoft }]}>{body}</View>
+})
+
+function MessageBody({ message, streaming, onEdit, onReact, onRetry }: Props) {
   const { c } = useTheme()
   const t = useT()
   const showReasoning = useSettings((s) => s.showReasoning)
@@ -330,9 +340,10 @@ export const MessageItem = memo(function MessageItem({ message, streaming, onEdi
       ) : null}
     </View>
   )
-})
+}
 
 const styles = StyleSheet.create({
+  hit: { borderWidth: 1, borderRadius: radius.md, margin: -space.sm, padding: space.sm - 1 },
   userWrap: { alignItems: 'flex-end', gap: 4, paddingLeft: 48 },
   user: {
     borderRadius: radius.lg,

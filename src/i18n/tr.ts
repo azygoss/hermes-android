@@ -1255,4 +1255,8 @@ export const tr: Record<string, string> = {
   'Open {what} full screen': '{what} tam ekran aç',
   'Previous match': 'Önceki eşleşme',
   '{n} lines': '{n} satır',
+  'Close search': 'Aramayı kapat',
+  'Newer match': 'Daha yeni eşleşme',
+  'Older match': 'Daha eski eşleşme',
+  'Search this chat': 'Bu sohbette ara',
 }

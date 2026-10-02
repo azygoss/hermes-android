@@ -1229,4 +1229,5 @@ export const tr: Record<string, string> = {
   'Updated {when}': 'Güncellendi: {when}',
   'Share reply': 'Yanıtı paylaş',
   'Worked for {time}': '{time} çalıştı',
+  'Regenerate reply': 'Yanıtı yeniden üret',
 }

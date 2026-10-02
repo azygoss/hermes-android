@@ -37,7 +37,7 @@ import { relativeTime } from '@/lib/format'
 import { rest, rpc, useRuntime } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { closeRuntime, useChat } from '@/store/chat'
-import { space, useTheme } from '@/theme'
+import { centered, space, useTheme } from '@/theme'
 
 export interface SessionRow {
   id: string
@@ -114,7 +114,7 @@ export default function SessionsScreen() {
         subtitle={list.data ? t('{n} conversations', { n: list.data.pages[0]?.total ?? rows.length }) : undefined}
         right={<IconButton icon={Search} label={t('Search sessions')} onPress={() => setSearchOpen(!searchOpen)} active={searchOpen} />}
       />
-      <View style={{ paddingHorizontal: space.lg, gap: space.sm, paddingBottom: space.sm }}>
+      <View style={[centered, { paddingHorizontal: space.lg, gap: space.sm, paddingBottom: space.sm }]}>
         {searchOpen ? (
           <TextField placeholder={t('Search all messages')} value={search} onChangeText={setSearch} autoFocus returnKeyType="search" />
         ) : null}
@@ -147,7 +147,7 @@ export default function SessionsScreen() {
             </View>
           ) : null
         }
-        contentContainerStyle={{ paddingBottom: space.xxxl }}
+        contentContainerStyle={[centered, { paddingBottom: space.xxxl }]}
         refreshControl={
           <RefreshControl refreshing={list.isRefetching} onRefresh={() => list.refetch()} tintColor={c.accent} colors={[c.accent]} />
         }

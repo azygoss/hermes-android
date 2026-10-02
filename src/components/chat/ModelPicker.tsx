@@ -9,6 +9,7 @@ import type { ModelOptionsResult } from '@/lib/gateway/contract.generated'
 import { rest, rpc } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { closeRuntime, newChat, useChat } from '@/store/chat'
+import { useSettings } from '@/store/settings'
 import { radius, space, useTheme } from '@/theme'
 
 interface Props {
@@ -97,6 +98,7 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
   const [q, setQ] = useState('')
   const [global, setGlobal] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
+  const recentModels = useSettings((s) => s.recentModels)
   const query = useQuery({
     queryKey: ['model.options', sessionId],
     enabled: visible,
@@ -111,11 +113,32 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
       model: string
       authed: boolean
       header?: boolean
+      /** Header without provider key actions (the Recent group). */
+      plain?: boolean
       price?: string
       caps?: string
     }[] = []
     const needle = q.trim().toLowerCase()
-    for (const p of query.data?.providers ?? []) {
+    const providers = query.data?.providers ?? []
+    // Recently used models first, while not searching; only ones the backend still offers.
+    const recent = needle
+      ? []
+      : recentModels.filter((r) => providers.some((p) => p.slug === r.provider && p.authenticated && p.models?.includes(r.model)))
+    if (recent.length) {
+      out.push({ key: 'h-recent', provider: '', providerName: t('Recent'), model: '', authed: true, header: true, plain: true })
+      for (const r of recent) {
+        const p = providers.find((x) => x.slug === r.provider)!
+        out.push({
+          key: `recent-${r.provider}/${r.model}`,
+          provider: r.provider,
+          providerName: p.name,
+          model: r.model,
+          authed: true,
+          caps: p.name,
+        })
+      }
+    }
+    for (const p of providers) {
       const models = (p.models ?? []).filter((m) => !needle || m.toLowerCase().includes(needle) || p.name.toLowerCase().includes(needle))
       if (!models.length) continue
       out.push({ key: `h-${p.slug}`, provider: p.slug, providerName: p.name, model: '', authed: !!p.authenticated, header: true })
@@ -136,7 +159,7 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
       }
     }
     return out
-  }, [query.data, q, t])
+  }, [query.data, q, t, recentModels])
 
   async function addKey(slug: string, name: string) {
     const key = await prompt(t('API key for {p}', { p: name }), { secret: true })
@@ -171,6 +194,8 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
     setBusy(`${provider}/${model}`)
     try {
       if (await switchModel(sessionId, model, provider, global)) {
+        const prev = useSettings.getState().recentModels.filter((r) => !(r.provider === provider && r.model === model))
+        useSettings.getState().set({ recentModels: [{ provider, model }, ...prev].slice(0, 4) })
         toast(t('Model switched to {model}', { model }), 'success')
         onChanged?.()
         onClose()
@@ -211,7 +236,7 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
                 <Text variant="small" weight="semibold" tone="muted" style={{ flex: 1 }}>
                   {item.providerName}
                 </Text>
-                {!item.authed ? (
+                {item.plain ? null : !item.authed ? (
                   <Button size="sm" variant="ghost" label={t('Add key')} onPress={() => addKey(item.provider, item.providerName)} />
                 ) : (
                   <Button size="sm" variant="ghost" label={t('Disconnect')} onPress={() => disconnect(item.provider, item.providerName)} />
@@ -247,7 +272,7 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
                   </Text>
                 ) : null}
               </View>
-              {busy === item.key ? (
+              {busy === `${item.provider}/${item.model}` ? (
                 <Text variant="caption">…</Text>
               ) : current ? (
                 <Check size={18} color={c.accentText} />

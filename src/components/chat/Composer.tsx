@@ -26,7 +26,7 @@ import { rpc } from '@/lib/hermes'
 import { fileToBase64, transcribe } from '@/lib/voice'
 import type { PendingAttachment } from '@/lib/chat/types'
 import { useSettings } from '@/store/settings'
-import { font, radius, space, useTheme } from '@/theme'
+import { centered, font, radius, space, useTheme } from '@/theme'
 
 interface Props {
   sessionId: string | null
@@ -236,7 +236,7 @@ export const Composer = memo(function Composer(props: Props) {
   const SendIcon = showStop ? Square : ArrowUp
 
   return (
-    <View style={[styles.wrap, { backgroundColor: c.bg }]}>
+    <View style={[styles.wrap, centered, { backgroundColor: c.bg }]}>
       {items.length ? (
         <ScrollView style={[styles.suggest, { backgroundColor: c.elevated, borderColor: c.border }]} keyboardShouldPersistTaps="always">
           {items.map((item) => (

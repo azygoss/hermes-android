@@ -16,7 +16,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useT } from '@/i18n'
-import { HIT, radius, space, useTheme } from '@/theme'
+import { centered, HIT, radius, space, useTheme } from '@/theme'
 
 import { Button } from './Button'
 import { Text } from './Text'
@@ -40,7 +40,7 @@ export function Screen({ children, scroll = true, refreshing, onRefresh, padded 
     <KeyboardAwareScrollView
       bottomOffset={space.xl}
       style={{ flex: 1, backgroundColor: c.bg }}
-      contentContainerStyle={[pad, { gap: space.lg }, style]}
+      contentContainerStyle={[pad, centered, { gap: space.lg }, style]}
       keyboardShouldPersistTaps="handled"
       refreshControl={
         onRefresh ? (

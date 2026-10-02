@@ -50,7 +50,7 @@ import {
   useChat,
 } from '@/store/chat'
 import { useConnections } from '@/store/connections'
-import { radius, space, useTheme } from '@/theme'
+import { centered, radius, space, useTheme } from '@/theme'
 
 const LOCAL_COMMANDS: Record<string, string> = {
   new: 'new',
@@ -118,7 +118,7 @@ function EmptyChat({ onPick }: { onPick: (text: string) => void }) {
   ]
   const last = recent.data?.session_id ? recent.data : null
   return (
-    <ScrollView contentContainerStyle={styles.empty} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.empty, centered]} keyboardShouldPersistTaps="handled">
       <View style={{ gap: space.sm }}>
         <HermesMark size={34} />
         <Text variant="h2" style={{ marginTop: space.sm }}>
@@ -223,6 +223,10 @@ export default function ChatScreen() {
   const onReact = useCallback((m: ChatMessage, emoji: string) => {
     const sid = useChat.getState().activeId
     if (sid) react(sid, m, emoji).catch(toastError)
+  }, [])
+  const onRetry = useCallback(() => {
+    const sid = useChat.getState().activeId
+    if (sid) runSlash(sid, '/retry').catch(toastError)
   }, [])
   const onEdit = useCallback((m: ChatMessage) => {
     const sid = useChat.getState().activeId
@@ -375,10 +379,16 @@ export default function ChatScreen() {
             onScroll={(e) => setAwayFromEnd(e.nativeEvent.contentOffset.y > 600)}
             scrollEventThrottle={100}
             keyExtractor={(m) => m.id}
-            renderItem={({ item }) => (
-              <MessageItem message={item} streaming={item.id === session.streamingId} onReact={onReact} onEdit={onEdit} />
+            renderItem={({ item, index }) => (
+              <MessageItem
+                message={item}
+                streaming={item.id === session.streamingId}
+                onReact={onReact}
+                onEdit={onEdit}
+                onRetry={index === 0 && item.role === 'assistant' && !session.busy ? onRetry : undefined}
+              />
             )}
-            contentContainerStyle={{ padding: space.lg, gap: space.lg }}
+            contentContainerStyle={[centered, { padding: space.lg, gap: space.lg }]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
             onEndReached={() => session.hasMore && loadHistory(session.runtimeId, true)}

@@ -117,4 +117,9 @@ export const type = {
 /** Minimum touch target (ui-ux-pro-max: 44x44, Material: 48dp). */
 export const HIT = 48
 
+/** Widest a column of text or controls gets on tablets and unfolded phones; wider lines read badly. */
+export const CONTENT_MAX = 760
+
+export const centered = { width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center' } as const
+
 export const motion = { fast: 150, base: 220, slow: 320 } as const

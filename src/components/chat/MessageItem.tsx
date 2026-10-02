@@ -9,14 +9,15 @@ import {
   FileText,
   Image as ImageIcon,
   Info,
+  RotateCcw,
   Share2,
   ThumbsDown,
   ThumbsUp,
   Volume2,
   XCircle,
 } from 'lucide-react-native'
-import { memo, useState } from 'react'
-import { Pressable, Share, StyleSheet, View } from 'react-native'
+import { memo, useEffect, useRef, useState } from 'react'
+import { Animated, Easing, Platform, Pressable, Share, StyleSheet, View } from 'react-native'
 
 import { Badge, Text, toast } from '@/components/ui'
 import { useT } from '@/i18n'
@@ -67,6 +68,39 @@ function formatElapsed(ms: number) {
   return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`
 }
 
+/** Three dots breathing in turn while the agent has not produced anything yet. */
+function TypingDots({ color }: { color: string }) {
+  const t = useT()
+  const anim = useRef(new Animated.Value(0)).current
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(anim, { toValue: 1, duration: 1200, easing: Easing.linear, useNativeDriver: Platform.OS !== 'web' }),
+    )
+    loop.start()
+    return () => loop.stop()
+  }, [anim])
+  return (
+    <View style={styles.dots} accessibilityLabel={t('Thinking…')} accessibilityLiveRegion="polite">
+      {[0, 1, 2].map((i) => (
+        <Animated.View
+          key={i}
+          style={[
+            styles.dot,
+            {
+              backgroundColor: color,
+              opacity: anim.interpolate({
+                inputRange: [0, (i + 0.5) / 4, (i + 1.5) / 4, 1],
+                outputRange: [0.25, 1, 0.25, 0.25],
+                extrapolate: 'clamp',
+              }),
+            },
+          ]}
+        />
+      ))}
+    </View>
+  )
+}
+
 /** Backend notices often start with their own ⚠️/ℹ️; the row already shows an icon. */
 function stripLeadingEmoji(text: string) {
   return text.replace(/^\s*(?:\p{Extended_Pictographic}\uFE0F?\s*)+/u, '')
@@ -77,9 +111,11 @@ interface Props {
   streaming: boolean
   onEdit?: (m: ChatMessage) => void
   onReact?: (m: ChatMessage, emoji: string) => void
+  /** Only on the latest reply, when the agent is idle. */
+  onRetry?: () => void
 }
 
-export const MessageItem = memo(function MessageItem({ message, streaming, onEdit, onReact }: Props) {
+export const MessageItem = memo(function MessageItem({ message, streaming, onEdit, onReact, onRetry }: Props) {
   const { c } = useTheme()
   const t = useT()
   const showReasoning = useSettings((s) => s.showReasoning)
@@ -189,7 +225,7 @@ export const MessageItem = memo(function MessageItem({ message, streaming, onEdi
           ))}
         </View>
       ) : null}
-      {streaming && !text && !message.parts.length ? <View style={[styles.cursor, { backgroundColor: c.accent }]} /> : null}
+      {streaming && !text && !message.parts.length ? <TypingDots color={c.textMuted} /> : null}
       {message.error ? (
         <View style={[styles.system, { backgroundColor: c.dangerSoft }]}>
           <XCircle size={16} color={c.danger} />
@@ -243,6 +279,17 @@ export const MessageItem = memo(function MessageItem({ message, streaming, onEdi
               </Pressable>
             </>
           ) : null}
+          {onRetry ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('Regenerate reply')}
+              hitSlop={10}
+              onPress={onRetry}
+              style={styles.action}
+            >
+              <RotateCcw size={15} color={c.textFaint} />
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('Share reply')}
@@ -290,7 +337,8 @@ const styles = StyleSheet.create({
   },
   reasoning: { borderLeftWidth: 2, paddingLeft: space.md, gap: 4 },
   reasonHead: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 28 },
-  cursor: { width: 8, height: 16, borderRadius: 2, opacity: 0.8 },
+  dots: { flexDirection: 'row', gap: 5, paddingVertical: space.sm },
+  dot: { width: 7, height: 7, borderRadius: 4 },
   actions: { flexDirection: 'row', gap: space.xs, alignItems: 'center' },
   action: { width: 36, height: 32, alignItems: 'center', justifyContent: 'center' },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },

@@ -24,6 +24,8 @@ export interface Settings {
   fontScale: number
   /** Ask for the fingerprint / screen lock when the app opens or comes back after a while. */
   appLock: boolean
+  /** Last models picked in the chat model picker, newest first. */
+  recentModels: { provider: string; model: string }[]
 }
 
 interface SettingsState extends Settings {
@@ -46,6 +48,7 @@ export const useSettings = create<SettingsState>()(
       notifyOnComplete: true,
       fontScale: 1,
       appLock: false,
+      recentModels: [],
       set: (patch) => set(patch),
     }),
     { name: 'hermes.settings', storage: persistStorage, version: 1 },

@@ -3,19 +3,27 @@ import { router } from 'expo-router'
 import {
   Archive,
   ArchiveRestore,
+  CheckCheck,
+  CheckSquare,
   Download,
   EyeOff,
   GitBranch,
   History,
+  type LucideIcon,
   MessageSquare,
   Pencil,
   Pin,
   PinOff,
   Search,
+  Square,
   Trash2,
+  X,
 } from '@/components/icons'
-import { memo, useCallback, useMemo, useState } from 'react'
-import { ActivityIndicator, Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ActivityIndicator, BackHandler, Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native'
+import { Pressable as GHPressable } from 'react-native-gesture-handler'
+import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { TabHeader } from '@/components/TabHeader'
 import {
@@ -107,13 +115,94 @@ export default function SessionsScreen() {
     }
   }
 
+  /** Delete one or many chats after one confirmation; open ones are closed first. */
+  async function remove(targets: SessionRow[]) {
+    if (!targets.length) return false
+    const ok = await confirm(
+      targets.length === 1 ? t('Delete this chat?') : t('Delete {n} chats?', { n: targets.length }),
+      t('The transcript is removed from the backend.'),
+      { destructive: true, confirmLabel: t('Delete') },
+    )
+    if (!ok) return false
+    try {
+      for (const row of targets) {
+        const rid = useChat.getState().storedToRuntime[row.id]
+        if (rid) await closeRuntime(rid)
+        await rest().del(`/api/sessions/${encodeURIComponent(row.id)}`)
+      }
+      toast(targets.length === 1 ? t('Deleted') : t('{n} chats deleted', { n: targets.length }), 'success')
+    } catch (e) {
+      toastError(e)
+    }
+    await queryClient.invalidateQueries({ queryKey: ['sessions'] })
+    return true
+  }
+
+  async function patchMany(targets: SessionRow[], body: Record<string, unknown>, message: string) {
+    try {
+      for (const row of targets) await rest().patch(`/api/sessions/${encodeURIComponent(row.id)}`, body)
+      toast(message, 'success')
+    } catch (e) {
+      toastError(e)
+    }
+    await queryClient.invalidateQueries({ queryKey: ['sessions'] })
+  }
+
+  // Multi-select: null when off. Tapping a row toggles it while on.
+  const [picked, setPicked] = useState<Set<string> | null>(null)
+  const selecting = picked !== null
+  const pickedRows = rows.filter((r) => picked?.has(r.id))
+  const toggle = useCallback(
+    (row: SessionRow) =>
+      setPicked((cur) => {
+        const next = new Set(cur ?? [])
+        if (next.has(row.id)) next.delete(row.id)
+        else next.add(row.id)
+        return next
+      }),
+    [],
+  )
+  useEffect(() => setPicked(null), [filter, search])
+  useEffect(() => {
+    if (!selecting) return
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => (setPicked(null), true))
+    return () => sub.remove()
+  }, [selecting])
+
+  const swipe = useCallback(
+    async (action: 'archive' | 'pin' | 'delete', row: SessionRow) => {
+      if (action === 'delete') return void remove([row])
+      if (action === 'pin') return patch(row, { pinned: !row.pinned }, row.pinned ? t('Unpinned') : t('Pinned'))
+      return patch(row, { archived: !row.archived }, row.archived ? t('Restored') : t('Archived'))
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t],
+  )
+
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <TabHeader
-        title={t('Sessions')}
-        subtitle={list.data ? t('{n} conversations', { n: list.data.pages[0]?.total ?? rows.length }) : undefined}
-        right={<IconButton icon={Search} label={t('Search sessions')} onPress={() => setSearchOpen(!searchOpen)} active={searchOpen} />}
-      />
+      {selecting ? (
+        <SelectionBar
+          count={pickedRows.length}
+          archived={filter === 'archived'}
+          onCancel={() => setPicked(null)}
+          onAll={() => setPicked(new Set(rows.map((r) => r.id)))}
+          onPin={() => patchMany(pickedRows, { pinned: true }, t('Pinned')).then(() => setPicked(null))}
+          onArchive={() =>
+            patchMany(pickedRows, { archived: filter !== 'archived' }, filter === 'archived' ? t('Restored') : t('Archived')).then(() =>
+              setPicked(null),
+            )
+          }
+          onDelete={() => remove(pickedRows).then((done) => done && setPicked(null))}
+        />
+      ) : null}
+      {selecting ? null : (
+        <TabHeader
+          title={t('Sessions')}
+          subtitle={list.data ? t('{n} conversations', { n: list.data.pages[0]?.total ?? rows.length }) : undefined}
+          right={<IconButton icon={Search} label={t('Search sessions')} onPress={() => setSearchOpen(!searchOpen)} active={searchOpen} />}
+        />
+      )}
       <View style={[centered, { paddingHorizontal: space.lg, gap: space.sm, paddingBottom: space.sm }]}>
         {searchOpen ? (
           <TextField placeholder={t('Search all messages')} value={search} onChangeText={setSearch} autoFocus returnKeyType="search" />
@@ -168,12 +257,32 @@ export default function SessionsScreen() {
           ) : null
         }
         ItemSeparatorComponent={Separator}
-        renderItem={({ item }) => <SessionCard row={item} onOpen={open} onMenu={setSelected} />}
+        extraData={picked}
+        renderItem={({ item }) => (
+          <SessionCard
+            row={item}
+            onOpen={selecting ? toggle : open}
+            onMenu={selecting ? toggle : setSelected}
+            selecting={selecting}
+            checked={!!picked?.has(item.id)}
+            onSwipe={swipe}
+          />
+        )}
       />
       <Sheet visible={!!selected} onClose={() => setSelected(null)} title={selected?.title || selected?.preview || t('Session')}>
         {selected ? (
           <View style={{ marginHorizontal: -space.lg }}>
             <Row icon={MessageSquare} title={t('Open')} onPress={() => (setSelected(null), open(selected))} />
+            <Row
+              icon={CheckSquare}
+              title={t('Select several')}
+              subtitle={t('Pin, archive or delete many chats at once')}
+              onPress={() => {
+                const id = selected.id
+                setSelected(null)
+                setPicked(new Set([id]))
+              }}
+            />
             <Row
               icon={Pencil}
               title={t('Rename')}
@@ -241,25 +350,10 @@ export default function SessionsScreen() {
               danger
               title={t('Delete')}
               last
-              onPress={async () => {
+              onPress={() => {
                 const row = selected
                 setSelected(null)
-                if (
-                  !(await confirm(t('Delete this chat?'), t('The transcript is removed from the backend.'), {
-                    destructive: true,
-                    confirmLabel: t('Delete'),
-                  }))
-                )
-                  return
-                try {
-                  const rid = useChat.getState().storedToRuntime[row.id]
-                  if (rid) await closeRuntime(rid)
-                  await rest().del(`/api/sessions/${encodeURIComponent(row.id)}`)
-                  toast(t('Deleted'), 'success')
-                  await queryClient.invalidateQueries({ queryKey: ['sessions'] })
-                } catch (e) {
-                  toastError(e)
-                }
+                void remove([row])
               }}
             />
           </View>
@@ -291,15 +385,25 @@ function groupByDay(rows: SessionRow[], searching: boolean, t: ReturnType<typeof
   return buckets.filter((b) => b.data.length)
 }
 
+const SWIPE_ACTION = 76
+const openRow: { current: SwipeableMethods | null } = { current: null }
+
 const SessionCard = memo(function SessionCard({
   row,
   onOpen,
   onMenu,
+  selecting,
+  checked,
+  onSwipe,
 }: {
   row: SessionRow
   onOpen: (row: SessionRow) => void
   onMenu: (row: SessionRow) => void
+  selecting: boolean
+  checked: boolean
+  onSwipe: (action: 'archive' | 'pin' | 'delete', row: SessionRow) => void
 }) {
+  const swipeRef = useRef<SwipeableMethods>(null)
   const { c } = useTheme()
   const t = useT()
   const title = row.title || row.preview || t('Untitled')
@@ -312,47 +416,138 @@ const SessionCard = memo(function SessionCard({
   ]
     .filter(Boolean)
     .join(' · ')
+  const action =
+    (label: string, Icon: LucideIcon, bg: string, fg: string, kind: 'archive' | 'pin' | 'delete') => (methods: SwipeableMethods) => (
+      <GHPressable
+        key={kind}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        onPress={() => {
+          methods.close()
+          onSwipe(kind, row)
+        }}
+        style={[styles.swipeAction, { backgroundColor: bg }]}
+      >
+        <Icon size={20} color={fg} strokeWidth={1.75} />
+        <Text variant="caption" weight="medium" style={{ color: fg }}>
+          {label}
+        </Text>
+      </GHPressable>
+    )
+  const archive = action(row.archived ? t('Restore') : t('Archive'), row.archived ? ArchiveRestore : Archive, c.elevated, c.text, 'archive')
+  const remove = action(t('Delete'), Trash2, c.danger, '#FFFFFF', 'delete')
+  const pin = action(row.pinned ? t('Unpin') : t('Pin'), row.pinned ? PinOff : Pin, c.accent, c.onAccent, 'pin')
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${title}, ${relativeTime(row.last_active ?? row.started_at)}`}
-      accessibilityHint={t('Long-press for more actions')}
-      onPress={() => onOpen(row)}
-      onLongPress={() => onMenu(row)}
-      android_ripple={{ color: c.surfaceAlt }}
-      style={({ pressed }) => [styles.row, pressed && { backgroundColor: c.surface }]}
-    >
-      <View style={styles.marker}>
-        {row.is_active ? (
-          <View style={[styles.dot, { backgroundColor: c.success }]} accessibilityLabel={t('Live')} />
-        ) : row.unread ? (
-          <View style={[styles.dot, { backgroundColor: c.accent }]} accessibilityLabel={t('unread')} />
-        ) : null}
-      </View>
-      <View style={{ flex: 1, gap: 3 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-          <Text weight="medium" numberOfLines={1} style={{ flex: 1 }}>
-            {title}
-          </Text>
-          {row.pinned ? <Pin size={13} color={c.textFaint} strokeWidth={1.75} /> : null}
-          <Text variant="caption" tone="faint">
-            {relativeTime(row.last_active ?? row.started_at)}
-          </Text>
+    <ReanimatedSwipeable
+      ref={swipeRef}
+      onSwipeableWillOpen={() => {
+        // One open row at a time, like the system lists.
+        if (openRow.current && openRow.current !== swipeRef.current) openRow.current.close()
+        openRow.current = swipeRef.current
+      }}
+      enabled={!selecting}
+      friction={1.6}
+      rightThreshold={SWIPE_ACTION / 2}
+      overshootRight={false}
+      // All actions on one side: the library stacks both sides' containers over the row, so a
+      // left set would sit under the (transparent) right one and never get the tap.
+      renderRightActions={(_p, _t, methods) => (
+        <View style={{ flexDirection: 'row' }}>
+          {pin(methods)}
+          {archive(methods)}
+          {remove(methods)}
         </View>
-        {body ? (
-          <Text variant="small" tone="muted" numberOfLines={2}>
-            {body}
-          </Text>
-        ) : null}
-        {meta ? (
-          <Text variant="caption" tone="faint" numberOfLines={1}>
-            {meta}
-          </Text>
-        ) : null}
-      </View>
-    </Pressable>
+      )}
+    >
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${title}, ${relativeTime(row.last_active ?? row.started_at)}`}
+        accessibilityHint={selecting ? undefined : t('Long-press for more actions')}
+        accessibilityState={selecting ? { checked } : undefined}
+        onPress={() => onOpen(row)}
+        onLongPress={() => onMenu(row)}
+        android_ripple={{ color: c.surfaceAlt }}
+        style={({ pressed }) => [styles.row, { backgroundColor: checked ? c.accentSoft : pressed ? c.surface : c.bg }]}
+      >
+        <View style={styles.marker}>
+          {selecting ? (
+            checked ? (
+              <CheckSquare size={20} color={c.accentText} strokeWidth={2} />
+            ) : (
+              <Square size={20} color={c.textFaint} strokeWidth={1.75} />
+            )
+          ) : null}
+          {selecting ? null : row.is_active ? (
+            <View style={[styles.dot, { backgroundColor: c.success }]} accessibilityLabel={t('Live')} />
+          ) : row.unread ? (
+            <View style={[styles.dot, { backgroundColor: c.accent }]} accessibilityLabel={t('unread')} />
+          ) : null}
+        </View>
+        <View style={{ flex: 1, gap: 3 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+            <Text weight="medium" numberOfLines={1} style={{ flex: 1 }}>
+              {title}
+            </Text>
+            {row.pinned ? <Pin size={13} color={c.textFaint} strokeWidth={1.75} /> : null}
+            <Text variant="caption" tone="faint">
+              {relativeTime(row.last_active ?? row.started_at)}
+            </Text>
+          </View>
+          {body ? (
+            <Text variant="small" tone="muted" numberOfLines={2}>
+              {body}
+            </Text>
+          ) : null}
+          {meta ? (
+            <Text variant="caption" tone="faint" numberOfLines={1}>
+              {meta}
+            </Text>
+          ) : null}
+        </View>
+      </Pressable>
+    </ReanimatedSwipeable>
   )
 })
+
+/** Replaces the header while picking chats: count, select all, and the bulk actions. */
+function SelectionBar({
+  count,
+  archived,
+  onCancel,
+  onAll,
+  onPin,
+  onArchive,
+  onDelete,
+}: {
+  count: number
+  archived: boolean
+  onCancel: () => void
+  onAll: () => void
+  onPin: () => void
+  onArchive: () => void
+  onDelete: () => void
+}) {
+  const t = useT()
+  const { c } = useTheme()
+  const insets = useSafeAreaInsets()
+  return (
+    <View style={[styles.selectBar, { paddingTop: insets.top + space.xs, borderBottomColor: c.border, backgroundColor: c.bg }]}>
+      <IconButton icon={X} label={t('Stop selecting')} onPress={onCancel} />
+      <Text variant="title" style={{ flex: 1 }} accessibilityLiveRegion="polite">
+        {t('{n} selected', { n: count })}
+      </Text>
+      <IconButton icon={CheckCheck} label={t('Select all')} onPress={onAll} />
+      <IconButton icon={Pin} label={t('Pin')} onPress={onPin} disabled={!count} />
+      <IconButton
+        icon={archived ? ArchiveRestore : Archive}
+        label={archived ? t('Restore from archive') : t('Archive')}
+        onPress={onArchive}
+        disabled={!count}
+      />
+      <IconButton icon={Trash2} label={t('Delete')} onPress={onDelete} disabled={!count} color={c.danger} />
+    </View>
+  )
+}
 
 function Separator() {
   const { c } = useTheme()
@@ -360,6 +555,14 @@ function Separator() {
 }
 
 const styles = StyleSheet.create({
+  swipeAction: { width: SWIPE_ACTION, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  selectBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: space.xs,
+    paddingBottom: space.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   dayHead: { paddingLeft: space.lg + 14, paddingRight: space.lg, paddingTop: space.lg, paddingBottom: space.xs },
   row: { flexDirection: 'row', paddingVertical: space.md, paddingRight: space.lg },
   marker: { width: space.lg + 14, alignItems: 'center', paddingTop: 8 },

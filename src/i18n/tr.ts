@@ -1270,4 +1270,11 @@ export const tr: Record<string, string> = {
   'Manage backends': 'Sunucuları yönet',
   'Manage…': 'Yönet…',
   offline: 'çevrimdışı',
+  'Delete {n} chats?': '{n} sohbet silinsin mi?',
+  'Pin, archive or delete many chats at once': 'Birçok sohbeti aynı anda sabitle, arşivle veya sil',
+  'Select all': 'Tümünü seç',
+  'Select several': 'Birden fazla seç',
+  'Stop selecting': 'Seçimi bitir',
+  '{n} chats deleted': '{n} sohbet silindi',
+  '{n} selected': '{n} seçili',
 }

@@ -14,12 +14,13 @@ import { radius, space, useTheme } from '@/theme'
 
 const PetThumb = memo(function PetThumb({ slug }: { slug: string }) {
   const profile = useProfile()
+  const { c } = useTheme()
   const q = useRpc(['pets', 'thumb', slug], 'pet.thumb', { slug, profile }, { staleTime: Infinity })
   return q.data?.dataUri ? (
     <Image source={{ uri: q.data.dataUri }} style={{ width: 64, height: 64 }} contentFit="contain" />
   ) : (
     <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center' }}>
-      <PawPrint size={28} color="#777" />
+      <PawPrint size={28} color={c.textFaint} strokeWidth={1.5} />
     </View>
   )
 })

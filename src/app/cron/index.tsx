@@ -5,7 +5,6 @@ import { useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import {
-  Badge,
   Button,
   confirm,
   EmptyState,
@@ -22,7 +21,7 @@ import {
   Toggle,
 } from '@/components/ui'
 import { useT } from '@/i18n'
-import { dateTime, relativeTime } from '@/lib/format'
+import { relativeTime } from '@/lib/format'
 import { useRest } from '@/lib/hooks'
 import { rest } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'

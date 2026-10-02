@@ -64,18 +64,21 @@ export function Section({
   children,
   footer,
   style,
+  plain,
 }: {
   title?: string
   action?: ReactNode
   children: ReactNode
   footer?: string
   style?: StyleProp<ViewStyle>
+  /** Edge-to-edge rows without the card, for lists inside sheets. */
+  plain?: boolean
 }) {
   const { c } = useTheme()
   return (
-    <View style={[{ gap: space.sm }, style]}>
+    <View style={[{ gap: plain ? 0 : space.sm }, style]}>
       {(title || action) && (
-        <View style={styles.sectionHead}>
+        <View style={[styles.sectionHead, plain && { paddingHorizontal: space.lg }]}>
           {title ? (
             <Text variant="small" weight="semibold" tone="muted" accessibilityRole="header">
               {title}
@@ -86,7 +89,7 @@ export function Section({
           {action}
         </View>
       )}
-      <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>{children}</View>
+      {plain ? children : <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>{children}</View>}
       {footer ? (
         <Text variant="caption" tone="faint" style={{ paddingHorizontal: space.xs }}>
           {footer}
@@ -305,7 +308,7 @@ export function Badge({
   return (
     <View style={[styles.badge, { backgroundColor: map[0] }]}>
       <Text variant="caption" weight="medium" style={{ color: map[1] }} numberOfLines={1}>
-        {label}
+        {label.replace(/_/g, ' ')}
       </Text>
     </View>
   )

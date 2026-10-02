@@ -55,7 +55,7 @@ export default function GroupsScreen() {
           style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, opacity: room.disbanded_at ? 0.5 : 1 }]}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-            <Users size={18} color={c.accentText} />
+            <Users size={18} color={c.textMuted} strokeWidth={1.75} />
             <Text weight="semibold" style={{ flex: 1 }}>
               {room.name}
             </Text>

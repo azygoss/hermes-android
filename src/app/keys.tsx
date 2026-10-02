@@ -1,12 +1,11 @@
 import * as Clipboard from 'expo-clipboard'
 import { Stack } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { Eye, KeyRound, LogIn, LogOut, Plus, Trash2 } from 'lucide-react-native'
+import { Eye, LogIn, LogOut, Plus, Trash2 } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { View } from 'react-native'
 
 import {
-  Badge,
   Button,
   Chip,
   confirm,
@@ -124,12 +123,10 @@ function EnvKeys() {
         {rows.map(([key, v], i) => (
           <Row
             key={key}
-            icon={KeyRound}
-            iconColor={v.is_set ? undefined : '#888'}
             title={key}
             mono
             subtitle={[v.provider_label, v.description].filter(Boolean).join(' — ')}
-            right={v.is_set ? <Badge label={v.redacted_value ?? t('set')} tone="success" /> : undefined}
+            value={v.is_set ? (v.redacted_value ?? t('set')) : undefined}
             onPress={() => setEditing(key)}
             last={i === rows.length - 1}
           />
@@ -338,7 +335,7 @@ function OAuthAccounts() {
                   }}
                 />
               ) : (
-                <Button size="sm" label={t('Sign in')} onPress={() => login(p)} />
+                <Button size="sm" variant="secondary" label={t('Sign in')} onPress={() => login(p)} />
               )
             }
             last={i === all.length - 1}
@@ -409,7 +406,6 @@ function Pools() {
           {p.entries.map((e, i) => (
             <Row
               key={e.id}
-              icon={KeyRound}
               title={e.label || e.token_preview}
               subtitle={[e.token_preview, e.source, e.last_status, e.request_count ? t('{n} requests', { n: e.request_count }) : null]
                 .filter(Boolean)

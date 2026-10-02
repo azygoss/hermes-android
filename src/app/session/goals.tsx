@@ -56,7 +56,7 @@ export default function GoalsScreen() {
         {goal ? (
           <View style={{ padding: space.lg, gap: space.sm }}>
             <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
-              <Target size={18} color={c.accentText} />
+              <Target size={18} color={c.textMuted} strokeWidth={1.75} />
               <Text weight="semibold" style={{ flex: 1 }}>
                 {goal.title}
               </Text>
@@ -133,7 +133,7 @@ export default function GoalsScreen() {
         {loop ? (
           <View style={{ padding: space.lg, gap: space.sm }}>
             <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
-              <Repeat size={18} color={c.accentText} />
+              <Repeat size={18} color={c.textMuted} strokeWidth={1.75} />
               <Text weight="semibold" style={{ flex: 1 }} numberOfLines={3}>
                 {loop.prompt}
               </Text>
@@ -177,7 +177,7 @@ export default function GoalsScreen() {
         {hb ? (
           <View style={{ padding: space.lg, gap: space.sm }}>
             <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
-              <HeartPulse size={18} color={c.accentText} />
+              <HeartPulse size={18} color={c.textMuted} strokeWidth={1.75} />
               <Text weight="semibold" style={{ flex: 1 }} numberOfLines={3}>
                 {hb.prompt}
               </Text>

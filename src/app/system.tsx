@@ -134,7 +134,7 @@ export default function SystemScreen() {
       {s ? (
         <Card>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-            <Gauge size={18} color={c.accentText} />
+            <Gauge size={18} color={c.textMuted} strokeWidth={1.75} />
             <Text weight="semibold" style={{ flex: 1 }}>
               {s.hostname}
             </Text>

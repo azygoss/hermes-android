@@ -175,7 +175,7 @@ export default function SessionAgents() {
               style={{ padding: space.lg, gap: space.sm, borderBottomWidth: i < all.length - 1 ? 1 : 0, borderBottomColor: c.border }}
             >
               <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
-                <SquareTerminal size={16} color={c.accentText} />
+                <SquareTerminal size={16} color={c.textMuted} strokeWidth={1.75} />
                 <Text mono variant="small" style={{ flex: 1 }} numberOfLines={2}>
                   {p.command}
                 </Text>

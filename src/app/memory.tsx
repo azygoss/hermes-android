@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Stack } from 'expo-router'
-import { Brain, Check, Database, RotateCcw, Settings2, User } from 'lucide-react-native'
+import { Brain, Check, RotateCcw, User } from 'lucide-react-native'
 import { useState } from 'react'
 import { View } from 'react-native'
 
@@ -135,7 +135,6 @@ export default function MemoryScreen() {
 
       <Section title={t('Memory provider')} footer={t('External providers add semantic recall on top of the built-in notebooks.')}>
         <Row
-          icon={Database}
           title={t('Built-in only')}
           right={!status.data?.active ? <Check size={18} color={c.accentText} /> : undefined}
           onPress={() => activate('')}
@@ -143,7 +142,6 @@ export default function MemoryScreen() {
         {(status.data?.providers ?? []).map((p, i, all) => (
           <Row
             key={p.name}
-            icon={Settings2}
             title={p.name}
             subtitle={p.description}
             right={

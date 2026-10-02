@@ -361,7 +361,7 @@ function SetupStep({
   return (
     <View style={{ padding: space.lg, gap: space.sm, borderBottomWidth: last ? 0 : 1, borderBottomColor: c.border }}>
       <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
-        <Icon size={18} color={c.accentText} />
+        <Icon size={18} color={c.textMuted} strokeWidth={1.75} />
         <Text weight="semibold">{title}</Text>
       </View>
       <Text tone="muted" variant="small">

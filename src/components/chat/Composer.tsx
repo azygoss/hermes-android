@@ -26,7 +26,7 @@ import { rpc } from '@/lib/hermes'
 import { fileToBase64, transcribe } from '@/lib/voice'
 import type { PendingAttachment } from '@/lib/chat/types'
 import { useSettings } from '@/store/settings'
-import { font, HIT, radius, space, useTheme } from '@/theme'
+import { font, radius, space, useTheme } from '@/theme'
 
 interface Props {
   sessionId: string | null

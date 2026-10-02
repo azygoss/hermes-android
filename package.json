@@ -46,6 +46,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~57.0.2",
     "prettier": "^3.9.9",
     "typescript": "~6.0.3"
   },
@@ -56,7 +58,8 @@
     "typecheck": "tsc --noEmit",
     "sync-contract": "node scripts/sync-contract.mjs",
     "prebuild": "expo prebuild --platform android --clean",
-    "build:apk": "bash scripts/build-apk.sh"
+    "build:apk": "bash scripts/build-apk.sh",
+    "lint": "expo lint"
   },
   "private": true
 }

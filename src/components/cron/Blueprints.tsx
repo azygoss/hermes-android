@@ -46,7 +46,7 @@ export function BlueprintsTab({ onCreated }: { onCreated: () => void }) {
           style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-            <Wand2 size={16} color={c.accentText} />
+            <Wand2 size={16} color={c.textMuted} strokeWidth={1.75} />
             <Text weight="semibold" style={{ flex: 1 }}>
               {b.title}
             </Text>

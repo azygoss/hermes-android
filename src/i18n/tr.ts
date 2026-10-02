@@ -1185,4 +1185,14 @@ export const tr: Record<string, string> = {
   Installed: 'Kurulu',
   'Search {n} pets': '{n} evcil hayvanda ara',
   'This model is expensive. Switch anyway?': 'Bu model pahalı. Yine de geçilsin mi?',
+  'Pick up where you left off': 'Kaldığın yerden devam et',
+  'Runs on {host} with its own tools, memory and skills. Type / for commands, @ for files.':
+    '{host} üzerinde kendi araçları, belleği ve yetenekleriyle çalışır. Komutlar için /, dosyalar için @ yaz.',
+  'What should Hermes work on?': 'Hermes ne üzerinde çalışsın?',
+  'due now': 'şimdi çalışacak',
+  'in {n}d': '{n} gün sonra',
+  'in {n}h': '{n} sa sonra',
+  'in {n}m': '{n} dk sonra',
+  '{n} messages': '{n} mesaj',
+  '{n} tokens of context': '{n} token bağlam',
 }

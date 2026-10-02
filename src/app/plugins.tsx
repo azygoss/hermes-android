@@ -237,7 +237,13 @@ export default function PluginsScreen() {
                 installedNames.has(e.name) ? (
                   <Badge label={t('installed')} tone="success" />
                 ) : (
-                  <Button size="sm" label={t('Install')} loading={busy === e.name} onPress={() => install({ catalog_name: e.name })} />
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    label={t('Install')}
+                    loading={busy === e.name}
+                    onPress={() => install({ catalog_name: e.name })}
+                  />
                 )
               }
               last={i === all.length - 1}

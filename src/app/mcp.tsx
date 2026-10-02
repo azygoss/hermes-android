@@ -150,7 +150,7 @@ export default function McpScreen() {
               p.installed ? (
                 <Badge label={t('installed')} tone="success" />
               ) : (
-                <Button size="sm" label={t('Add')} onPress={() => installPreset(p.name, p.requires)} />
+                <Button size="sm" variant="secondary" label={t('Add')} onPress={() => installPreset(p.name, p.requires)} />
               )
             }
             last={i === all.length - 1}

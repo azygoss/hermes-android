@@ -91,8 +91,8 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
 
   return (
     <Sheet visible={visible} onClose={onClose} title={session.title || t('This chat')}>
-      <View style={{ marginHorizontal: -space.lg, gap: space.lg }}>
-        <Section title={t('Model & behaviour')}>
+      <View style={{ marginHorizontal: -space.lg, gap: space.md }}>
+        <Section plain title={t('Model & behaviour')}>
           <Row icon={Cpu} title={t('Model')} value={String(info.model ?? '—')} onPress={() => (onClose(), onPickModel())} />
           <Row
             icon={Brain}
@@ -165,7 +165,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
           />
         </Section>
 
-        <Section title={t('Conversation')}>
+        <Section plain title={t('Conversation')}>
           <Row
             icon={Pencil}
             title={t('Rename')}
@@ -248,7 +248,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
           />
         </Section>
 
-        <Section title={t('Inspect')}>
+        <Section plain title={t('Inspect')}>
           <Row icon={Gauge} title={t('Usage & context')} onPress={go('/session/usage')} />
           <Row icon={Users} title={t('Subagents & processes')} onPress={go('/session/agents')} />
           <Row icon={Target} title={t('Goal, loop & heartbeat')} onPress={go('/session/goals')} />
@@ -279,7 +279,7 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
           />
         </Section>
 
-        <Section title={t('Share & manage')}>
+        <Section plain title={t('Share & manage')}>
           <Row
             icon={PackageOpen}
             title={t('Export transcript')}

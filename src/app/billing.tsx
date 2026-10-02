@@ -67,7 +67,7 @@ export default function BillingScreen() {
       {billing.error ? <ErrorState error={billing.error} /> : null}
       <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-          <CreditCard size={18} color={c.accentText} />
+          <CreditCard size={18} color={c.textMuted} strokeWidth={1.75} />
           <Text weight="semibold" style={{ flex: 1 }}>
             {s?.current?.tier_name ?? (b?.free_tier_account ? t('Free tier') : t('No plan'))}
           </Text>

@@ -12,7 +12,8 @@ for (const f of files) for (const m of readFileSync(f, 'utf8').matchAll(re)) str
 let out = [...strings].sort()
 if (process.argv[2] === '--missing') {
   const src = readFileSync(`src/i18n/${process.argv[3]}.ts`, 'utf8')
-  out = out.filter((s) => !src.includes(JSON.stringify(s)))
+  const catalog = new Function(`return ${src.slice(src.indexOf('{'))}`)()
+  out = out.filter((s) => !(s in catalog))
 }
 console.log(JSON.stringify(out, null, 1))
 console.error(`${out.length} strings`)

@@ -1230,4 +1230,10 @@ export const tr: Record<string, string> = {
   'Share reply': 'Yanıtı paylaş',
   'Worked for {time}': '{time} çalıştı',
   'Regenerate reply': 'Yanıtı yeniden üret',
+  'Copy details': 'Ayrıntıları kopyala',
+  'Go to chat': 'Sohbete git',
+  'The rest of the app is fine. Try again, or go back to the chat.': 'Uygulamanın geri kalanı çalışıyor. Tekrar dene ya da sohbete dön.',
+  'This screen ran into a problem': 'Bu ekranda bir sorun çıktı',
+  'Show less': 'Daha az göster',
+  'Show more': 'Devamını göster',
 }

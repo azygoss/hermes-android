@@ -43,3 +43,5 @@ export default function TabsLayout() {
     </Tabs>
   )
 }
+
+export { RouteError as ErrorBoundary } from '@/components/RouteError'

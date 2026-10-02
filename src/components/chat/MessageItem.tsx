@@ -68,6 +68,27 @@ function formatElapsed(ms: number) {
   return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`
 }
 
+/** Long pasted prompts (logs, files) fold to a dozen lines so the reply stays in view. */
+function UserText({ text }: { text: string }) {
+  const t = useT()
+  const long = text.length > 700 || text.split('\n').length > 14
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Text variant="body" selectable numberOfLines={long && !open ? 12 : undefined}>
+        {text}
+      </Text>
+      {long ? (
+        <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setOpen(!open)}>
+          <Text variant="small" weight="medium" tone="accent">
+            {open ? t('Show less') : t('Show more')}
+          </Text>
+        </Pressable>
+      ) : null}
+    </>
+  )
+}
+
 /** Three dots breathing in turn while the agent has not produced anything yet. */
 function TypingDots({ color }: { color: string }) {
   const t = useT()
@@ -180,11 +201,7 @@ export const MessageItem = memo(function MessageItem({ message, streaming, onEdi
               ))}
             </View>
           ) : null}
-          {text ? (
-            <Text variant="body" selectable>
-              {text}
-            </Text>
-          ) : null}
+          {text ? <UserText text={text} /> : null}
         </Pressable>
         {message.pending === 'queued' ? (
           <View style={styles.meta}>

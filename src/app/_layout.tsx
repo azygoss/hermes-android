@@ -119,3 +119,5 @@ function AppShell() {
     </SafeAreaProvider>
   )
 }
+
+export { RouteError as ErrorBoundary } from '@/components/RouteError'

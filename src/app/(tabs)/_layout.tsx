@@ -19,7 +19,6 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: c.textMuted,
         tabBarStyle: { backgroundColor: c.bg, borderTopColor: c.border, height: 60 + insets.bottom, paddingTop: 6 },
         tabBarLabelStyle: { fontFamily: font.medium, fontSize: 11 },
-        tabBarHideOnKeyboard: true,
       }}
     >
       <Tabs.Screen

@@ -1,7 +1,8 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { ArrowUp, Octagon, Trash2 } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native'
+import { FlatList, Platform, StyleSheet, TextInput, View } from 'react-native'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Markdown } from '@/components/chat/Markdown'
@@ -101,7 +102,7 @@ export default function RoomScreen() {
           {state.data?.driver_status ? <Badge label={String((state.data.driver_status as { state?: string }).state ?? 'idle')} /> : null}
         </View>
       ) : null}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         {log.isLoading ? <Loading /> : null}
         <FlatList
           data={events}

@@ -1196,4 +1196,16 @@ export const tr: Record<string, string> = {
   '{n} messages': '{n} mesaj',
   '{n} tokens of context': '{n} token bağlam',
   'Set up': 'Kurulu',
+  '5-hour window': '5 saatlik pencere',
+  'Asking each provider…': 'Sağlayıcılara soruluyor…',
+  'Could not load plan limits.': 'Plan limitleri yüklenemedi.',
+  Monthly: 'Aylık',
+  'None of the signed-in providers report limits. Codex, OpenCode Go, Command Code, Anthropic and OpenRouter do.':
+    'Giriş yapılmış sağlayıcıların hiçbiri limit bildirmiyor. Codex, OpenCode Go, Command Code, Anthropic ve OpenRouter bildirir.',
+  'Plan limits': 'Plan limitleri',
+  Refresh: 'Yenile',
+  'Rolling window': 'Kayan pencere',
+  Weekly: 'Haftalık',
+  'resets {when}': '{when} sıfırlanır',
+  '{n}% left': '%{n} kaldı',
 }

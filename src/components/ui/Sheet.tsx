@@ -1,6 +1,7 @@
 import { X } from 'lucide-react-native'
 import { useEffect, useRef, type ReactNode } from 'react'
-import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native'
+import { Animated, Modal, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useT } from '@/i18n'
@@ -37,7 +38,7 @@ export function Sheet({ visible, onClose, title, children, noScroll, footer, hei
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <Pressable
           style={[StyleSheet.absoluteFill, { backgroundColor: c.overlay }]}
           onPress={onClose}

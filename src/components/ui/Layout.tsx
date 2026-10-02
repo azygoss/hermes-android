@@ -6,13 +6,13 @@ import {
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Switch,
   View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useT } from '@/i18n'
@@ -37,7 +37,8 @@ export function Screen({ children, scroll = true, refreshing, onRefresh, padded 
   const pad = { padding: padded ? space.lg : 0, paddingBottom: (padded ? space.lg : 0) + (bottomInset ? insets.bottom : 0) }
   if (!scroll) return <View style={[{ flex: 1, backgroundColor: c.bg }, pad, style]}>{children}</View>
   return (
-    <ScrollView
+    <KeyboardAwareScrollView
+      bottomOffset={space.xl}
       style={{ flex: 1, backgroundColor: c.bg }}
       contentContainerStyle={[pad, { gap: space.lg }, style]}
       keyboardShouldPersistTaps="handled"
@@ -54,7 +55,7 @@ export function Screen({ children, scroll = true, refreshing, onRefresh, padded 
       }
     >
       {children}
-    </ScrollView>
+    </KeyboardAwareScrollView>
   )
 }
 

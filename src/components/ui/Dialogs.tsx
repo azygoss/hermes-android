@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react-native'
 import { useEffect, useRef, useState } from 'react'
 import { Animated, Modal, Platform, Pressable, StyleSheet, View } from 'react-native'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { create } from 'zustand'
 
@@ -95,7 +96,7 @@ export function DialogHost() {
   }
   return (
     <Modal visible transparent animationType="fade" onRequestClose={() => close(null)} statusBarTranslucent>
-      <View style={[styles.backdrop, { backgroundColor: c.overlay }]}>
+      <KeyboardAvoidingView behavior="padding" style={[styles.backdrop, { backgroundColor: c.overlay }]}>
         <View accessibilityViewIsModal style={[styles.dialog, { backgroundColor: c.elevated, borderColor: c.border }]}>
           <Text variant="title" accessibilityRole="header">
             {dialog.title}
@@ -126,7 +127,7 @@ export function DialogHost() {
             />
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }

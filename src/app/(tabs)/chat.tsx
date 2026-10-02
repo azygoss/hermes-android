@@ -11,7 +11,8 @@ import {
   type LucideIcon,
 } from 'lucide-react-native'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Composer } from '@/components/chat/Composer'
@@ -326,7 +327,7 @@ export default function ChatScreen() {
         </Pressable>
       ) : null}
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         {opening && !session ? (
           <View style={styles.loading}>
             <ActivityIndicator color={c.accent} />

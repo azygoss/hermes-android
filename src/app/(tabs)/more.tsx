@@ -15,6 +15,7 @@ import {
 } from 'lucide-react-native'
 import { View } from 'react-native'
 
+import { AccountLimitsSection, useAccountLimits } from '@/components/AccountLimits'
 import { TabHeader } from '@/components/TabHeader'
 import { Badge, Row, Screen, Section } from '@/components/ui'
 import { useT } from '@/i18n'
@@ -27,11 +28,12 @@ export default function MoreHub() {
   const { c } = useTheme()
   const conn = useConnections((s) => s.connections.find((x) => x.id === s.activeId))
   const state = useRuntime((s) => s.state)
+  const limits = useAccountLimits()
   const go = (path: string) => () => router.push(path as never)
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <TabHeader title={t('More')} />
-      <Screen>
+      <Screen refreshing={limits.isRefetching} onRefresh={() => limits.refetch()}>
         <Section title={t('Connection')}>
           <Row
             icon={Wifi}
@@ -42,6 +44,7 @@ export default function MoreHub() {
           />
           <Row icon={Smartphone} title={t('Switch or add a backend')} onPress={go('/connect')} last />
         </Section>
+        <AccountLimitsSection />
         <Section title={t('Backend')}>
           <Row icon={FolderOpen} title={t('Files')} subtitle={t('Browse, preview, upload and download')} onPress={go('/files')} />
           <Row icon={BarChart3} title={t('Analytics')} subtitle={t('Tokens, cost and activity')} onPress={go('/analytics')} />

@@ -9,23 +9,23 @@
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 > Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :expo-gradle-plugin:expo-autolinking-settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :gradle-plugin:settings-plugin:pluginDescriptors UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :expo-gradle-plugin:expo-autolinking-settings-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:pluginDescriptors UP-TO-DATE
 > Task :expo-gradle-plugin:expo-autolinking-settings-plugin:processResources UP-TO-DATE
 > Task :gradle-plugin:settings-plugin:processResources UP-TO-DATE
-> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileKotlin UP-TO-DATE
 > Task :gradle-plugin:shared:compileKotlin UP-TO-DATE
-> Task :gradle-plugin:shared:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileKotlin UP-TO-DATE
 > Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileJava NO-SOURCE
-> Task :gradle-plugin:shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:compileJava NO-SOURCE
 > Task :expo-gradle-plugin:expo-autolinking-plugin-shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:processResources NO-SOURCE
 > Task :expo-gradle-plugin:expo-autolinking-plugin-shared:classes UP-TO-DATE
 > Task :gradle-plugin:shared:classes UP-TO-DATE
-> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:jar UP-TO-DATE
 > Task :gradle-plugin:shared:jar UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:jar UP-TO-DATE
 > Task :gradle-plugin:settings-plugin:compileKotlin UP-TO-DATE
 > Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
 > Task :gradle-plugin:settings-plugin:classes UP-TO-DATE
@@ -36,14 +36,14 @@ Daemon will be stopped at the end of the build
 > Task :expo-gradle-plugin:expo-autolinking-settings-plugin:jar UP-TO-DATE
 > Task :expo-gradle-plugin:expo-autolinking-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :expo-gradle-plugin:expo-max-sdk-override-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :expo-module-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-module-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :expo-module-gradle-plugin:pluginDescriptors UP-TO-DATE
 > Task :expo-module-gradle-plugin:processResources UP-TO-DATE
-> Task :expo-gradle-plugin:expo-autolinking-plugin:compileKotlin UP-TO-DATE
 > Task :expo-gradle-plugin:expo-max-sdk-override-plugin:compileKotlin UP-TO-DATE
-> Task :expo-gradle-plugin:expo-autolinking-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:compileKotlin UP-TO-DATE
 > Task :expo-gradle-plugin:expo-max-sdk-override-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:compileJava NO-SOURCE
 > Task :expo-gradle-plugin:expo-max-sdk-override-plugin:pluginDescriptors UP-TO-DATE
 > Task :expo-gradle-plugin:expo-max-sdk-override-plugin:processResources UP-TO-DATE
 > Task :expo-gradle-plugin:expo-max-sdk-override-plugin:classes UP-TO-DATE
@@ -113,117 +113,123 @@ Using expo modules
 
 Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
 
+> Task :expo-log-box:preBuild UP-TO-DATE
 > Task :expo-modules-core:preBuild UP-TO-DATE
 > Task :react-native-masked-view_masked-view:preBuild UP-TO-DATE
-> Task :expo-log-box:preBuild UP-TO-DATE
 > Task :expo:generatePackagesList
-> Task :app:generateAutolinkingNewArchitectureFiles
 > Task :expo:preBuild
+> Task :app:generateAutolinkingNewArchitectureFiles
 > Task :app:generateAutolinkingPackageList
 > Task :app:generateCodegenSchemaFromJavaScript SKIPPED
 > Task :app:generateCodegenArtifactsFromSchema SKIPPED
 > Task :app:generateReactNativeEntryPoint
 > Task :expo:preReleaseBuild
+> Task :react-native-safe-area-context:generateCodegenSchemaFromJavaScript
 > Task :react-native-async-storage_async-storage:generateCodegenSchemaFromJavaScript
 > Task :expo:mergeReleaseJniLibFolders
 > Task :expo:mergeReleaseNativeLibs NO-SOURCE
-> Task :react-native-safe-area-context:generateCodegenSchemaFromJavaScript
+> Task :react-native-screens:generateCodegenSchemaFromJavaScript
 > Task :expo:copyReleaseJniLibsProjectOnly
 > Task :expo-log-box:preReleaseBuild UP-TO-DATE
-> Task :react-native-screens:generateCodegenSchemaFromJavaScript
 
 > Task :expo-constants:createExpoConfig
 The NODE_ENV environment variable is required but was not specified. Ensure the project is bundled with Expo CLI or NODE_ENV is set. Using only .env.local and .env
 
-> Task :expo-log-box:mergeReleaseJniLibFolders
 > Task :expo-constants:preBuild
 > Task :expo-constants:preReleaseBuild
+> Task :expo-log-box:mergeReleaseJniLibFolders
 > Task :expo-log-box:mergeReleaseNativeLibs NO-SOURCE
-> Task :react-native-svg:generateCodegenSchemaFromJavaScript
-> Task :expo-log-box:copyReleaseJniLibsProjectOnly
-> Task :expo-modules-core:preReleaseBuild UP-TO-DATE
 > Task :expo-constants:mergeReleaseJniLibFolders
+> Task :expo-log-box:copyReleaseJniLibsProjectOnly
 > Task :expo-constants:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-modules-core:preReleaseBuild UP-TO-DATE
 > Task :expo-constants:copyReleaseJniLibsProjectOnly
+> Task :react-native-svg:generateCodegenSchemaFromJavaScript
 > Task :react-native-masked-view_masked-view:preReleaseBuild UP-TO-DATE
 > Task :react-native-masked-view_masked-view:mergeReleaseJniLibFolders
 > Task :react-native-masked-view_masked-view:mergeReleaseNativeLibs NO-SOURCE
 > Task :react-native-masked-view_masked-view:copyReleaseJniLibsProjectOnly
 > Task :react-native-masked-view_masked-view:generateReleaseBuildConfig
 > Task :react-native-masked-view_masked-view:generateReleaseResValues
+> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
+> Task :react-native-async-storage_async-storage:preBuild
+> Task :react-native-async-storage_async-storage:preReleaseBuild
 > Task :react-native-masked-view_masked-view:generateReleaseResources
-> Task :react-native-masked-view_masked-view:packageReleaseResources
+> Task :react-native-async-storage_async-storage:mergeReleaseJniLibFolders
 > Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema
 > Task :react-native-safe-area-context:preBuild
 > Task :react-native-safe-area-context:preReleaseBuild
+> Task :react-native-async-storage_async-storage:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-async-storage_async-storage:copyReleaseJniLibsProjectOnly
 > Task :react-native-safe-area-context:mergeReleaseJniLibFolders
-> Task :react-native-safe-area-context:mergeReleaseNativeLibs NO-SOURCE
-> Task :react-native-safe-area-context:copyReleaseJniLibsProjectOnly
-> Task :react-native-safe-area-context:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :react-native-svg:generateCodegenArtifactsFromSchema
-> Task :react-native-svg:preBuild
 > Task :react-native-screens:generateCodegenArtifactsFromSchema
 > Task :react-native-screens:preBuild
 > Task :react-native-screens:preReleaseBuild
-> Task :react-native-svg:preReleaseBuild
+> Task :react-native-safe-area-context:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-async-storage_async-storage:generateReleaseBuildConfig
+> Task :react-native-safe-area-context:copyReleaseJniLibsProjectOnly
+> Task :react-native-safe-area-context:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-async-storage_async-storage:generateReleaseResValues
+> Task :react-native-async-storage_async-storage:generateReleaseResources
 > Task :react-native-safe-area-context:generateReleaseBuildConfig
-> Task :react-native-svg:mergeReleaseJniLibFolders
-> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
-> Task :react-native-async-storage_async-storage:preBuild
+> Task :react-native-safe-area-context:generateReleaseResValues
+> Task :react-native-masked-view_masked-view:packageReleaseResources
+> Task :react-native-safe-area-context:generateReleaseResources
+> Task :react-native-async-storage_async-storage:packageReleaseResources
+> Task :react-native-safe-area-context:packageReleaseResources
+> Task :react-native-svg:generateCodegenArtifactsFromSchema
+> Task :react-native-svg:preBuild
 > Task :app:preBuild
 > Task :app:preReleaseBuild
+> Task :react-native-masked-view_masked-view:parseReleaseLocalResources
+> Task :react-native-svg:preReleaseBuild
+> Task :react-native-svg:mergeReleaseJniLibFolders
 > Task :react-native-svg:mergeReleaseNativeLibs NO-SOURCE
-> Task :react-native-async-storage_async-storage:preReleaseBuild
-> Task :react-native-safe-area-context:generateReleaseResValues
 > Task :react-native-svg:copyReleaseJniLibsProjectOnly
-> Task :react-native-async-storage_async-storage:mergeReleaseJniLibFolders
-> Task :react-native-async-storage_async-storage:mergeReleaseNativeLibs NO-SOURCE
-> Task :react-native-safe-area-context:generateReleaseResources
-> Task :react-native-async-storage_async-storage:copyReleaseJniLibsProjectOnly
-> Task :react-native-safe-area-context:packageReleaseResources
-> Task :react-native-async-storage_async-storage:generateReleaseBuildConfig
-> Task :react-native-async-storage_async-storage:generateReleaseResValues
-> Task :react-native-safe-area-context:javaPreCompileRelease
-> Task :react-native-async-storage_async-storage:generateReleaseResources
-> Task :react-native-async-storage_async-storage:packageReleaseResources
 > Task :react-native-safe-area-context:parseReleaseLocalResources
 > Task :react-native-async-storage_async-storage:parseReleaseLocalResources
-> Task :react-native-masked-view_masked-view:parseReleaseLocalResources
-> Task :react-native-safe-area-context:generateReleaseRFile
-> Task :react-native-async-storage_async-storage:generateReleaseRFile
+> Task :react-native-safe-area-context:javaPreCompileRelease
 > Task :react-native-masked-view_masked-view:generateReleaseRFile
+> Task :react-native-async-storage_async-storage:generateReleaseRFile
+> Task :react-native-safe-area-context:generateReleaseRFile
 > Task :react-native-masked-view_masked-view:javaPreCompileRelease
 > Task :react-native-async-storage_async-storage:javaPreCompileRelease
-> Task :react-native-screens:configureCMakeRelWithDebInfo[arm64-v8a]
 > Task :expo-modules-core:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-screens:configureCMakeRelWithDebInfo[arm64-v8a]
 > Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a]
 > Task :react-native-screens:configureCMakeRelWithDebInfo[armeabi-v7a]
 > Task :expo-modules-core:buildCMakeRelWithDebInfo[arm64-v8a]
 > Task :expo-modules-core:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :app:configureCMakeRelWithDebInfo[arm64-v8a]
 > Task :react-native-screens:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :expo-modules-core:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :expo-modules-core:mergeReleaseJniLibFolders
 > Task :react-native-screens:mergeReleaseJniLibFolders
 > Task :react-native-screens:mergeReleaseNativeLibs
 > Task :react-native-screens:copyReleaseJniLibsProjectOnly
 > Task :react-native-screens:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :react-native-screens:generateReleaseBuildConfig
-> Task :expo-modules-core:buildCMakeRelWithDebInfo[armeabi-v7a]
 > Task :react-native-screens:generateReleaseResValues
-> Task :expo-modules-core:mergeReleaseJniLibFolders
 > Task :react-native-screens:generateReleaseResources
-> Task :react-native-screens:packageReleaseResources
 > Task :expo-modules-core:mergeReleaseNativeLibs
-> Task :app:configureCMakeRelWithDebInfo[arm64-v8a]
-> Task :react-native-screens:parseReleaseLocalResources
-> Task :react-native-screens:generateReleaseRFile
+> Task :react-native-screens:packageReleaseResources
 > Task :expo-modules-core:copyReleaseJniLibsProjectOnly
+> Task :react-native-screens:javaPreCompileRelease
 > Task :expo:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :expo:generateReleaseBuildConfig
+> Task :react-native-screens:parseReleaseLocalResources
 > Task :expo:generateReleaseResValues
 > Task :expo:generateReleaseResources
+> Task :react-native-screens:generateReleaseRFile
 > Task :expo:packageReleaseResources
 > Task :expo:parseReleaseLocalResources
 > Task :expo:generateReleaseRFile
 > Task :expo-constants:checkKotlinGradlePluginConfigurationErrors SKIPPED
+
+> Task :react-native-masked-view_masked-view:compileReleaseJavaWithJavac
+Note: /root/dev/projects/hermes-android/node_modules/@react-native-masked-view/masked-view/android/src/main/java/org/reactnative/maskedview/RNCMaskedViewPackage.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
 > Task :expo-constants:generateReleaseBuildConfig
 > Task :expo-constants:generateReleaseResValues
 > Task :expo-constants:generateReleaseResources
@@ -232,15 +238,6 @@ The NODE_ENV environment variable is required but was not specified. Ensure the 
 > Task :expo-constants:generateReleaseRFile
 > Task :expo-modules-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :expo-modules-core:generateReleaseBuildConfig
-> Task :expo-modules-core:generateReleaseResValues
-> Task :expo-modules-core:generateReleaseResources
-> Task :expo-modules-core:packageReleaseResources
-> Task :expo-modules-core:parseReleaseLocalResources
-> Task :expo-modules-core:generateReleaseRFile
-
-> Task :react-native-masked-view_masked-view:compileReleaseJavaWithJavac
-Note: /root/dev/projects/hermes-android/node_modules/@react-native-masked-view/masked-view/android/src/main/java/org/reactnative/maskedview/RNCMaskedViewPackage.java uses or overrides a deprecated API.
-Note: Recompile with -Xlint:deprecation for details.
 
 > Task :react-native-async-storage_async-storage:compileReleaseJavaWithJavac
 Note: Some input files use or override a deprecated API.
@@ -248,9 +245,13 @@ Note: Recompile with -Xlint:deprecation for details.
 Note: /root/dev/projects/hermes-android/node_modules/@react-native-async-storage/async-storage/android/src/javaPackage/java/com/reactnativecommunity/asyncstorage/AsyncStoragePackage.java uses unchecked or unsafe operations.
 Note: Recompile with -Xlint:unchecked for details.
 
+> Task :expo-modules-core:generateReleaseResValues
+> Task :expo-modules-core:generateReleaseResources
+> Task :expo-modules-core:packageReleaseResources
+> Task :expo-modules-core:parseReleaseLocalResources
+> Task :expo-modules-core:generateReleaseRFile
 > Task :react-native-masked-view_masked-view:bundleLibRuntimeToDirRelease
 > Task :react-native-async-storage_async-storage:bundleLibRuntimeToDirRelease
-> Task :react-native-screens:javaPreCompileRelease
 > Task :expo-modules-core:javaPreCompileRelease
 > Task :expo-constants:javaPreCompileRelease
 > Task :expo-log-box:checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -269,6 +270,7 @@ Note: Recompile with -Xlint:unchecked for details.
 > Task :react-native-svg:parseReleaseLocalResources
 > Task :react-native-svg:generateReleaseRFile
 > Task :react-native-svg:javaPreCompileRelease
+> Task :react-native-safe-area-context:compileReleaseKotlin
 > Task :expo:writeReleaseAarMetadata
 > Task :expo-constants:writeReleaseAarMetadata
 > Task :expo-log-box:writeReleaseAarMetadata
@@ -279,7 +281,6 @@ Note: Recompile with -Xlint:unchecked for details.
 > Task :react-native-screens:writeReleaseAarMetadata
 > Task :expo:extractDeepLinksRelease
 > Task :expo:processReleaseManifest
-> Task :react-native-safe-area-context:compileReleaseKotlin
 > Task :expo-constants:extractDeepLinksRelease
 > Task :expo-constants:processReleaseManifest
 > Task :expo-log-box:extractDeepLinksRelease
@@ -314,7 +315,9 @@ Recommendation: remove package="com.th3rdwave.safeareacontext" from the source A
 > Task :expo-modules-core:compileReleaseLibraryResources
 > Task :react-native-async-storage_async-storage:compileReleaseLibraryResources
 > Task :react-native-masked-view_masked-view:compileReleaseLibraryResources
+> Task :app:buildCMakeRelWithDebInfo[arm64-v8a]
 > Task :react-native-safe-area-context:compileReleaseLibraryResources
+> Task :react-native-screens:compileReleaseKotlin
 > Task :react-native-screens:compileReleaseLibraryResources
 > Task :react-native-async-storage_async-storage:bundleLibCompileToJarRelease
 > Task :react-native-masked-view_masked-view:bundleLibCompileToJarRelease
@@ -327,11 +330,9 @@ Recommendation: remove package="com.th3rdwave.safeareacontext" from the source A
 > Task :react-native-safe-area-context:prepareReleaseArtProfile
 > Task :react-native-screens:prepareReleaseArtProfile
 > Task :react-native-async-storage_async-storage:bundleLibRuntimeToJarRelease
-> Task :app:buildCMakeRelWithDebInfo[arm64-v8a]
-> Task :react-native-screens:compileReleaseKotlin
+> Task :expo-modules-core:compileReleaseKotlin
 > Task :react-native-masked-view_masked-view:bundleLibRuntimeToJarRelease
 > Task :expo:mergeReleaseShaders
-> Task :expo-modules-core:compileReleaseKotlin
 > Task :expo:compileReleaseShaders NO-SOURCE
 > Task :expo:generateReleaseAssets UP-TO-DATE
 > Task :expo:mergeReleaseAssets
@@ -382,24 +383,24 @@ Note: Some input files use unchecked or unsafe operations.
 Note: Recompile with -Xlint:unchecked for details.
 
 > Task :react-native-async-storage_async-storage:generateReleaseLintModel
+> Task :react-native-svg:writeReleaseAarMetadata
+> Task :react-native-svg:extractDeepLinksRelease
+> Task :react-native-svg:processReleaseManifest
+> Task :react-native-svg:compileReleaseLibraryResources
+> Task :react-native-svg:bundleLibCompileToJarRelease
+> Task :react-native-svg:prepareReleaseArtProfile
+> Task :react-native-svg:bundleLibRuntimeToDirRelease
+> Task :react-native-svg:bundleLibRuntimeToJarRelease
+> Task :react-native-svg:mergeReleaseShaders
+> Task :react-native-svg:compileReleaseShaders NO-SOURCE
+> Task :react-native-svg:generateReleaseAssets UP-TO-DATE
+> Task :react-native-svg:mergeReleaseAssets
 > Task :react-native-async-storage_async-storage:prepareLintJarForPublish
 > Task :react-native-masked-view_masked-view:processReleaseJavaRes NO-SOURCE
 > Task :react-native-masked-view_masked-view:createFullJarRelease
 > Task :react-native-masked-view_masked-view:extractProguardFiles
 > Task :react-native-masked-view_masked-view:generateReleaseLintModel
 > Task :react-native-masked-view_masked-view:prepareLintJarForPublish
-> Task :react-native-svg:writeReleaseAarMetadata
-> Task :react-native-svg:extractDeepLinksRelease
-> Task :react-native-svg:processReleaseManifest
-> Task :react-native-svg:compileReleaseLibraryResources
-> Task :react-native-svg:bundleLibRuntimeToDirRelease
-> Task :react-native-svg:bundleLibCompileToJarRelease
-> Task :react-native-svg:prepareReleaseArtProfile
-> Task :react-native-svg:bundleLibRuntimeToJarRelease
-> Task :react-native-svg:mergeReleaseShaders
-> Task :react-native-svg:compileReleaseShaders NO-SOURCE
-> Task :react-native-svg:generateReleaseAssets UP-TO-DATE
-> Task :react-native-svg:mergeReleaseAssets
 > Task :react-native-safe-area-context:extractProguardFiles
 > Task :react-native-safe-area-context:prepareLintJarForPublish
 > Task :react-native-screens:extractProguardFiles
@@ -416,37 +417,37 @@ Note: Recompile with -Xlint:unchecked for details.
 > Task :react-native-screens:copyReleaseJniLibsProjectAndLocalJars
 > Task :react-native-screens:extractDeepLinksForAarRelease
 > Task :react-native-async-storage_async-storage:stripReleaseDebugSymbols NO-SOURCE
-> Task :react-native-masked-view_masked-view:stripReleaseDebugSymbols NO-SOURCE
 > Task :react-native-async-storage_async-storage:copyReleaseJniLibsProjectAndLocalJars
-> Task :react-native-masked-view_masked-view:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-masked-view_masked-view:stripReleaseDebugSymbols NO-SOURCE
 > Task :react-native-async-storage_async-storage:extractDeepLinksForAarRelease
+> Task :react-native-masked-view_masked-view:copyReleaseJniLibsProjectAndLocalJars
 > Task :react-native-masked-view_masked-view:extractDeepLinksForAarRelease
 > Task :react-native-masked-view_masked-view:extractReleaseAnnotations
 > Task :react-native-async-storage_async-storage:extractReleaseAnnotations
 > Task :react-native-async-storage_async-storage:mergeReleaseGeneratedProguardFiles
 > Task :react-native-masked-view_masked-view:mergeReleaseGeneratedProguardFiles
-> Task :react-native-masked-view_masked-view:mergeReleaseConsumerProguardFiles
 > Task :react-native-async-storage_async-storage:mergeReleaseConsumerProguardFiles
-> Task :react-native-masked-view_masked-view:mergeReleaseJavaResource
+> Task :react-native-masked-view_masked-view:mergeReleaseConsumerProguardFiles
 > Task :react-native-async-storage_async-storage:mergeReleaseJavaResource
+> Task :react-native-masked-view_masked-view:mergeReleaseJavaResource
 > Task :react-native-masked-view_masked-view:syncReleaseLibJars
 > Task :react-native-async-storage_async-storage:syncReleaseLibJars
 > Task :react-native-masked-view_masked-view:bundleReleaseLocalLintAar
 > Task :react-native-async-storage_async-storage:bundleReleaseLocalLintAar
-> Task :react-native-svg:stripReleaseDebugSymbols NO-SOURCE
 > Task :expo:stripReleaseDebugSymbols NO-SOURCE
-> Task :react-native-svg:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-svg:stripReleaseDebugSymbols NO-SOURCE
 > Task :expo:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-svg:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-svg:extractDeepLinksForAarRelease
 > Task :expo:extractDeepLinksForAarRelease
 > Task :expo-log-box:stripReleaseDebugSymbols NO-SOURCE
-> Task :react-native-svg:extractDeepLinksForAarRelease
 > Task :expo-log-box:copyReleaseJniLibsProjectAndLocalJars
 > Task :expo-log-box:extractDeepLinksForAarRelease
 > Task :react-native-svg:extractReleaseAnnotations
 > Task :react-native-svg:mergeReleaseGeneratedProguardFiles
 > Task :react-native-svg:mergeReleaseConsumerProguardFiles
-> Task :react-native-svg:mergeReleaseJavaResource
 > Task :expo-modules-core:stripReleaseDebugSymbols
+> Task :react-native-svg:mergeReleaseJavaResource
 > Task :expo-modules-core:copyReleaseJniLibsProjectAndLocalJars
 > Task :expo-modules-core:extractDeepLinksForAarRelease
 > Task :expo-constants:stripReleaseDebugSymbols NO-SOURCE
@@ -470,13 +471,13 @@ w: file:///root/dev/projects/hermes-android/node_modules/react-native-safe-area-
 
 > Task :react-native-safe-area-context:compileReleaseJavaWithJavac
 > Task :react-native-safe-area-context:bundleLibRuntimeToDirRelease
+> Task :react-native-async-storage_async-storage:lintVitalAnalyzeRelease
+> Task :react-native-masked-view_masked-view:lintVitalAnalyzeRelease
 > Task :react-native-safe-area-context:bundleLibCompileToJarRelease
 > Task :react-native-safe-area-context:bundleLibRuntimeToJarRelease
-> Task :react-native-async-storage_async-storage:lintVitalAnalyzeRelease
 > Task :react-native-safe-area-context:processReleaseJavaRes
 > Task :react-native-safe-area-context:createFullJarRelease
 > Task :react-native-safe-area-context:generateReleaseLintModel
-> Task :react-native-masked-view_masked-view:lintVitalAnalyzeRelease
 > Task :react-native-safe-area-context:extractReleaseAnnotations
 > Task :react-native-safe-area-context:mergeReleaseGeneratedProguardFiles
 > Task :react-native-safe-area-context:mergeReleaseConsumerProguardFiles
@@ -494,17 +495,17 @@ w: file:///root/dev/projects/hermes-android/node_modules/react-native-safe-area-
 > Task :react-native-safe-area-context:generateReleaseLintVitalModel
 > Task :react-native-svg:generateReleaseLintVitalModel
 > Task :expo-constants:mapReleaseSourceSetPaths
-> Task :expo-constants:mergeReleaseResources
 > Task :expo:mapReleaseSourceSetPaths
+> Task :expo-constants:mergeReleaseResources
 > Task :expo-constants:verifyReleaseResources
 > Task :expo-log-box:mapReleaseSourceSetPaths
 > Task :expo-log-box:mergeReleaseResources
 > Task :expo:mergeReleaseResources
-> Task :expo-log-box:verifyReleaseResources
 > Task :expo-modules-core:mapReleaseSourceSetPaths
-> Task :expo:verifyReleaseResources
+> Task :expo-log-box:verifyReleaseResources
 > Task :react-native-async-storage_async-storage:bundleReleaseAar
 > Task :react-native-async-storage_async-storage:mapReleaseSourceSetPaths
+> Task :expo:verifyReleaseResources
 > Task :react-native-masked-view_masked-view:bundleReleaseAar
 > Task :react-native-masked-view_masked-view:mapReleaseSourceSetPaths
 > Task :expo-modules-core:mergeReleaseResources
@@ -528,3 +529,279 @@ w: file:///root/dev/projects/hermes-android/node_modules/react-native-safe-area-
 > Task :react-native-svg:verifyReleaseResources
 > Task :react-native-svg:assembleRelease
 > Task :react-native-screens:verifyReleaseResources
+
+> Task :react-native-screens:compileReleaseKotlin
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt:70:9 The corresponding parameter in the supertype 'BaseReactPackage' is named 'name'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt:71:9 The corresponding parameter in the supertype 'BaseReactPackage' is named 'reactContext'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt:83:17 'constructor(name: String, className: String, canOverrideExistingModule: Boolean, needsEagerInit: Boolean, hasConstants: Boolean, isCxxModule: Boolean, isTurboModule: Boolean): ReactModuleInfo' is deprecated. This constructor is deprecated and will be removed in the future. Use ReactModuleInfo(String, String, boolean, boolean, boolean, boolean)].
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt:54:77 Unchecked cast of '(CoordinatorLayout.Behavior<View!>?..CoordinatorLayout.Behavior<*>?)' to 'BottomSheetBehavior<Screen>'.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt:59:33 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt:516:14 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenContainer.kt:250:18 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenContainer.kt:260:18 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenFragment.kt:225:37 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenFragment.kt:242:14 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenFragment.kt:258:22 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenFragment.kt:327:22 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenModalFragment.kt:180:22 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStack.kt:120:14 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:173:18 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:230:31 'var targetElevation: Float' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:233:13 'fun setHasOptionsMenu(p0: Boolean): Unit' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:443:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:450:22 'fun onPrepareOptionsMenu(p0: Menu): Unit' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:453:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:458:22 'fun onCreateOptionsMenu(p0: Menu, p1: MenuInflater): Unit' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt:199:14 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt:209:14 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:48:42 'fun replaceSystemWindowInsets(p0: Int, p1: Int, p2: Int, p3: Int): @NonNull() WindowInsetsCompat' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:49:39 'val systemWindowInsetLeft: Int' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:51:39 'val systemWindowInsetRight: Int' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:52:39 'val systemWindowInsetBottom: Int' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreensModule.kt:100:14 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/SearchBarView.kt:137:29 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:7:8 'object ReactFeatureFlags : Any' is deprecated. Use com.facebook.react.internal.featureflags.ReactNativeFeatureFlags instead.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:25:13 'object ReactFeatureFlags : Any' is deprecated. Use com.facebook.react.internal.featureflags.ReactNativeFeatureFlags instead.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:32:9 The corresponding parameter in the supertype 'ReactViewGroup' is named 'left'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:33:9 The corresponding parameter in the supertype 'ReactViewGroup' is named 'top'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:34:9 The corresponding parameter in the supertype 'ReactViewGroup' is named 'right'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:35:9 The corresponding parameter in the supertype 'ReactViewGroup' is named 'bottom'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:71:9 The corresponding parameter in the supertype 'RootView' is named 'childView'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:72:9 The corresponding parameter in the supertype 'RootView' is named 'ev'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:79:46 The corresponding parameter in the supertype 'RootView' is named 'ev'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:83:9 The corresponding parameter in the supertype 'RootView' is named 'childView'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:84:9 The corresponding parameter in the supertype 'RootView' is named 'ev'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:95:34 The corresponding parameter in the supertype 'RootView' is named 't'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/DimmingView.kt:64:9 The corresponding parameter in the supertype 'ReactCompoundView' is named 'touchX'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/DimmingView.kt:65:9 The corresponding parameter in the supertype 'ReactCompoundView' is named 'touchY'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/DimmingView.kt:69:9 The corresponding parameter in the supertype 'ReactCompoundViewGroup' is named 'touchX'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/DimmingView.kt:70:9 The corresponding parameter in the supertype 'ReactCompoundViewGroup' is named 'touchY'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/common/event/BaseEventEmitter.kt:12:38 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/modals/dimmingview/DimmingView.kt:64:9 The corresponding parameter in the supertype 'ReactCompoundView' is named 'touchX'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/modals/dimmingview/DimmingView.kt:65:9 The corresponding parameter in the supertype 'ReactCompoundView' is named 'touchY'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/modals/dimmingview/DimmingView.kt:69:9 The corresponding parameter in the supertype 'ReactCompoundViewGroup' is named 'touchX'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/modals/dimmingview/DimmingView.kt:70:9 The corresponding parameter in the supertype 'ReactCompoundViewGroup' is named 'touchY'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/modals/formsheet/FormSheetContentView.kt:11:8 'object ReactFeatureFlags : Any' is deprecated. Use com.facebook.react.internal.featureflags.ReactNativeFeatureFlags instead.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/modals/formsheet/FormSheetContentView.kt:39:33 'fun getEventDispatcher(context: ReactContext, uiManagerType: Int): EventDispatcher?' is deprecated. UIManagerType is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/modals/formsheet/FormSheetContentView.kt:44:13 'object ReactFeatureFlags : Any' is deprecated. Use com.facebook.react.internal.featureflags.ReactNativeFeatureFlags instead.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/modals/formsheet/FormSheetHostViewManager.kt:38:9 The corresponding parameter in the supertype 'FormSheetHostViewManager' is named 'view'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/tabs/host/TabsHostViewManager.kt:44:9 The corresponding parameter in the supertype 'TabsHostViewManager' is named 'view'. This may cause problems when calling this function with named arguments.
+w: file:///root/dev/projects/hermes-android/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/safearea/SafeAreaView.kt:143:45 'fun consumeDisplayCutout(): @NonNull() WindowInsetsCompat' is deprecated. Deprecated in Java.
+
+> Task :react-native-screens:compileReleaseJavaWithJavac
+> Task :react-native-screens:bundleLibCompileToJarRelease
+> Task :react-native-screens:processReleaseJavaRes
+> Task :react-native-screens:bundleLibRuntimeToJarRelease
+> Task :react-native-screens:createFullJarRelease
+> Task :react-native-screens:bundleLibRuntimeToDirRelease
+> Task :react-native-screens:generateReleaseLintModel
+> Task :react-native-screens:extractReleaseAnnotations
+> Task :react-native-screens:mergeReleaseGeneratedProguardFiles
+> Task :react-native-screens:mergeReleaseConsumerProguardFiles
+> Task :react-native-screens:mergeReleaseJavaResource
+> Task :react-native-screens:syncReleaseLibJars
+> Task :react-native-screens:bundleReleaseLocalLintAar
+> Task :react-native-screens:generateReleaseLintVitalModel
+> Task :react-native-screens:bundleReleaseAar
+> Task :react-native-screens:assembleRelease
+
+> Task :expo-modules-core:compileReleaseKotlin
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/apploader/AppLoaderProvider.kt:34:52 Unchecked cast of 'Class<*>!' to 'Class<out HeadlessAppLoader>'.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:14:8 'class UIManagerModule : ReactContextBaseJavaModule, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:22:8 'typealias ErrorManagerModule = JSLoggerModule' is deprecated. Use JSLoggerModule instead.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:61:13 'val hostingRuntimeContext: MainRuntime' is deprecated. Use AppContext.runtimeContext instead.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:271:21 'typealias ErrorManagerModule = JSLoggerModule' is deprecated. Use JSLoggerModule instead.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:380:21 'val DEFAULT: Int' is deprecated. UIManagerType.DEFAULT will be deleted in the next release of React Native. Use [LEGACY] instead.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:381:10 'class UIManagerModule : ReactContextBaseJavaModule, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/defaultmodules/NativeModulesProxyModule.kt:16:5 'fun Constants(legacyConstantsProvider: () -> Map<String, Any?>): Unit' is deprecated. Use `Constant` or `Property` instead.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/events/KModuleEventEmitterWrapper.kt:99:21 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/events/KModuleEventEmitterWrapper.kt:108:21 'fun getEventDispatcherForReactTag(context: ReactContext, reactTag: Int): EventDispatcher?' is deprecated. reactTag is no longer needed.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewDefinitionBuilder.kt:470:16 'val errorManager: JSLoggerModule?' is deprecated. Use AppContext.jsLogger instead.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewDefinitionBuilder.kt:470:30 'fun reportExceptionToLogBox(codedException: CodedException): Unit' is deprecated. Use appContext.jsLogger.error(...) instead.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewManagerDefinition.kt:41:16 'val errorManager: JSLoggerModule?' is deprecated. Use AppContext.jsLogger instead.
+w: file:///root/dev/projects/hermes-android/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewManagerDefinition.kt:41:30 'fun reportExceptionToLogBox(codedException: CodedException): Unit' is deprecated. Use appContext.jsLogger.error(...) instead.
+
+> Task :expo-modules-core:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :expo-modules-core:bundleLibCompileToJarRelease
+> Task :expo-modules-core:bundleLibRuntimeToJarRelease
+> Task :expo-modules-core:bundleLibRuntimeToDirRelease
+
+> Task :expo-constants:compileReleaseKotlin
+w: file:///root/dev/projects/hermes-android/node_modules/expo-constants/android/src/main/java/expo/modules/constants/ConstantsModule.kt:13:5 'fun Constants(legacyConstantsProvider: () -> Map<String, Any?>): Unit' is deprecated. Use `Constant` or `Property` instead.
+
+> Task :expo-constants:compileReleaseJavaWithJavac
+> Task :expo-constants:bundleLibCompileToJarRelease
+> Task :expo-constants:bundleLibRuntimeToDirRelease
+> Task :expo-log-box:compileReleaseKotlin
+> Task :expo-constants:bundleLibRuntimeToJarRelease
+> Task :expo-constants:processReleaseJavaRes
+> Task :expo-constants:createFullJarRelease
+> Task :expo-log-box:compileReleaseJavaWithJavac
+> Task :expo-modules-core:processReleaseJavaRes
+> Task :expo-log-box:bundleLibCompileToJarRelease
+> Task :expo-log-box:bundleLibRuntimeToDirRelease
+> Task :expo-modules-core:createFullJarRelease
+> Task :expo-log-box:bundleLibRuntimeToJarRelease
+> Task :expo-modules-core:generateReleaseLintModel
+> Task :expo-constants:generateReleaseLintModel
+> Task :expo-log-box:processReleaseJavaRes
+> Task :expo-log-box:createFullJarRelease
+> Task :expo-log-box:generateReleaseLintModel
+> Task :expo-log-box:extractReleaseAnnotations
+> Task :expo-log-box:mergeReleaseGeneratedProguardFiles
+> Task :expo-log-box:mergeReleaseConsumerProguardFiles
+> Task :expo-log-box:mergeReleaseJavaResource
+> Task :expo-log-box:syncReleaseLibJars
+> Task :expo-log-box:bundleReleaseLocalLintAar
+> Task :expo-modules-core:extractReleaseAnnotations
+> Task :expo-modules-core:mergeReleaseGeneratedProguardFiles
+> Task :expo-modules-core:mergeReleaseConsumerProguardFiles
+> Task :expo-modules-core:mergeReleaseJavaResource
+> Task :expo-modules-core:syncReleaseLibJars
+> Task :expo-modules-core:bundleReleaseLocalLintAar
+> Task :expo-constants:extractReleaseAnnotations
+> Task :expo-constants:mergeReleaseGeneratedProguardFiles
+> Task :expo-constants:mergeReleaseConsumerProguardFiles
+> Task :expo-constants:mergeReleaseJavaResource
+> Task :expo-constants:syncReleaseLibJars
+> Task :expo-constants:bundleReleaseLocalLintAar
+> Task :react-native-screens:lintVitalAnalyzeRelease
+> Task :expo-constants:lintVitalAnalyzeRelease
+
+> Task :expo:compileReleaseKotlin
+w: file:///root/dev/projects/hermes-android/node_modules/expo/android/src/main/java/expo/modules/ExpoModulesPackage.kt:34:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///root/dev/projects/hermes-android/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:22:8 'class ReactInstanceManager : Any' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:102:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///root/dev/projects/hermes-android/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:102:43 'class ReactInstanceManager : Any' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:103:21 'val reactInstanceManager: ReactInstanceManager' is deprecated. Deprecated in Java.
+w: file:///root/dev/projects/hermes-android/node_modules/expo/android/src/main/java/expo/modules/fetch/ExpoFetchModule.kt:33:39 'constructor(reactContext: ReactContext): ForwardingCookieHandler' is deprecated. Use the default constructor.
+w: file:///root/dev/projects/hermes-android/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt:44:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///root/dev/projects/hermes-android/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt:46:11 'fun deallocate(): Unit' is deprecated. Use sharedObjectDidRelease() instead.
+
+> Task :app:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :expo:compileReleaseJavaWithJavac
+> Task :expo:bundleLibRuntimeToDirRelease
+> Task :expo:bundleLibCompileToJarRelease
+> Task :expo:bundleLibRuntimeToJarRelease
+> Task :expo-log-box:lintVitalAnalyzeRelease
+> Task :expo:processReleaseJavaRes
+> Task :expo:createFullJarRelease
+> Task :expo:generateReleaseLintModel
+> Task :expo:extractReleaseAnnotations
+> Task :expo:mergeReleaseGeneratedProguardFiles
+> Task :expo:mergeReleaseConsumerProguardFiles
+> Task :expo:mergeReleaseJavaResource
+> Task :expo:syncReleaseLibJars
+> Task :expo:bundleReleaseLocalLintAar
+> Task :expo:generateReleaseLintVitalModel
+> Task :expo-constants:generateReleaseLintVitalModel
+> Task :expo-log-box:generateReleaseLintVitalModel
+> Task :expo-modules-core:generateReleaseLintVitalModel
+> Task :expo:bundleReleaseAar
+> Task :expo:assembleRelease
+> Task :expo-constants:bundleReleaseAar
+> Task :expo-constants:assembleRelease
+> Task :expo-log-box:bundleReleaseAar
+> Task :expo-log-box:assembleRelease
+> Task :expo-modules-core:bundleReleaseAar
+> Task :expo-modules-core:assembleRelease
+> Task :app:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :expo-modules-core:lintVitalAnalyzeRelease
+> Task :expo:lintVitalAnalyzeRelease
+> Task :app:mergeReleaseJniLibFolders
+> Task :app:buildKotlinToolingMetadata
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateReleaseBuildConfig
+> Task :app:checkReleaseDuplicateClasses
+> Task :app:checkReleaseAarMetadata
+
+> Task :app:createBundleReleaseJsAndAssets
+Using src/app as the root directory for Expo Router.
+
+> Task :app:mergeReleaseNativeLibs
+
+> Task :app:createBundleReleaseJsAndAssets
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Android Bundled 31627ms node_modules/expo-router/entry.js (3770 modules)
+Writing bundle output to: /root/dev/projects/hermes-android/android/app/build/generated/assets/react/release/index.android.bundle
+Writing sourcemap output to: /root/dev/projects/hermes-android/android/app/build/intermediates/sourcemaps/react/release/index.android.bundle.packager.map
+Copying 63 asset files
+Done writing bundle output
+Done writing sourcemap output
+
+> Task :app:generateReleaseResValues
+> Task :app:stripReleaseDebugSymbols
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :app:extractReleaseNativeSymbolTables
+> Task :app:packageReleaseResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :app:parseReleaseLocalResources
+> Task :app:mergeReleaseResources
+> Task :app:mergeReleaseNativeDebugMetadata
+
+> Task :app:processReleaseMainManifest
+/root/dev/projects/hermes-android/android/app/src/main/AndroidManifest.xml Warning:
+	provider#expo.modules.filesystem.FileSystemFileProvider@android:authorities was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
+/root/dev/projects/hermes-android/android/app/src/main/AndroidManifest.xml Warning:
+	activity#expo.modules.imagepicker.ExpoCropImageActivity@android:exported was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
+
+> Task :app:expoReleaseOverrideMaxSdkConflicts
+[33m---------- Expo Max Sdk Override Plugin ----------[0m
+[32m>>> No 'android:maxSdkVersion' conflicts found[0m
+[33m--------------------------------------------------[0m
+
+> Task :app:processReleaseManifest
+> Task :app:javaPreCompileRelease
+> Task :app:desugarReleaseFileDependencies
+> Task :app:mergeReleaseStartupProfile
+> Task :app:mergeReleaseShaders
+> Task :app:processReleaseManifestForPackage
+> Task :app:mergeReleaseArtProfile
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :app:compressReleaseAssets
+> Task :app:extractReleaseVersionControlInfo
+> Task :app:extractProguardFiles
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:validateSigningRelease
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :app:processReleaseResources
+> Task :app:optimizeReleaseResources
+> Task :app:compileReleaseKotlin
+> Task :app:compileReleaseJavaWithJavac
+> Task :app:dexBuilderRelease
+> Task :app:mergeReleaseGlobalSynthetics
+> Task :app:generateReleaseLintVitalReportModel
+> Task :app:processReleaseJavaRes
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:mergeReleaseJavaResource
+> Task :app:mergeExtDexRelease
+> Task :app:mergeDexRelease
+> Task :app:compileReleaseArtProfile
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:assembleRelease
+
+[Incubating] Problems report is available at: file:///root/dev/projects/hermes-android/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 14m 11s
+473 actionable tasks: 445 executed, 28 up-to-date
+built dist/hermes-android-v1.1.0.apk

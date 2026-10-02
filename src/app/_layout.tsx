@@ -6,6 +6,7 @@ import { DarkTheme, DefaultTheme, SplashScreen, Stack, ThemeProvider } from 'exp
 import { StatusBar } from 'expo-status-bar'
 import * as SystemUI from 'expo-system-ui'
 import { useEffect, useState } from 'react'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { GatewayBridge } from '@/components/GatewayBridge'
@@ -82,30 +83,32 @@ function AppShell() {
 
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider value={navTheme}>
-          <StatusBar style={isDark ? 'light' : 'dark'} />
-          <GatewayBridge />
-          <TurnEffects />
-          <Stack
-            screenOptions={{
-              headerStyle: { backgroundColor: c.bg },
-              headerTintColor: c.text,
-              headerTitleStyle: { fontFamily: font.semibold, fontSize: 17 },
-              headerShadowVisible: false,
-              contentStyle: { backgroundColor: c.bg },
-              animation: 'slide_from_right',
-              headerBackButtonDisplayMode: 'minimal',
-            }}
-          >
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="connect" options={{ title: t('Connect to Hermes') }} />
-          </Stack>
-          <DialogHost />
-          <ToastHost />
-        </ThemeProvider>
-      </QueryClientProvider>
+      <KeyboardProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider value={navTheme}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <GatewayBridge />
+            <TurnEffects />
+            <Stack
+              screenOptions={{
+                headerStyle: { backgroundColor: c.bg },
+                headerTintColor: c.text,
+                headerTitleStyle: { fontFamily: font.semibold, fontSize: 17 },
+                headerShadowVisible: false,
+                contentStyle: { backgroundColor: c.bg },
+                animation: 'slide_from_right',
+                headerBackButtonDisplayMode: 'minimal',
+              }}
+            >
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="connect" options={{ title: t('Connect to Hermes') }} />
+            </Stack>
+            <DialogHost />
+            <ToastHost />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </KeyboardProvider>
     </SafeAreaProvider>
   )
 }

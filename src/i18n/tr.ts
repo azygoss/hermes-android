@@ -1195,4 +1195,5 @@ export const tr: Record<string, string> = {
   'in {n}m': '{n} dk sonra',
   '{n} messages': '{n} mesaj',
   '{n} tokens of context': '{n} token bağlam',
+  'Set up': 'Kurulu',
 }

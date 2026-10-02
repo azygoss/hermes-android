@@ -1,15 +1,15 @@
 import { router, Stack } from 'expo-router'
-import { MessagesSquare, Play, RotateCw, Square } from 'lucide-react-native'
+import { Play, RotateCw, Square } from 'lucide-react-native'
 import { useState } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
-import { Badge, Button, Card, ErrorState, Loading, Screen, Text, toast, toastError } from '@/components/ui'
+import { Button, Card, ErrorState, Loading, Row, Screen, Section, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
 import { useRest } from '@/lib/hooks'
 import { rest } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
-import { radius, space, useTheme } from '@/theme'
-import { stateTone, type Platform } from '@/components/messaging/types'
+import { space, useTheme } from '@/theme'
+import type { Platform } from '@/components/messaging/types'
 
 export default function MessagingScreen() {
   const t = useT()
@@ -72,29 +72,28 @@ export default function MessagingScreen() {
       </Card>
       {q.isLoading ? <Loading /> : null}
       {q.error ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : null}
-      <View style={styles.grid}>
-        {platforms.map((p) => (
-          <Pressable
-            key={p.id}
-            accessibilityRole="button"
-            accessibilityLabel={`${p.name}, ${p.state}`}
-            onPress={() => router.push({ pathname: '/messaging/[id]', params: { id: p.id } })}
-            style={[styles.tile, { backgroundColor: c.surface, borderColor: p.enabled ? c.accent : c.border }]}
-          >
-            <MessagesSquare size={18} color={p.enabled ? c.accentText : c.textMuted} />
-            <Text weight="semibold" numberOfLines={1}>
-              {p.name}
-            </Text>
-            <Badge label={p.state.replace(/_/g, ' ')} tone={stateTone(p.state)} />
-          </Pressable>
+      {[
+        { title: t('Set up'), items: platforms.filter((p) => p.enabled) },
+        { title: t('Available'), items: platforms.filter((p) => !p.enabled) },
+      ]
+        .filter((g) => g.items.length)
+        .map((g) => (
+          <Section key={g.title} title={g.title}>
+            {g.items.map((p, i) => (
+              <Row
+                key={p.id}
+                title={p.name}
+                value={p.enabled ? p.state.replace(/_/g, ' ') : null}
+                onPress={() => router.push({ pathname: '/messaging/[id]', params: { id: p.id } })}
+                last={i === g.items.length - 1}
+              />
+            ))}
+          </Section>
         ))}
-      </View>
     </Screen>
   )
 }
 
 const styles = StyleSheet.create({
   dot: { width: 10, height: 10, borderRadius: 5 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  tile: { width: '48.5%', borderWidth: 1, borderRadius: radius.lg, padding: space.md, gap: space.xs, minHeight: 96 },
 })

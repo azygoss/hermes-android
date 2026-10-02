@@ -26,6 +26,8 @@ export interface Settings {
   appLock: boolean
   /** Last models picked in the chat model picker, newest first. */
   recentModels: { provider: string; model: string }[]
+  /** Run a foreground service while the agent works, so the connection survives the background. */
+  keepAlive: boolean
 }
 
 interface SettingsState extends Settings {
@@ -49,6 +51,7 @@ export const useSettings = create<SettingsState>()(
       fontScale: 1,
       appLock: false,
       recentModels: [],
+      keepAlive: true,
       set: (patch) => set(patch),
     }),
     { name: 'hermes.settings', storage: persistStorage, version: 1 },

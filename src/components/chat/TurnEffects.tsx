@@ -9,6 +9,8 @@ import { speak } from '@/lib/voice'
 import { answerRequest, onTurnComplete, openStored, setActive, useChat } from '@/store/chat'
 import { useSettings } from '@/store/settings'
 
+import { KeepAlive } from '../../../modules/hermes-keepalive'
+
 const APPROVAL_CATEGORY = 'hermes-approval'
 
 if (Platform.OS !== 'web') {
@@ -32,8 +34,53 @@ function openChat(data: { sessionId?: string; storedId?: string | null }) {
   } else router.navigate('/chat')
 }
 
+/**
+ * While any chat is working or waiting on the user, hold a foreground service so Android does not
+ * freeze the app (and drop the gateway socket) once it is in the background.
+ */
+function useKeepAlive() {
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !KeepAlive.available) return
+    let running = false
+    let shown = ''
+    const sync = () => {
+      const { sessions, requests } = useChat.getState()
+      const busy = Object.values(sessions).filter((s) => s.busy)
+      const want = useSettings.getState().keepAlive && (busy.length > 0 || requests.length > 0)
+      if (!want) {
+        if (running) KeepAlive.stop()
+        running = false
+        shown = ''
+        return
+      }
+      const title = requests.length ? t('Hermes needs your input') : t('Hermes is working')
+      const lead = busy[0]
+      const text = requests.length
+        ? t('Open the app to answer')
+        : [lead?.title, lead?.status].filter(Boolean).join(' · ') || t('Working on your request')
+      const label = `${title}|${text}`
+      if (label === shown) return
+      // Starting is only allowed from the foreground; a refused start is retried when the app returns.
+      if (!running) running = AppState.currentState === 'active' && KeepAlive.start(title, text)
+      else KeepAlive.update(title, text)
+      if (running) shown = label
+    }
+    const offChat = useChat.subscribe(sync)
+    const offSettings = useSettings.subscribe(sync)
+    const offApp = AppState.addEventListener('change', (state) => state === 'active' && sync())
+    sync()
+    return () => {
+      offChat()
+      offSettings()
+      offApp.remove()
+      if (running) KeepAlive.stop()
+    }
+  }, [])
+}
+
 /** Side effects of a finished turn: read it aloud, or notify when the app is in the background. */
 export function TurnEffects() {
+  useKeepAlive()
   useEffect(
     () =>
       onTurnComplete((session, message) => {

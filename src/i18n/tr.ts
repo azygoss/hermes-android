@@ -1284,4 +1284,10 @@ export const tr: Record<string, string> = {
   'Next runs': 'Sonraki çalışmalar',
   'This schedule never runs in the next year.': 'Bu plan önümüzdeki bir yıl içinde hiç çalışmıyor.',
   'server time, {zone}': 'sunucu saati, {zone}',
+  'Hermes is working': 'Hermes çalışıyor',
+  'Keep working in the background': 'Arka planda çalışmaya devam et',
+  'Open the app to answer': 'Yanıtlamak için uygulamayı aç',
+  'Shows a quiet "Hermes is working" notification during a turn so Android keeps the connection open':
+    'Bir tur sürerken sessiz bir "Hermes çalışıyor" bildirimi gösterir; böylece Android bağlantıyı açık tutar',
+  'Working on your request': 'İsteğin üzerinde çalışıyor',
 }

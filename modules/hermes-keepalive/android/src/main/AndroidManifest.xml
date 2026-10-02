@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+  <application>
+    <!-- Keeps the gateway socket alive while the agent works with the app in the background. -->
+    <service
+      android:name="expo.modules.hermeskeepalive.KeepAliveService"
+      android:exported="false"
+      android:foregroundServiceType="dataSync" />
+  </application>
+</manifest>

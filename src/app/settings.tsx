@@ -1,6 +1,20 @@
 import * as Notifications from 'expo-notifications'
 import { Stack } from 'expo-router'
-import { Bell, Brain, Fingerprint, Languages, Mic, Moon, Palette, Send, Smartphone, Type, Vibrate, Wrench } from '@/components/icons'
+import {
+  Activity,
+  Bell,
+  Brain,
+  Fingerprint,
+  Languages,
+  Mic,
+  Moon,
+  Palette,
+  Send,
+  Smartphone,
+  Type,
+  Vibrate,
+  Wrench,
+} from '@/components/icons'
 import { Platform, Pressable, View } from 'react-native'
 
 import { appLockSupported, authenticate, canUseAppLock } from '@/components/AppLock'
@@ -177,8 +191,18 @@ export default function SettingsScreen() {
               if (!perm.granted) toast(t('Allow notifications for Hermes in Android settings.'), 'warn')
             }
           }}
-          last
+          last={Platform.OS !== 'android'}
         />
+        {Platform.OS === 'android' ? (
+          <ToggleRow
+            icon={Activity}
+            title={t('Keep working in the background')}
+            subtitle={t('Shows a quiet "Hermes is working" notification during a turn so Android keeps the connection open')}
+            value={s.keepAlive}
+            onChange={(v) => s.set({ keepAlive: v })}
+            last
+          />
+        ) : null}
       </Section>
     </Screen>
   )

@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { Badge, Button, Row, Section, Sheet, Text, toast } from '@/components/ui'
-import { useT } from '@/i18n'
+import { t, useT } from '@/i18n'
 import { rpc, useRuntime } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { resetChat } from '@/store/chat'
@@ -32,6 +32,17 @@ export function useProfiles() {
   })
 }
 
+/** Point this phone at another Hermes profile (null = the default one); chats and caches restart. */
+export function switchProfile(name: string | null) {
+  const { connections, activeId } = useConnections.getState()
+  const conn = connections.find((x) => x.id === activeId)
+  if (!conn) return
+  useConnections.getState().setProfile(conn.id, name)
+  resetChat()
+  void queryClient.invalidateQueries()
+  toast(t('Switched to profile {name}', { name: name ?? t('default') }), 'success')
+}
+
 /** Which Hermes profile this phone works in. Sessions, skills, memory and config follow it. */
 export function ProfileSwitcher() {
   const t = useT()
@@ -43,12 +54,8 @@ export function ProfileSwitcher() {
   const currentRow = profiles.data?.find((p) => (current ? p.name === current : p.is_default)) ?? null
 
   const choose = (name: string | null) => {
-    if (!conn) return
-    useConnections.getState().setProfile(conn.id, name)
-    resetChat()
-    void queryClient.invalidateQueries()
     setOpen(false)
-    toast(t('Switched to profile {name}', { name: name ?? t('default') }), 'success')
+    switchProfile(name)
   }
 
   return (

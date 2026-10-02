@@ -1263,4 +1263,11 @@ export const tr: Record<string, string> = {
   'Nothing found': 'Bir şey bulunamadı',
   'Search features': 'Özelliklerde ara',
   'Telegram, backups, API keys…': 'Telegram, yedekler, API anahtarları…',
+  'All sessions': 'Tüm oturumlar',
+  'Backend: {name}': 'Sunucu: {name}',
+  'Chats, profiles and backends': 'Sohbetler, profiller ve sunucular',
+  'Filter chats': 'Sohbetleri filtrele',
+  'Manage backends': 'Sunucuları yönet',
+  'Manage…': 'Yönet…',
+  offline: 'çevrimdışı',
 }

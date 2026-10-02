@@ -8,6 +8,7 @@ import {
   ChevronUp,
   EllipsisVertical,
   History,
+  PanelLeft,
   PenSquare,
   Search,
   WifiOff,
@@ -15,11 +16,29 @@ import {
 } from '@/components/icons'
 import type { LucideIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
+import {
+  ActivityIndicator,
+  BackHandler,
+  FlatList,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from 'react-native'
+import ReanimatedDrawerLayout, {
+  DrawerKeyboardDismissMode,
+  DrawerPosition,
+  DrawerType,
+  type DrawerLayoutMethods,
+} from 'react-native-gesture-handler/ReanimatedDrawerLayout'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Composer } from '@/components/chat/Composer'
+import { ChatDrawer } from '@/components/chat/ChatDrawer'
 import { ConnectionCard } from '@/components/chat/ConnectionCard'
 import { MessageItem } from '@/components/chat/MessageItem'
 import { ModelPicker, REASONING_LEVELS } from '@/components/chat/ModelPicker'
@@ -199,6 +218,23 @@ export default function ChatScreen() {
   const [reasoningOpen, setReasoningOpen] = useState(false)
   const [editing, setEditing] = useState<ChatMessage | null>(null)
   const [awayFromEnd, setAwayFromEnd] = useState(false)
+  const { width } = useWindowDimensions()
+  const drawerRef = useRef<DrawerLayoutMethods>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  // Keep the drawer's content mounted after the first open so later swipes show it at once.
+  const drawerMounted = useRef(false)
+  if (drawerOpen) drawerMounted.current = true
+  const openDrawer = useCallback(() => {
+    drawerMounted.current = true
+    setDrawerOpen(true)
+    drawerRef.current?.openDrawer()
+  }, [])
+  const closeDrawer = useCallback(() => drawerRef.current?.closeDrawer(), [])
+  useEffect(() => {
+    if (!drawerOpen) return
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => (closeDrawer(), true))
+    return () => sub.remove()
+  }, [drawerOpen, closeDrawer])
   const listRef = useRef<FlatList<ChatMessage>>(null)
   useEffect(() => setAwayFromEnd(false), [activeId])
 
@@ -339,236 +375,252 @@ export default function ChatScreen() {
   const ctxPct = usage?.context_percent ?? null
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: insets.top }}>
-      {searching ? (
-        <View style={[styles.header, { borderBottomColor: c.border }]}>
-          <IconButton icon={X} label={t('Close search')} onPress={closeSearch} />
-          <TextInput
-            value={needle}
-            onChangeText={setNeedle}
-            autoFocus
-            placeholder={t('Search this chat')}
-            placeholderTextColor={c.textFaint}
-            returnKeyType="search"
-            onSubmitEditing={() => stepHit(1)}
-            accessibilityLabel={t('Search this chat')}
-            style={[styles.searchInput, { color: c.text, fontFamily: font.regular }]}
-          />
-          <Text variant="small" tone="muted" style={{ minWidth: 40, textAlign: 'center' }} accessibilityLiveRegion="polite">
-            {needle.trim() ? (hits.length ? `${hitIndex + 1}/${hits.length}` : '0') : ''}
-          </Text>
-          <IconButton icon={ChevronUp} label={t('Older match')} onPress={() => stepHit(1)} disabled={!hits.length} />
-          <IconButton icon={ChevronDown} label={t('Newer match')} onPress={() => stepHit(-1)} disabled={!hits.length} />
-        </View>
-      ) : (
-        <View style={[styles.header, { borderBottomColor: c.border }]}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('Chat options')}
-            onPress={() => session && setMenuOpen(true)}
-            style={{ flex: 1, minHeight: 48, justifyContent: 'center', paddingLeft: space.lg }}
-          >
-            <Text variant="title" numberOfLines={1}>
-              {session?.title || t('New chat')}
+    <ReanimatedDrawerLayout
+      ref={drawerRef}
+      drawerWidth={Math.min(width * 0.84, 340)}
+      drawerPosition={DrawerPosition.LEFT}
+      drawerType={DrawerType.FRONT}
+      edgeWidth={24}
+      overlayColor={c.overlay}
+      keyboardDismissMode={DrawerKeyboardDismissMode.ON_DRAG}
+      onDrawerOpen={() => setDrawerOpen(true)}
+      onDrawerClose={() => setDrawerOpen(false)}
+      renderNavigationView={() => (drawerOpen || drawerMounted.current ? <ChatDrawer onClose={closeDrawer} /> : null)}
+    >
+      <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: insets.top }}>
+        {searching ? (
+          <View style={[styles.header, { borderBottomColor: c.border }]}>
+            <IconButton icon={X} label={t('Close search')} onPress={closeSearch} />
+            <TextInput
+              value={needle}
+              onChangeText={setNeedle}
+              autoFocus
+              placeholder={t('Search this chat')}
+              placeholderTextColor={c.textFaint}
+              returnKeyType="search"
+              onSubmitEditing={() => stepHit(1)}
+              accessibilityLabel={t('Search this chat')}
+              style={[styles.searchInput, { color: c.text, fontFamily: font.regular }]}
+            />
+            <Text variant="small" tone="muted" style={{ minWidth: 40, textAlign: 'center' }} accessibilityLiveRegion="polite">
+              {needle.trim() ? (hits.length ? `${hitIndex + 1}/${hits.length}` : '0') : ''}
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View
-                style={[styles.dot, { backgroundColor: connState === 'open' ? c.success : connState === 'closed' ? c.danger : c.warn }]}
-              />
-              <Text variant="caption" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>
-                {[
-                  info.model,
-                  ctxPct != null ? t('{pct}% context', { pct: ctxPct }) : null,
-                  info.cwd ? String(info.cwd).split('/').pop() : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ') || t('Hermes Agent')}
-              </Text>
-            </View>
-          </Pressable>
-          {session?.messages.length ? <IconButton icon={Search} label={t('Search this chat')} onPress={() => setSearching(true)} /> : null}
-          <IconButton icon={PenSquare} label={t('New chat')} onPress={() => setActive(null)} />
-          <IconButton
-            icon={EllipsisVertical}
-            label={t('Chat options')}
-            onPress={() => (session ? setMenuOpen(true) : toast(t('Start a chat first.'), 'info'))}
-          />
-        </View>
-      )}
-
-      <ConnectionBanner />
-
-      {otherRequests.length ? (
-        <Pressable
-          onPress={() => {
-            const r = otherRequests[0]
-            const stored = Object.entries(useChat.getState().storedToRuntime).find(([, rid]) => rid === r.sessionId)?.[0]
-            if (useChat.getState().sessions[r.sessionId]) setActive(r.sessionId)
-            else if (stored) openStored(stored).catch(toastError)
-          }}
-          style={[styles.banner, { backgroundColor: c.accentSoft }]}
-          accessibilityRole="button"
-        >
-          <Text variant="small" tone="accent" weight="semibold">
-            {t('Another chat needs your input ({n})', { n: otherRequests.length })}
-          </Text>
-        </Pressable>
-      ) : null}
-
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-        {opening && !session ? (
-          <View style={styles.loading}>
-            <ActivityIndicator color={c.accent} />
+            <IconButton icon={ChevronUp} label={t('Older match')} onPress={() => stepHit(1)} disabled={!hits.length} />
+            <IconButton icon={ChevronDown} label={t('Newer match')} onPress={() => stepHit(-1)} disabled={!hits.length} />
           </View>
-        ) : !session || (session.historyLoaded && !session.messages.length && !session.loadingHistory) ? (
-          <EmptyChat onPick={(text) => handleSend(text, 'auto').catch(toastError)} />
         ) : (
-          <FlatList
-            ref={listRef}
-            data={data}
-            inverted
-            onScroll={(e) => setAwayFromEnd(e.nativeEvent.contentOffset.y > 600)}
-            onScrollToIndexFailed={(info) => {
-              // Rows have different heights: jump near it, then aim again once it is measured.
-              listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: false })
-              setTimeout(() => listRef.current?.scrollToIndex({ index: info.index, viewPosition: 0.4, animated: true }), 120)
-            }}
-            scrollEventThrottle={100}
-            keyExtractor={(m) => m.id}
-            renderItem={({ item, index }) => (
-              <MessageItem
-                message={item}
-                streaming={item.id === session.streamingId}
-                onReact={onReact}
-                onEdit={onEdit}
-                onRetry={index === 0 && item.role === 'assistant' && !session.busy ? onRetry : undefined}
-                highlighted={item.id === hitId}
-              />
-            )}
-            contentContainerStyle={[centered, { padding: space.lg, gap: space.lg }]}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-            onEndReached={() => session.hasMore && loadHistory(session.runtimeId, true)}
-            onEndReachedThreshold={0.4}
-            ListFooterComponent={session.loadingHistory ? <ActivityIndicator color={c.accent} style={{ margin: space.lg }} /> : null}
-            removeClippedSubviews={Platform.OS === 'android'}
-            maxToRenderPerBatch={8}
-            windowSize={11}
-          />
-        )}
-        {awayFromEnd && session ? (
-          <View style={styles.jumpWrap} pointerEvents="box-none">
+          <View style={[styles.header, { borderBottomColor: c.border }]}>
+            <IconButton icon={PanelLeft} label={t('Chats, profiles and backends')} onPress={openDrawer} />
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={t('Jump to the latest message')}
-              onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
-              style={({ pressed }) => [
-                styles.jump,
-                { backgroundColor: c.elevated, borderColor: c.borderStrong, opacity: pressed ? 0.8 : 1 },
-              ]}
+              accessibilityLabel={t('Chat options')}
+              onPress={() => session && setMenuOpen(true)}
+              style={{ flex: 1, minHeight: 48, justifyContent: 'center' }}
             >
-              <ArrowDown size={18} color={c.text} strokeWidth={2} />
-              {session.busy ? <View style={[styles.jumpDot, { backgroundColor: c.accent }]} /> : null}
-            </Pressable>
-          </View>
-        ) : null}
-
-        {Object.values(connections)
-          .filter((pc) => pc.sessionId === activeId)
-          .map((pc) => (
-            <View key={pc.op.op_id} style={{ paddingHorizontal: space.md, paddingBottom: space.sm }}>
-              <ConnectionCard pc={pc} />
-            </View>
-          ))}
-        {myRequests.length ? (
-          <View style={{ paddingHorizontal: space.md, gap: space.sm, paddingBottom: space.sm }}>
-            {myRequests.map((r) => (
-              <RequestCard key={r.id} req={r} />
-            ))}
-          </View>
-        ) : null}
-
-        {session ? <TodoPanel todos={session.todos} /> : null}
-        {session?.busy ? <BusyLine status={session.status} since={session.turnStartedAt} /> : null}
-
-        <View style={{ paddingBottom: insets.bottom > 0 ? 0 : space.sm }}>
-          <Composer
-            sessionId={activeId}
-            busy={!!session?.busy}
-            attachments={session?.attachments ?? NO_ATTACHMENTS}
-            editing={!!editing}
-            prefill={prefill}
-            onPrefillConsumed={onPrefillConsumed}
-            onCancelEdit={onCancelEdit}
-            onSend={onSend}
-            onStop={onStop}
-            ensureSession={ensureSession}
-            onAttachImage={onAttachImage}
-            onAttachFile={onAttachFile}
-            onAttachPdf={onAttachPdf}
-            onGenerateImage={onGenerateImage}
-            onRemoveAttachment={onRemoveAttachment}
-            pills={pills}
-          />
-        </View>
-      </KeyboardAvoidingView>
-
-      {session ? (
-        <SessionMenu
-          visible={menuOpen}
-          onClose={() => setMenuOpen(false)}
-          session={session}
-          onPickModel={() => setModelOpen(true)}
-          onPickReasoning={() => setReasoningOpen(true)}
-        />
-      ) : null}
-      <ModelPicker
-        visible={modelOpen}
-        onClose={() => setModelOpen(false)}
-        sessionId={activeId}
-        currentModel={info.model as string | undefined}
-        currentProvider={info.provider as string | undefined}
-      />
-      <Sheet visible={reasoningOpen} onClose={() => setReasoningOpen(false)} title={t('Reasoning effort')}>
-        <Text tone="muted" variant="small">
-          {t('How hard the model thinks before answering. Higher is slower and costs more.')}
-        </Text>
-        <View style={{ gap: space.xs }}>
-          {REASONING_LEVELS.map((level) => {
-            const on = (info.reasoning_effort || '') === level
-            return (
-              <Pressable
-                key={level}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                onPress={async () => {
-                  setReasoningOpen(false)
-                  try {
-                    const sid = await ensureSession()
-                    await rpc().request('config.set', { key: 'reasoning', value: level, session_id: sid })
-                    useChat.setState((st) => ({
-                      sessions: {
-                        ...st.sessions,
-                        [sid]: { ...st.sessions[sid], info: { ...st.sessions[sid].info, reasoning_effort: level } },
-                      },
-                    }))
-                    toast(t('Reasoning effort: {level}', { level }), 'success')
-                  } catch (e) {
-                    toastError(e)
-                  }
-                }}
-                style={[styles.option, { backgroundColor: on ? c.accentSoft : c.surfaceAlt }]}
-              >
-                <Text weight={on ? 'semibold' : 'regular'} style={{ flex: 1 }}>
-                  {level}
+              <Text variant="title" numberOfLines={1}>
+                {session?.title || t('New chat')}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View
+                  style={[styles.dot, { backgroundColor: connState === 'open' ? c.success : connState === 'closed' ? c.danger : c.warn }]}
+                />
+                <Text variant="caption" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>
+                  {[
+                    info.model,
+                    ctxPct != null ? t('{pct}% context', { pct: ctxPct }) : null,
+                    info.cwd ? String(info.cwd).split('/').pop() : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || t('Hermes Agent')}
                 </Text>
-                {on ? <Check size={18} color={c.accentText} /> : null}
+              </View>
+            </Pressable>
+            {session?.messages.length ? (
+              <IconButton icon={Search} label={t('Search this chat')} onPress={() => setSearching(true)} />
+            ) : null}
+            <IconButton icon={PenSquare} label={t('New chat')} onPress={() => setActive(null)} />
+            <IconButton
+              icon={EllipsisVertical}
+              label={t('Chat options')}
+              onPress={() => (session ? setMenuOpen(true) : toast(t('Start a chat first.'), 'info'))}
+            />
+          </View>
+        )}
+
+        <ConnectionBanner />
+
+        {otherRequests.length ? (
+          <Pressable
+            onPress={() => {
+              const r = otherRequests[0]
+              const stored = Object.entries(useChat.getState().storedToRuntime).find(([, rid]) => rid === r.sessionId)?.[0]
+              if (useChat.getState().sessions[r.sessionId]) setActive(r.sessionId)
+              else if (stored) openStored(stored).catch(toastError)
+            }}
+            style={[styles.banner, { backgroundColor: c.accentSoft }]}
+            accessibilityRole="button"
+          >
+            <Text variant="small" tone="accent" weight="semibold">
+              {t('Another chat needs your input ({n})', { n: otherRequests.length })}
+            </Text>
+          </Pressable>
+        ) : null}
+
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          {opening && !session ? (
+            <View style={styles.loading}>
+              <ActivityIndicator color={c.accent} />
+            </View>
+          ) : !session || (session.historyLoaded && !session.messages.length && !session.loadingHistory) ? (
+            <EmptyChat onPick={(text) => handleSend(text, 'auto').catch(toastError)} />
+          ) : (
+            <FlatList
+              ref={listRef}
+              data={data}
+              inverted
+              onScroll={(e) => setAwayFromEnd(e.nativeEvent.contentOffset.y > 600)}
+              onScrollToIndexFailed={(info) => {
+                // Rows have different heights: jump near it, then aim again once it is measured.
+                listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: false })
+                setTimeout(() => listRef.current?.scrollToIndex({ index: info.index, viewPosition: 0.4, animated: true }), 120)
+              }}
+              scrollEventThrottle={100}
+              keyExtractor={(m) => m.id}
+              renderItem={({ item, index }) => (
+                <MessageItem
+                  message={item}
+                  streaming={item.id === session.streamingId}
+                  onReact={onReact}
+                  onEdit={onEdit}
+                  onRetry={index === 0 && item.role === 'assistant' && !session.busy ? onRetry : undefined}
+                  highlighted={item.id === hitId}
+                />
+              )}
+              contentContainerStyle={[centered, { padding: space.lg, gap: space.lg }]}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              onEndReached={() => session.hasMore && loadHistory(session.runtimeId, true)}
+              onEndReachedThreshold={0.4}
+              ListFooterComponent={session.loadingHistory ? <ActivityIndicator color={c.accent} style={{ margin: space.lg }} /> : null}
+              removeClippedSubviews={Platform.OS === 'android'}
+              maxToRenderPerBatch={8}
+              windowSize={11}
+            />
+          )}
+          {awayFromEnd && session ? (
+            <View style={styles.jumpWrap} pointerEvents="box-none">
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('Jump to the latest message')}
+                onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
+                style={({ pressed }) => [
+                  styles.jump,
+                  { backgroundColor: c.elevated, borderColor: c.borderStrong, opacity: pressed ? 0.8 : 1 },
+                ]}
+              >
+                <ArrowDown size={18} color={c.text} strokeWidth={2} />
+                {session.busy ? <View style={[styles.jumpDot, { backgroundColor: c.accent }]} /> : null}
               </Pressable>
-            )
-          })}
-        </View>
-      </Sheet>
-    </View>
+            </View>
+          ) : null}
+
+          {Object.values(connections)
+            .filter((pc) => pc.sessionId === activeId)
+            .map((pc) => (
+              <View key={pc.op.op_id} style={{ paddingHorizontal: space.md, paddingBottom: space.sm }}>
+                <ConnectionCard pc={pc} />
+              </View>
+            ))}
+          {myRequests.length ? (
+            <View style={{ paddingHorizontal: space.md, gap: space.sm, paddingBottom: space.sm }}>
+              {myRequests.map((r) => (
+                <RequestCard key={r.id} req={r} />
+              ))}
+            </View>
+          ) : null}
+
+          {session ? <TodoPanel todos={session.todos} /> : null}
+          {session?.busy ? <BusyLine status={session.status} since={session.turnStartedAt} /> : null}
+
+          <View style={{ paddingBottom: insets.bottom > 0 ? 0 : space.sm }}>
+            <Composer
+              sessionId={activeId}
+              busy={!!session?.busy}
+              attachments={session?.attachments ?? NO_ATTACHMENTS}
+              editing={!!editing}
+              prefill={prefill}
+              onPrefillConsumed={onPrefillConsumed}
+              onCancelEdit={onCancelEdit}
+              onSend={onSend}
+              onStop={onStop}
+              ensureSession={ensureSession}
+              onAttachImage={onAttachImage}
+              onAttachFile={onAttachFile}
+              onAttachPdf={onAttachPdf}
+              onGenerateImage={onGenerateImage}
+              onRemoveAttachment={onRemoveAttachment}
+              pills={pills}
+            />
+          </View>
+        </KeyboardAvoidingView>
+
+        {session ? (
+          <SessionMenu
+            visible={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            session={session}
+            onPickModel={() => setModelOpen(true)}
+            onPickReasoning={() => setReasoningOpen(true)}
+          />
+        ) : null}
+        <ModelPicker
+          visible={modelOpen}
+          onClose={() => setModelOpen(false)}
+          sessionId={activeId}
+          currentModel={info.model as string | undefined}
+          currentProvider={info.provider as string | undefined}
+        />
+        <Sheet visible={reasoningOpen} onClose={() => setReasoningOpen(false)} title={t('Reasoning effort')}>
+          <Text tone="muted" variant="small">
+            {t('How hard the model thinks before answering. Higher is slower and costs more.')}
+          </Text>
+          <View style={{ gap: space.xs }}>
+            {REASONING_LEVELS.map((level) => {
+              const on = (info.reasoning_effort || '') === level
+              return (
+                <Pressable
+                  key={level}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
+                  onPress={async () => {
+                    setReasoningOpen(false)
+                    try {
+                      const sid = await ensureSession()
+                      await rpc().request('config.set', { key: 'reasoning', value: level, session_id: sid })
+                      useChat.setState((st) => ({
+                        sessions: {
+                          ...st.sessions,
+                          [sid]: { ...st.sessions[sid], info: { ...st.sessions[sid].info, reasoning_effort: level } },
+                        },
+                      }))
+                      toast(t('Reasoning effort: {level}', { level }), 'success')
+                    } catch (e) {
+                      toastError(e)
+                    }
+                  }}
+                  style={[styles.option, { backgroundColor: on ? c.accentSoft : c.surfaceAlt }]}
+                >
+                  <Text weight={on ? 'semibold' : 'regular'} style={{ flex: 1 }}>
+                    {level}
+                  </Text>
+                  {on ? <Check size={18} color={c.accentText} /> : null}
+                </Pressable>
+              )
+            })}
+          </View>
+        </Sheet>
+      </View>
+    </ReanimatedDrawerLayout>
   )
 }
 

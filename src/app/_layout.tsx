@@ -6,6 +6,7 @@ import { DarkTheme, DefaultTheme, SplashScreen, Stack, ThemeProvider } from 'exp
 import { StatusBar } from 'expo-status-bar'
 import * as SystemUI from 'expo-system-ui'
 import { useEffect, useState } from 'react'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
@@ -55,9 +56,11 @@ export default function RootLayout() {
   if (!ready) return null
 
   return (
-    <AppThemeProvider>
-      <AppShell />
-    </AppThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppThemeProvider>
+        <AppShell />
+      </AppThemeProvider>
+    </GestureHandlerRootView>
   )
 }
 

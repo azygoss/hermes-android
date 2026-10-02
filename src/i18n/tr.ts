@@ -1277,4 +1277,11 @@ export const tr: Record<string, string> = {
   'Stop selecting': 'Seçimi bitir',
   '{n} chats deleted': '{n} sohbet silindi',
   '{n} selected': '{n} seçili',
+  'Drag onto a column above': 'Yukarıdaki bir sütuna sürükle',
+  'Drop to move to {col}': '{col} sütununa taşımak için bırak',
+  'Hermes works out the times when you save.': 'Hermes zamanları kaydettiğinde hesaplar.',
+  'Long-press and drag onto a column to move it': 'Taşımak için basılı tutup bir sütuna sürükle',
+  'Next runs': 'Sonraki çalışmalar',
+  'This schedule never runs in the next year.': 'Bu plan önümüzdeki bir yıl içinde hiç çalışmıyor.',
+  'server time, {zone}': 'sunucu saati, {zone}',
 }

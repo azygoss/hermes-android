@@ -1,8 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
 import { Archive, KanbanSquare, MessageSquare, Plus, Rocket, Send, Trash2, Undo2 } from '@/components/icons'
-import { useState } from 'react'
+import * as Haptics from 'expo-haptics'
+import { useMemo, useRef, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 
 import {
   Badge,
@@ -25,6 +28,7 @@ import { relativeTime } from '@/lib/format'
 import { useRest } from '@/lib/hooks'
 import { rest } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
+import { useSettings } from '@/store/settings'
 import { radius, space, useTheme } from '@/theme'
 
 const BASE = '/api/plugins/kanban'
@@ -71,8 +75,57 @@ export default function KanbanScreen() {
   const cols = q.data?.columns ?? []
   const tasks = cols.find((x) => x.name === column)?.tasks ?? []
 
+  // Drag a card onto a column chip to move it. Chip rectangles are measured when a drag starts.
+  const chipRefs = useRef<Record<string, View | null>>({})
+  const rects = useRef<Record<string, { x: number; y: number; w: number; h: number }>>({})
+  const rootRef = useRef<View>(null)
+  const origin = useRef({ x: 0, y: 0 })
+  const [drag, setDrag] = useState<{ task: Task } | null>(null)
+  const [hover, setHover] = useState<string | null>(null)
+  const ghostX = useSharedValue(0)
+  const ghostY = useSharedValue(0)
+  const ghostStyle = useAnimatedStyle(() => ({ transform: [{ translateX: ghostX.value }, { translateY: ghostY.value }] }))
+  const columnAt = (x: number, y: number) =>
+    Object.entries(rects.current).find(([, r]) => x >= r.x - 8 && x <= r.x + r.w + 8 && y >= r.y - 16 && y <= r.y + r.h + 16)?.[0] ?? null
+  const dragApi = {
+    start: (task: Task, x: number, y: number) => {
+      rootRef.current?.measureInWindow((ox, oy) => (origin.current = { x: ox, y: oy }))
+      for (const [name, ref] of Object.entries(chipRefs.current))
+        ref?.measureInWindow((rx, ry, w, h) => (rects.current[name] = { x: rx, y: ry, w, h }))
+      ghostX.value = x - origin.current.x - 24
+      ghostY.value = y - origin.current.y + 36
+      setDrag({ task })
+      if (useSettings.getState().haptics) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    },
+    move: (x: number, y: number) => {
+      ghostX.value = x - origin.current.x - 24
+      ghostY.value = y - origin.current.y + 36
+      const over = columnAt(x, y)
+      setHover((h) => (h === over ? h : over))
+    },
+    end: async (x: number, y: number) => {
+      const target = columnAt(x, y)
+      const task = drag?.task
+      setDrag(null)
+      setHover(null)
+      if (!task || !target || target === task.status) return
+      try {
+        await rest().patch(`${BASE}/tasks/${task.id}`, { status: target }, { query: { board } })
+        toast(t('Moved to {col}', { col: target }), 'success')
+        if (useSettings.getState().haptics) void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      } catch (e) {
+        toastError(e)
+      }
+      await refresh()
+    },
+    cancel: () => {
+      setDrag(null)
+      setHover(null)
+    },
+  }
+
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
+    <View ref={rootRef} collapsable={false} style={{ flex: 1, backgroundColor: c.bg }}>
       <Stack.Screen
         options={{
           title: t('Kanban'),
@@ -88,12 +141,19 @@ export default function KanbanScreen() {
       ) : null}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={styles.chips}>
         {cols.map((col) => (
-          <Chip
+          <View
             key={col.name}
-            label={`${col.name} · ${col.tasks.length}`}
-            selected={col.name === column}
-            onPress={() => setColumn(col.name)}
-          />
+            ref={(r) => {
+              chipRefs.current[col.name] = r
+            }}
+            collapsable={false}
+            style={[
+              styles.dropTarget,
+              drag && hover === col.name && col.name !== drag.task.status && { borderColor: c.accent, backgroundColor: c.accentSoft },
+            ]}
+          >
+            <Chip label={`${col.name} · ${col.tasks.length}`} selected={col.name === column} onPress={() => setColumn(col.name)} />
+          </View>
         ))}
       </ScrollView>
       <Screen refreshing={q.isRefetching} onRefresh={refresh}>
@@ -101,32 +161,19 @@ export default function KanbanScreen() {
         {q.error ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : null}
         {!q.isLoading && !tasks.length ? <EmptyState icon={KanbanSquare} title={t('Nothing in {col}', { col: column })} /> : null}
         {tasks.map((task) => (
-          <Pressable
-            key={task.id}
-            accessibilityRole="button"
-            onPress={() => setSelected(task)}
-            style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
-          >
-            <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
-              <Text weight="semibold" style={{ flex: 1 }} numberOfLines={2}>
-                {task.title}
-              </Text>
-              {task.priority ? <Badge label={`P${task.priority}`} tone={task.priority >= 2 ? 'warn' : 'default'} /> : null}
-            </View>
-            {task.latest_summary || task.body ? (
-              <Text variant="small" tone="muted" numberOfLines={2}>
-                {task.latest_summary || task.body}
-              </Text>
-            ) : null}
-            <View style={{ flexDirection: 'row', gap: space.xs }}>
-              <Badge label={task.assignee ?? t('unassigned')} tone={task.assignee ? 'info' : 'default'} />
-              <Text variant="caption" tone="faint">
-                {relativeTime(task.created_at)}
-              </Text>
-            </View>
-          </Pressable>
+          <DraggableTask key={task.id} task={task} dragging={drag?.task.id === task.id} onOpen={setSelected} drag={dragApi} />
         ))}
       </Screen>
+      {drag ? (
+        <Animated.View pointerEvents="none" style={[styles.ghost, { backgroundColor: c.elevated, borderColor: c.accent }, ghostStyle]}>
+          <Text weight="semibold" numberOfLines={2}>
+            {drag.task.title}
+          </Text>
+          <Text variant="caption" tone="muted">
+            {hover && hover !== drag.task.status ? t('Drop to move to {col}', { col: hover }) : t('Drag onto a column above')}
+          </Text>
+        </Animated.View>
+      ) : null}
       <TaskSheet
         task={selected}
         board={board}
@@ -379,7 +426,87 @@ function CreateTask({
   )
 }
 
+interface DragApi {
+  start: (task: Task, x: number, y: number) => void
+  move: (x: number, y: number) => void
+  end: (x: number, y: number) => void
+  cancel: () => void
+}
+
+/** A task card: tap opens it, long-press lifts it so it can be dropped on a column chip. */
+function DraggableTask({ task, dragging, onOpen, drag }: { task: Task; dragging: boolean; onOpen: (t: Task) => void; drag: DragApi }) {
+  const t = useT()
+  const { c } = useTheme()
+  const api = useRef(drag)
+  api.current = drag
+  const gesture = useMemo(
+    () =>
+      Gesture.Exclusive(
+        Gesture.Pan()
+          .runOnJS(true)
+          .activateAfterLongPress(320)
+          .onStart((e) => api.current.start(task, e.absoluteX, e.absoluteY))
+          .onUpdate((e) => api.current.move(e.absoluteX, e.absoluteY))
+          .onEnd((e) => api.current.end(e.absoluteX, e.absoluteY))
+          .onFinalize((_e, ok) => !ok && api.current.cancel()),
+        Gesture.Tap()
+          .runOnJS(true)
+          // Open on the next tick: a browser's follow-up click would otherwise land on the new
+          // sheet's backdrop and close it straight away.
+          .onEnd((_e, ok) => {
+            if (ok) setTimeout(() => onOpen(task), 60)
+          }),
+      ),
+    [task, onOpen],
+  )
+  return (
+    <GestureDetector gesture={gesture}>
+      <View
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={task.title}
+        accessibilityHint={t('Long-press and drag onto a column to move it')}
+        accessibilityActions={[{ name: 'activate' }]}
+        onAccessibilityAction={() => onOpen(task)}
+        style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, opacity: dragging ? 0.35 : 1 }]}
+      >
+        <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
+          <Text weight="semibold" style={{ flex: 1 }} numberOfLines={2}>
+            {task.title}
+          </Text>
+          {task.priority ? <Badge label={`P${task.priority}`} tone={task.priority >= 2 ? 'warn' : 'default'} /> : null}
+        </View>
+        {task.latest_summary || task.body ? (
+          <Text variant="small" tone="muted" numberOfLines={2}>
+            {task.latest_summary || task.body}
+          </Text>
+        ) : null}
+        <Text variant="caption" tone="faint">
+          {[task.assignee ?? t('unassigned'), relativeTime(task.created_at)].filter(Boolean).join(' · ')}
+        </Text>
+      </View>
+    </GestureDetector>
+  )
+}
+
 const styles = StyleSheet.create({
+  dropTarget: { borderRadius: radius.pill, borderWidth: 1.5, borderColor: 'transparent', padding: 2 },
+  ghost: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: 240,
+    padding: space.md,
+    gap: 4,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    zIndex: 50,
+  },
   chips: { gap: space.xs, paddingHorizontal: space.lg, paddingVertical: space.sm },
   card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg, padding: space.md, gap: space.xs },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },

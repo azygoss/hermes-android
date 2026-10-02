@@ -1,16 +1,19 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { Cpu, Save } from '@/components/icons'
-import { useEffect, useState } from 'react'
-import { View } from 'react-native'
+import { CalendarClock, Cpu, Save } from '@/components/icons'
+import { useEffect, useMemo, useState } from 'react'
+import { StyleSheet, View } from 'react-native'
 
 import type { CronJob } from '@/components/cron/types'
 import { ModelChooser } from '@/components/ModelChooser'
 import { Button, Chip, ErrorState, Loading, Row, Screen, Section, Text, TextField, toast, toastError, ToggleRow } from '@/components/ui'
 import { useT } from '@/i18n'
+import { nextRuns, offsetFromIso, offsetLabel, serverWallClock } from '@/lib/cron'
+import { relativeTime } from '@/lib/format'
 import { useRest } from '@/lib/hooks'
 import { rest } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
-import { space } from '@/theme'
+import { useSettings } from '@/store/settings'
+import { radius, space, useTheme } from '@/theme'
 
 const PRESETS = ['every 30m', 'every 1h', 'every 6h', '0 9 * * *', '0 9 * * 1-5', '0 18 * * 5', '0 8 1 * *']
 
@@ -116,6 +119,7 @@ export default function CronEdit() {
             <Chip key={p} label={p} selected={schedule === p} onPress={() => setSchedule(p)} />
           ))}
         </View>
+        <NextRunsPreview schedule={schedule} />
       </View>
       <View style={{ gap: space.sm }}>
         <Text variant="small" weight="medium" tone="muted">
@@ -176,3 +180,51 @@ export default function CronEdit() {
     </Screen>
   )
 }
+
+/** The next few run times for interval and cron schedules, on the server's clock. */
+function NextRunsPreview({ schedule }: { schedule: string }) {
+  const t = useT()
+  const { c } = useTheme()
+  const lang = useSettings((s) => s.language)
+  const jobs = useRest<CronJob[]>(['cron', 'jobs'], '/api/cron/jobs')
+  // The server writes timestamps in its own zone; any of them tells us the offset.
+  const serverOffset =
+    (jobs.data ?? []).map((j) => offsetFromIso(j.next_run_at ?? j.last_run_at)).find((o) => o != null) ?? -new Date().getTimezoneOffset()
+  const runs = useMemo(() => nextRuns(schedule, serverOffset), [schedule, serverOffset])
+  if (!schedule.trim()) return null
+  const locale = lang === 'system' ? undefined : lang
+  const phoneOffset = -new Date().getTimezoneOffset()
+  return (
+    <View style={[styles.preview, { backgroundColor: c.surface, borderColor: c.border }]} accessibilityLiveRegion="polite">
+      <CalendarClock size={16} color={c.textMuted} strokeWidth={1.75} style={{ marginTop: 2 }} />
+      <View style={{ flex: 1, gap: 2 }}>
+        {runs === null ? (
+          <Text variant="small" tone="muted">
+            {t('Hermes works out the times when you save.')}
+          </Text>
+        ) : runs.length ? (
+          <>
+            <Text variant="small" tone="muted">
+              {t('Next runs')}
+              {serverOffset !== phoneOffset ? ` · ${t('server time, {zone}', { zone: offsetLabel(serverOffset) })}` : ''}
+            </Text>
+            {runs.map((r) => (
+              <Text key={r} variant="small">
+                {serverWallClock(r, serverOffset, locale)}
+                <Text variant="small" tone="faint">{`  ${relativeTime(r)}`}</Text>
+              </Text>
+            ))}
+          </>
+        ) : (
+          <Text variant="small" tone="warn">
+            {t('This schedule never runs in the next year.')}
+          </Text>
+        )}
+      </View>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  preview: { flexDirection: 'row', gap: space.sm, padding: space.md, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth },
+})

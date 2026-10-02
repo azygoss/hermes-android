@@ -86,6 +86,7 @@ Telegram, cron…): `GET /api/sessions`, `/api/sessions/search`, `PATCH`/`DELETE
 | Hermes CLI console | `cli.exec` |
 | Bot screen (computer-use desktop) | `display.status/start/stop/install/thumbnail` |
 | Plan, credits and free tier | `billing.state`, `subscription.state`, `usage.bars`, `free_tier.*` |
+| Plan limits per signed-in provider | `model.options` (signed-in providers), then `cli.exec` → `hermes usage --provider <slug> --json` |
 
 ## Not exposed, and why
 

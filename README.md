@@ -6,7 +6,7 @@ A native Android app for [Hermes Agent](https://github.com/NousResearch/hermes-a
 
 Built with React Native (Expo SDK 57). English and Turkish UI.
 
-**[Download the latest APK](https://github.com/azygoss/hermes-android/releases/latest)**
+**[Download the latest APK](https://github.com/azygoss/hermes-android/releases/latest)** (`-arm64` is smaller and fits almost every phone from the last years; the plain one also runs on older 32-bit devices)
 
 <p>
   <img src="docs/screenshots/chat-markdown.png" width="200" alt="Streaming chat with markdown">
@@ -77,7 +77,7 @@ qrencode -t ansiutf8 "hermes://connect?url=http://127.0.0.1:9119&token=$HERMES_D
 
 ## Features
 
-- **Chat** with streaming replies, reasoning, tool cards (terminal output, diffs, todos, images), markdown and code blocks with copy.
+- **Chat** with streaming replies, reasoning, tool cards (terminal output, diffs, todos, images), markdown and syntax-highlighted code blocks with copy, per-chat drafts.
 - **Agent requests**: approve or deny dangerous commands, answer clarify questions, enter sudo passwords, secrets and vault codes, and approve connector/MCP/plugin installs the agent asks for.
 - **Composer**: slash-command and `@file` completion, photo/camera/PDF/file attachments, voice input (transcribed by the backend), image generation, `!command` shell, steer or interrupt-and-redirect a running turn, edit and resend.
 - **Per-chat controls**: model and reasoning pickers, fast mode, YOLO, approval mode, personality, working directory, rename, retry, undo, branch, compress, `/btw` side questions, background tasks, export, hand off to Telegram/Discord, usage and context breakdown, subagents and processes, goals/loops/heartbeats, checkpoints and rollback.
@@ -85,7 +85,8 @@ qrencode -t ansiutf8 "hermes://connect?url=http://127.0.0.1:9119&token=$HERMES_D
 - **Agent**: profiles (SOUL.md, model, avatar, skills, toolsets, MCP), main/auxiliary models and Mixture of Agents, memory notebooks and providers, learning journey, skills and the Skills Hub, toolsets with provider keys, MCP servers (catalog, OAuth, keys, tests), plugins, connectors, projects, credential vault, pets.
 - **Automate**: cron jobs and blueprints, kanban board, group rooms with several profiles, background agents, messaging platforms with guided Telegram/WhatsApp setup, pairing approvals, webhooks.
 - **Backend**: file browser with preview, upload and download, analytics, live logs, API keys, OAuth accounts and key pools, config (summary, form, raw YAML), system health (doctor, security audit, backups, updates, curator, hooks, CDP browser), Hermes CLI console, bot screen viewer, plan and credits.
-- **App**: multiple backends, profile switching, dark/light themes with accent colours or the backend's skin, text size, read-aloud with backend or on-device TTS, notifications when a turn finishes or needs you in the background.
+- **Plan limits**: what is left on each subscription the backend is signed in to (Codex 5-hour and weekly windows, OpenCode Go rolling/weekly/monthly, Anthropic, OpenRouter credits; Command Code with the plugin in [`extras/hermes-plugins`](extras/hermes-plugins)), under More.
+- **App**: multiple backends, profile switching, dark/light themes with accent colours or the backend's skin, text size, fingerprint/screen-lock app lock, read-aloud with backend or on-device TTS, notifications when a turn finishes or needs you in the background, sessions and model info shown instantly from a local cache.
 
 ## Build from source
 

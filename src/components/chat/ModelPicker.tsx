@@ -4,9 +4,11 @@ import { useMemo, useState } from 'react'
 import { FlatList, Pressable, View } from 'react-native'
 
 import { Button, confirm, ErrorState, Loading, prompt, Sheet, Text, TextField, toast, toastError, ToggleRow } from '@/components/ui'
-import { useT } from '@/i18n'
+import { t, useT } from '@/i18n'
 import type { ModelOptionsResult } from '@/lib/gateway/contract.generated'
-import { rpc } from '@/lib/hermes'
+import { rest, rpc } from '@/lib/hermes'
+import { queryClient } from '@/lib/query'
+import { closeRuntime, newChat, useChat } from '@/store/chat'
 import { radius, space, useTheme } from '@/theme'
 
 interface Props {
@@ -18,24 +20,75 @@ interface Props {
   onChanged?: () => void
 }
 
-export async function switchModel(sessionId: string | null, model: string, provider: string, global: boolean) {
-  // Without an explicit flag a provider switch may persist, so say which one we mean.
-  const value = `${model} --provider ${provider} ${global || !sessionId ? '--global' : '--session'}`
-  const send = (confirmExpensive: boolean) =>
-    rpc().request('config.set', {
-      key: 'model',
-      value,
-      session_id: sessionId,
-      ...(confirmExpensive ? { confirm_expensive_model: true } : {}),
-    })
+async function confirmed<T extends { confirm_required?: boolean | null; confirm_message?: string | null }>(
+  send: (force: boolean) => Promise<T>,
+) {
   let res = await send(false)
-  if ((res as { confirm_required?: boolean }).confirm_required) {
-    const ok = await confirm(String((res as { confirm_message?: string }).confirm_message ?? 'This model is expensive. Switch anyway?'))
-    if (!ok) return false
+  if (res?.confirm_required) {
+    if (!(await confirm(res.confirm_message ?? t('This model is expensive. Switch anyway?')))) return null
     res = await send(true)
   }
-  if ((res as { warning?: string }).warning) toast(String((res as { warning?: string }).warning), 'warn')
+  return res
+}
+
+/** Switch the model of a live chat only (config.set needs a live session). */
+async function switchSession(sessionId: string, model: string, provider: string) {
+  const res = await confirmed((force) =>
+    rpc().request('config.set', {
+      key: 'model',
+      // Without an explicit flag a provider switch may persist, so say we mean this chat only.
+      value: `${model} --provider ${provider} --session`,
+      session_id: sessionId,
+      ...(force ? { confirm_expensive_model: true } : {}),
+    }),
+  )
+  if (!res) return false
+  if (res.warning) toast(res.warning, 'warn')
+  useChat.setState((st) => {
+    const cur = st.sessions[sessionId]
+    if (!cur) return st
+    return { sessions: { ...st.sessions, [sessionId]: { ...cur, info: { ...cur.info, ...(res.info ?? {}), model, provider } } } }
+  })
   return true
+}
+
+/** Make the model the profile default (same route as the Models screen). */
+async function switchDefault(model: string, provider: string) {
+  const res = await confirmed((force) =>
+    rest().post<{ confirm_required?: boolean; confirm_message?: string }>('/api/model/set', {
+      scope: 'main',
+      provider,
+      model,
+      ...(force ? { confirm_expensive_model: true } : {}),
+    }),
+  )
+  if (!res) return false
+  await queryClient.invalidateQueries({ queryKey: ['model-info'] })
+  return true
+}
+
+/** A chat that exists but has not run a turn yet: its agent is built lazily, so config.set is lost. */
+function isFresh(sessionId: string | null) {
+  const s = sessionId ? useChat.getState().sessions[sessionId] : null
+  return !!s && !s.busy && !s.messages.some((m) => m.role !== 'system') && !s.attachments.length
+}
+
+/** Start the chat on the picked model (session.create applies it to the first turn). */
+async function startOn(sessionId: string | null, model: string, provider: string) {
+  if (sessionId) await closeRuntime(sessionId)
+  await newChat({ model, provider })
+  return true
+}
+
+/**
+ * Apply a model pick. "Default" persists it for new chats; the open chat follows either way.
+ * A chat that has not run yet is (re)created on the model, because a live switch only takes
+ * effect once the agent exists.
+ */
+export async function switchModel(sessionId: string | null, model: string, provider: string, makeDefault: boolean) {
+  if (makeDefault && !(await switchDefault(model, provider))) return false
+  if (!sessionId || isFresh(sessionId)) return makeDefault && !sessionId ? true : startOn(sessionId, model, provider)
+  return switchSession(sessionId, model, provider)
 }
 
 export function ModelPicker({ visible, onClose, sessionId, currentModel, currentProvider, onChanged }: Props) {
@@ -137,9 +190,8 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
           <ToggleRow
             title={t('Make it the default')}
             subtitle={t('Otherwise only this chat switches.')}
-            value={global || !sessionId}
+            value={global}
             onChange={setGlobal}
-            disabled={!sessionId}
             last
           />
         </View>

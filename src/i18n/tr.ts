@@ -1184,4 +1184,5 @@ export const tr: Record<string, string> = {
   '{n} variables reloaded': '{n} değişken yeniden yüklendi',
   Installed: 'Kurulu',
   'Search {n} pets': '{n} evcil hayvanda ara',
+  'This model is expensive. Switch anyway?': 'Bu model pahalı. Yine de geçilsin mi?',
 }

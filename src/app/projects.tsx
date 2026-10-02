@@ -25,7 +25,7 @@ import { useT } from '@/i18n'
 import { relativeTime } from '@/lib/format'
 import type { ProjectInfo } from '@/lib/gateway/contract.generated'
 import { useRpc } from '@/lib/hooks'
-import { hermes, rpc } from '@/lib/hermes'
+import { hermes, rpc, useProfile } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { newChat } from '@/store/chat'
 import { radius, space, useTheme } from '@/theme'
@@ -33,7 +33,7 @@ import { radius, space, useTheme } from '@/theme'
 export default function ProjectsScreen() {
   const t = useT()
   const { c } = useTheme()
-  const profile = hermes().profile
+  const profile = useProfile()
   const q = useRpc(['projects', profile], 'projects.list', { profile })
   const [selected, setSelected] = useState<ProjectInfo | null>(null)
   const [creating, setCreating] = useState(false)
@@ -104,7 +104,7 @@ function ProjectSheet({
   onChanged: () => void
 }) {
   const t = useT()
-  const profile = hermes().profile
+  const profile = useProfile()
   const sessions = useRpc(
     ['projects', 'sessions', project?.id],
     'projects.project_sessions',

@@ -80,13 +80,13 @@ export default function KanbanScreen() {
         }}
       />
       {(boards.data?.boards.length ?? 0) > 1 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={styles.chips}>
           {boards.data!.boards.map((b) => (
             <Chip key={b.slug} label={b.name} selected={b.slug === board} onPress={() => setSlug(b.slug)} />
           ))}
         </ScrollView>
       ) : null}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={styles.chips}>
         {cols.map((col) => (
           <Chip
             key={col.name}

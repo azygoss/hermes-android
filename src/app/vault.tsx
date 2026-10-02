@@ -25,13 +25,13 @@ import {
 import { useT } from '@/i18n'
 import type { VaultKind } from '@/lib/gateway/contract.generated'
 import { useRpc } from '@/lib/hooks'
-import { hermes, rpc } from '@/lib/hermes'
+import { hermes, rpc, useProfile } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { space } from '@/theme'
 
 export default function VaultScreen() {
   const t = useT()
-  const profile = hermes().profile
+  const profile = useProfile()
   const sources = useRpc(['vault', 'sources', profile], 'vault.sources', { profile })
   const items = useRpc(['vault', 'items', profile], 'vault.list', { profile })
   const [adding, setAdding] = useState(false)

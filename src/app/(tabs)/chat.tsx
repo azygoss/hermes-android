@@ -15,6 +15,7 @@ import { Button, Chip, IconButton, Sheet, Text, toast, toastError } from '@/comp
 import { useT } from '@/i18n'
 import type { ChatMessage } from '@/lib/chat/types'
 import { textOf } from '@/lib/chat/types'
+import { useRest } from '@/lib/hooks'
 import { rpc, useRuntime } from '@/lib/hermes'
 import {
   attachFile,
@@ -179,7 +180,8 @@ export default function ChatScreen() {
     return true
   }
 
-  const info = session?.info ?? {}
+  const defaultModel = useRest<{ model?: string; provider?: string }>(['model-info'], '/api/model/info', undefined, { enabled: !session })
+  const info = session?.info ?? { model: defaultModel.data?.model, provider: defaultModel.data?.provider }
   const usage = session?.usage
   const ctxPct = usage?.context_percent ?? null
 

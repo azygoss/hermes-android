@@ -18,6 +18,7 @@ import {
   Send,
   ShieldOff,
   Shrink,
+  Smile,
   Target,
   Trash2,
   Undo2,
@@ -33,6 +34,24 @@ import { useT } from '@/i18n'
 import type { ChatSession } from '@/lib/chat/types'
 import { rest, rpc } from '@/lib/hermes'
 import { space } from '@/theme'
+
+// Built-in personalities from hermes_cli/personality.py.
+const BUILTIN_PERSONALITIES = [
+  'helpful',
+  'concise',
+  'technical',
+  'creative',
+  'teacher',
+  'kawaii',
+  'catgirl',
+  'pirate',
+  'shakespeare',
+  'surfer',
+  'noir',
+  'uwu',
+  'philosopher',
+  'hype',
+]
 
 interface Props {
   visible: boolean
@@ -114,6 +133,21 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
               const next = order[(order.indexOf(String(info.approval_mode)) + 1) % order.length]
               await setFlag('approval_mode', next)
               toast(t('Approval mode: {mode}', { mode: next }), 'info')
+            })}
+          />
+          <Row
+            icon={Smile}
+            title={t('Personality')}
+            value={String(info.personality || t('none'))}
+            onPress={run(async () => {
+              const cfg = (await rpc().request('config.get', { key: 'full' })) as { config?: Record<string, any> }
+              const custom = Object.keys({ ...(cfg.config?.personalities ?? {}), ...(cfg.config?.agent?.personalities ?? {}) })
+              const names = ['none', ...BUILTIN_PERSONALITIES, ...custom.filter((n) => !BUILTIN_PERSONALITIES.includes(n))]
+              const pick = await prompt(t('Personality'), { message: names.join(', '), initial: String(info.personality || 'none') })
+              if (!pick) return
+              const res = await rpc().request('config.set', { key: 'personality', value: pick.trim(), session_id: sid })
+              if ((res as { history_reset?: boolean }).history_reset) toast(t('Personality changed; the chat starts fresh.'), 'info')
+              else toast(t('Personality: {name}', { name: pick.trim() }), 'success')
             })}
           />
           <Row

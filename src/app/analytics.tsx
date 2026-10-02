@@ -213,6 +213,6 @@ export default function AnalyticsScreen() {
 
 const styles = StyleSheet.create({
   plot: { height: 140, flexDirection: 'row', alignItems: 'flex-end', gap: 2, borderBottomWidth: 1 },
-  barHit: { flex: 1, height: '100%', justifyContent: 'flex-end' },
+  barHit: { flex: 1, maxWidth: 28, height: '100%', justifyContent: 'flex-end' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md },
 })

@@ -27,7 +27,7 @@ import {
 import { useT } from '@/i18n'
 import type { AgentPluginRow } from '@/lib/gateway/contract.generated'
 import { useRpc } from '@/lib/hooks'
-import { hermes, rest, rpc } from '@/lib/hermes'
+import { hermes, rest, rpc, useProfile } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { space, useTheme } from '@/theme'
 
@@ -54,7 +54,7 @@ function describeResult(
 export default function PluginsScreen() {
   const t = useT()
   const { c } = useTheme()
-  const profile = hermes().profile
+  const profile = useProfile()
   const list = useRpc(['plugins', profile], 'plugins.manage', { action: 'list', profile })
   const catalog = useQuery({
     queryKey: ['plugins', 'catalog'],

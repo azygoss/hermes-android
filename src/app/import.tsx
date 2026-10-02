@@ -9,7 +9,7 @@ import { useT } from '@/i18n'
 import { relativeTime } from '@/lib/format'
 import type { ForeignSessionRow } from '@/lib/gateway/contract.generated'
 import { useRpc } from '@/lib/hooks'
-import { hermes, rpc, useRuntime } from '@/lib/hermes'
+import { hermes, rpc, useRuntime, useProfile } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { radius, space, useTheme } from '@/theme'
 
@@ -17,7 +17,7 @@ export default function ImportScreen() {
   const t = useT()
   const { c } = useTheme()
   const open = useRuntime((s) => s.state === 'open')
-  const profile = hermes().profile
+  const profile = useProfile()
   const [selected, setSelected] = useState<ForeignSessionRow | null>(null)
   const list = useInfiniteQuery({
     queryKey: ['foreign-sessions', profile],
@@ -83,12 +83,8 @@ function PreviewSheet({ row, onClose }: { row: ForeignSessionRow | null; onClose
   const t = useT()
   const { c } = useTheme()
   const [busy, setBusy] = useState(false)
-  const preview = useRpc(
-    ['foreign-preview', row?.id],
-    'session.foreign.preview',
-    { id: row?.id ?? '', profile: hermes().profile },
-    { enabled: !!row },
-  )
+  const profile = useProfile()
+  const preview = useRpc(['foreign-preview', row?.id], 'session.foreign.preview', { id: row?.id ?? '', profile }, { enabled: !!row })
   const doImport = async () => {
     if (!row) return
     setBusy(true)

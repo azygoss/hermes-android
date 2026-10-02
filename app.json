@@ -90,10 +90,8 @@
           }
         }
       ],
-      "expo-localization"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    }
+      "expo-localization",
+      "./plugins/withReleaseSigning"
+    ]
   }
 }

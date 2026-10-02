@@ -130,3 +130,8 @@ export function hermes(): HermesConnection {
 
 export const rpc = () => hermes().gateway
 export const rest = () => hermes().rest
+
+/** The Hermes profile this phone works in, safe to call during render before the socket exists. */
+export function useProfile(): string | null {
+  return useConnections((s) => s.connections.find((c) => c.id === s.activeId)?.profile ?? null)
+}

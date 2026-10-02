@@ -27,7 +27,7 @@ import {
 import { useT } from '@/i18n'
 import type { McpProbeTool, McpServerSummary } from '@/lib/gateway/contract.generated'
 import { useRpc } from '@/lib/hooks'
-import { hermes, rest, rpc } from '@/lib/hermes'
+import { hermes, rest, rpc, useProfile } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { useChat } from '@/store/chat'
 import { space, useTheme } from '@/theme'
@@ -37,7 +37,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 export default function McpScreen() {
   const t = useT()
   const { c } = useTheme()
-  const profile = hermes().profile
+  const profile = useProfile()
   const list = useRpc(['mcp', 'list', profile], 'mcp.servers.list', { profile })
   const status = useRpc(['mcp', 'status', profile], 'mcp.servers.status', { profile }, { refetchInterval: 10_000 })
   const catalog = useRpc(['mcp', 'catalog', profile], 'mcp.catalog', { profile })
@@ -168,7 +168,7 @@ export default function McpScreen() {
 
 function ServerSheet({ server, onClose, onChanged }: { server: McpServerSummary | null; onClose: () => void; onChanged: () => void }) {
   const t = useT()
-  const profile = hermes().profile
+  const profile = useProfile()
   const [tools, setTools] = useState<McpProbeTool[] | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const name = server?.name ?? ''

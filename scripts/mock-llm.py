@@ -11,6 +11,7 @@ The reply depends on keywords in the last user message:
   "#todo"    -> todo tool with a small plan
   "#remember" -> memory tool adding a user fact
   "#skill"   -> skill_manage creating a small skill
+  "#write"   -> write_file creating mock-notes.md in the working directory
   anything else -> streamed markdown with reasoning
 After a tool result arrives the model streams a short summary.
 """
@@ -58,6 +59,8 @@ def plan(body):
         ]})}
     if "#remember" in user and "memory" in tools:
         return {"tool": ("memory", {"action": "add", "target": "user", "content": "Prefers concise answers and Turkish UI copy."})}
+    if "#write" in user and "write_file" in tools:
+        return {"tool": ("write_file", {"path": "mock-notes.md", "content": "# Notes from the mock model\n\n- written by write_file\n- open me from the tool card\n"})}
     if "#skill" in user and "skill_manage" in tools:
         return {"tool": ("skill_manage", {"action": "create", "name": "mock-release-notes", "category": "productivity",
                                           "content": "---\nname: mock-release-notes\ndescription: Draft release notes from a git log.\n---\n\n# Release notes\n\n1. Read `git log`.\n2. Group by feature.\n"})}

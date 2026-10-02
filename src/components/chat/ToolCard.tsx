@@ -1,16 +1,19 @@
 import * as Clipboard from 'expo-clipboard'
-import { CheckCircle2, ChevronDown, ChevronRight, Circle, CircleDot, XCircle } from '@/components/icons'
+import { CheckCircle2, ChevronDown, ChevronRight, Circle, CircleDot, FolderOpen, XCircle } from '@/components/icons'
+import { router } from 'expo-router'
 import { memo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 
 import { Text } from '@/components/ui'
 import { useT } from '@/i18n'
-import { formatDuration, imagesIn, resultText, toolIcon, toolLabel, toolPreview } from '@/lib/chat/tools'
+import { formatDuration, imagesIn, resultText, toolFilePath, toolIcon, toolLabel, toolPreview } from '@/lib/chat/tools'
 import type { ToolPart } from '@/lib/chat/types'
+import { useChat } from '@/store/chat'
 import { useSettings } from '@/store/settings'
 import { radius, space, useTheme } from '@/theme'
 
 import { RemoteImage } from './RemoteImage'
+import { TextViewer } from './TextViewer'
 
 function DiffView({ diff }: { diff: string }) {
   const { c } = useTheme()
@@ -68,19 +71,30 @@ function TodoList({ todos }: { todos: { content?: string; status?: string }[] })
   )
 }
 
-function Block({ label, text }: { label: string; text: string }) {
+function Block({ label, text, title }: { label: string; text: string; title: string }) {
   const { c } = useTheme()
   const t = useT()
+  const [full, setFull] = useState(false)
   return (
     <View style={{ gap: 4 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text variant="caption" tone="faint" weight="semibold" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg }}>
+        <Text variant="caption" tone="faint" weight="medium" style={{ flex: 1 }}>
           {label}
         </Text>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t('Open {what} full screen', { what: label })}
+          hitSlop={12}
+          onPress={() => setFull(true)}
+        >
+          <Text variant="caption" tone="accent">
+            {t('Open')}
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
           accessibilityLabel={t('Copy {what}', { what: label })}
-          hitSlop={10}
+          hitSlop={12}
           onPress={() => Clipboard.setStringAsync(text)}
         >
           <Text variant="caption" tone="accent">
@@ -88,6 +102,7 @@ function Block({ label, text }: { label: string; text: string }) {
           </Text>
         </Pressable>
       </View>
+      {full ? <TextViewer visible onClose={() => setFull(false)} title={`${title} · ${label}`} text={text} /> : null}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.pre, { backgroundColor: c.codeBg }]}>
         <Text mono variant="caption" selectable style={{ padding: space.sm }}>
           {text.length > 6000 ? `${text.slice(0, 6000)}\n…` : text}
@@ -111,6 +126,8 @@ export const ToolCard = memo(function ToolCard({ part }: { part: ToolPart }) {
   const images = part.status === 'done' ? imagesIn(part.result) : []
   const out = part.status !== 'running' ? resultText(part) : ''
   const StatusIcon = part.status === 'error' ? XCircle : CheckCircle2
+  const cwd = useChat((st) => (st.activeId ? st.sessions[st.activeId]?.info?.cwd : undefined))
+  const file = toolFilePath(part, typeof cwd === 'string' ? cwd : null)
 
   return (
     <View style={[styles.card, { borderColor: part.status === 'error' ? c.danger : c.border, backgroundColor: c.surface }]}>
@@ -145,6 +162,20 @@ export const ToolCard = memo(function ToolCard({ part }: { part: ToolPart }) {
         )}
         {open ? <ChevronDown size={16} color={c.textFaint} /> : <ChevronRight size={16} color={c.textFaint} />}
       </Pressable>
+      {file && part.status === 'done' ? (
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t('Open {name} in Files', { name: file.split('/').pop() ?? file })}
+          onPress={() => router.push({ pathname: '/files', params: { file } })}
+          hitSlop={8}
+          style={({ pressed }) => [styles.fileLink, pressed && { opacity: 0.6 }]}
+        >
+          <FolderOpen size={14} color={c.accentText} strokeWidth={1.75} />
+          <Text variant="caption" tone="accent" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {t('Open {name}', { name: file.split('/').pop() ?? file })}
+          </Text>
+        </Pressable>
+      ) : null}
 
       {todos?.length ? (
         <View style={styles.body}>
@@ -171,9 +202,11 @@ export const ToolCard = memo(function ToolCard({ part }: { part: ToolPart }) {
               {part.summary}
             </Text>
           ) : null}
-          {part.args && Object.keys(part.args).length ? <Block label={t('Input')} text={JSON.stringify(part.args, null, 2)} /> : null}
+          {part.args && Object.keys(part.args).length ? (
+            <Block label={t('Input')} title={toolLabel(part.name)} text={JSON.stringify(part.args, null, 2)} />
+          ) : null}
           {part.diff ? <DiffView diff={part.diff} /> : null}
-          {out ? <Block label={part.status === 'error' ? t('Error') : t('Output')} text={out} /> : null}
+          {out ? <Block label={part.status === 'error' ? t('Error') : t('Output')} title={toolLabel(part.name)} text={out} /> : null}
           {part.status === 'running' ? (
             <Text variant="caption" tone="muted">
               {t('Running…')}
@@ -197,4 +230,5 @@ const styles = StyleSheet.create({
   },
   body: { paddingHorizontal: space.md, paddingBottom: space.md, gap: space.sm },
   pre: { borderRadius: radius.sm, maxHeight: 320 },
+  fileLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, paddingBottom: space.sm, minHeight: 32 },
 })

@@ -123,3 +123,17 @@ export function resultText(part: ToolPart): string {
   }
   return JSON.stringify(r, null, 2)
 }
+
+const FILE_TOOLS = new Set(['read_file', 'write_file', 'patch'])
+
+/** The file a read/write/edit call touched, made absolute against the chat's working directory. */
+export function toolFilePath(part: ToolPart, cwd?: string | null): string | null {
+  if (!FILE_TOOLS.has(part.name) || !part.args) return null
+  const resolved = (part.result as { resolved_path?: unknown } | null)?.resolved_path
+  if (typeof resolved === 'string' && resolved) return resolved
+  const a = part.args as { path?: unknown; file_path?: unknown }
+  const raw = typeof a.path === 'string' ? a.path : typeof a.file_path === 'string' ? a.file_path : null
+  if (!raw) return null
+  if (raw.startsWith('/') || raw.startsWith('~') || !cwd) return raw
+  return `${cwd.replace(/\/+$/, '')}/${raw.replace(/^\.\//, '')}`
+}

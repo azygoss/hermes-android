@@ -58,10 +58,24 @@ function decodeBase64Utf8(b64: string) {
 export default function FilesScreen() {
   const t = useT()
   const { c } = useTheme()
-  const params = useLocalSearchParams<{ path?: string }>()
-  const [path, setPath] = useState<string | undefined>(params.path)
+  // `file` opens straight into that file's preview (from a chat tool card), inside its folder.
+  const params = useLocalSearchParams<{ path?: string; file?: string }>()
+  const [path, setPath] = useState<string | undefined>(
+    params.file ? params.file.slice(0, params.file.lastIndexOf('/')) || '/' : params.path,
+  )
   const [showHidden, setShowHidden] = useState(false)
-  const [preview, setPreview] = useState<Entry | null>(null)
+  const [preview, setPreview] = useState<Entry | null>(
+    params.file
+      ? {
+          name: params.file.split('/').pop() ?? params.file,
+          path: params.file,
+          is_directory: false,
+          size: null,
+          mtime: null,
+          mime_type: null,
+        }
+      : null,
+  )
   const q = useRest<Listing>(['files', path ?? ''], '/api/files', { path: path ?? '' })
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['files'] })
   const listing = q.data
@@ -232,11 +246,9 @@ function PreviewSheet({ entry, onClose, onDeleted }: { entry: Entry | null; onCl
       title={entry?.name}
       heightRatio={0.92}
       footer={
-        <View style={{ flexDirection: 'row', gap: space.sm }}>
-          <Button label={t('Download / share')} icon={Share2} onPress={share} style={{ flex: 1 }} />
+        <View style={{ flexDirection: 'row', gap: space.xs, alignItems: 'center' }}>
           <Button
             label={t('Ask Hermes about it')}
-            variant="secondary"
             onPress={() => {
               onClose()
               router.navigate('/chat')
@@ -246,6 +258,7 @@ function PreviewSheet({ entry, onClose, onDeleted }: { entry: Entry | null; onCl
             }}
             style={{ flex: 1 }}
           />
+          <IconButton icon={Share2} label={t('Download / share')} onPress={share} />
           <IconButton
             icon={Trash2}
             label={t('Delete')}

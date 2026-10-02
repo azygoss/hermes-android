@@ -1248,4 +1248,11 @@ export const tr: Record<string, string> = {
   'runs now': 'hemen çalışır',
   Info: 'Bilgi',
   'Tools & Skills': "Araçlar ve skill'ler",
+  'Find in output': 'Çıktıda bul',
+  'Next match': 'Sonraki eşleşme',
+  'Open {name}': '{name} dosyasını aç',
+  'Open {name} in Files': "{name} dosyasını Dosyalar'da aç",
+  'Open {what} full screen': '{what} tam ekran aç',
+  'Previous match': 'Önceki eşleşme',
+  '{n} lines': '{n} satır',
 }

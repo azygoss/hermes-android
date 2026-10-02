@@ -13,6 +13,7 @@ import {
   Plus,
   Sparkles,
   Square,
+  SquareSlash,
   X,
   Zap,
 } from '@/components/icons'
@@ -21,6 +22,7 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, TextInp
 
 import { prompt, Row, Sheet, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
+import { CommandPalette } from './CommandPalette'
 import type { CompletionItem } from '@/lib/gateway/contract.generated'
 import { rpc } from '@/lib/hermes'
 import { fileToBase64, transcribe } from '@/lib/voice'
@@ -110,6 +112,7 @@ export const Composer = memo(function Composer(props: Props) {
   }, [sessionId])
   const [sending, setSending] = useState(false)
   const [attachOpen, setAttachOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const [modeOpen, setModeOpen] = useState(false)
   const [recording, setRecording] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
@@ -375,8 +378,17 @@ export const Composer = memo(function Composer(props: Props) {
         </View>
       </View>
 
-      <Sheet visible={attachOpen} onClose={() => setAttachOpen(false)} title={t('Attach')}>
+      <Sheet visible={attachOpen} onClose={() => setAttachOpen(false)} title={t('Add to message')}>
         <View style={{ marginHorizontal: -space.lg }}>
+          <Row
+            icon={SquareSlash}
+            title={t('Commands & skills')}
+            subtitle={t('Plan, review, goals, loops and every other slash command')}
+            onPress={() => {
+              setAttachOpen(false)
+              setPaletteOpen(true)
+            }}
+          />
           <Row
             icon={ImageIcon}
             title={t('Photo library')}
@@ -404,6 +416,19 @@ export const Composer = memo(function Composer(props: Props) {
           />
         </View>
       </Sheet>
+
+      <CommandPalette
+        visible={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        sessionId={sessionId}
+        onInsert={(value) => {
+          setText(value)
+          setTimeout(() => input.current?.focus(), 50)
+        }}
+        onRun={(command) => {
+          onSend(command, 'auto').catch(toastError)
+        }}
+      />
 
       <Sheet visible={modeOpen} onClose={() => setModeOpen(false)} title={t('The agent is working')}>
         <View style={{ marginHorizontal: -space.lg }}>

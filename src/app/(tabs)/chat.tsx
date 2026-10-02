@@ -119,7 +119,9 @@ export default function ChatScreen() {
   const activeId = useChat((s) => s.activeId)
   const session = useChat((s) => (s.activeId ? s.sessions[s.activeId] : undefined))
   const requests = useChat((s) => s.requests)
-  const prefill = useChat((s) => (s.composerPrefill && s.composerPrefill.runtimeId === s.activeId ? s.composerPrefill.text : null))
+  const prefill = useChat((s) =>
+    s.composerPrefill && (s.composerPrefill.runtimeId || null) === (s.activeId || null) ? s.composerPrefill.text : null,
+  )
   const opening = useChat((s) => s.opening)
   const connState = useRuntime((s) => s.state)
   const [menuOpen, setMenuOpen] = useState(false)

@@ -26,7 +26,7 @@ import { BusyLine, SubagentChip, TodoPanel } from '@/components/chat/StatusStrip
 import { HermesMark } from '@/components/HermesMark'
 import { Button, IconButton, Sheet, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
-import type { ChatMessage } from '@/lib/chat/types'
+import type { ChatMessage, PendingAttachment } from '@/lib/chat/types'
 import { textOf } from '@/lib/chat/types'
 import { relativeTime } from '@/lib/format'
 import { useRest, useRpc } from '@/lib/hooks'
@@ -272,6 +272,35 @@ export default function ChatScreen() {
     return true
   }
 
+  // Stable props so the memoised Composer skips the re-render on every streamed token.
+  const sendRef = useRef(handleSend)
+  sendRef.current = handleSend
+  const onSend = useCallback((text: string, mode: 'auto' | 'steer' | 'redirect') => sendRef.current(text, mode), [])
+  const onPrefillConsumed = useCallback(() => setPrefill(useChat.getState().activeId ?? '', null), [])
+  const onCancelEdit = useCallback(() => setEditing(null), [])
+  const onStop = useCallback(() => {
+    const sid = useChat.getState().activeId
+    if (sid) interrupt(sid).catch(toastError)
+  }, [])
+  const onAttachImage = useCallback(
+    async (b64: string, name: string, uri: string) => attachImage(await ensureSession(), b64, name, uri),
+    [ensureSession],
+  )
+  const onAttachFile = useCallback(
+    async (dataUrl: string, name: string) => attachFile(await ensureSession(), dataUrl, name),
+    [ensureSession],
+  )
+  const onAttachPdf = useCallback(async (b64: string, name: string) => attachPdf(await ensureSession(), b64, name), [ensureSession])
+  const onGenerateImage = useCallback(async (prompt: string) => generateImage(await ensureSession(), prompt), [ensureSession])
+  const onRemoveAttachment = useCallback((key: string) => {
+    const sid = useChat.getState().activeId
+    if (sid) removeAttachment(sid, key)
+  }, [])
+  const pills = useMemo(
+    () => <ComposerPills onModel={() => setModelOpen(true)} onReasoning={() => setReasoningOpen(true)} onMenu={() => setMenuOpen(true)} />,
+    [],
+  )
+
   const defaultModel = useRest<{ model?: string; provider?: string }>(['model-info'], '/api/model/info', undefined, { enabled: !session })
   const info = session?.info ?? { model: defaultModel.data?.model, provider: defaultModel.data?.provider }
   const usage = session?.usage
@@ -399,32 +428,20 @@ export default function ChatScreen() {
           <Composer
             sessionId={activeId}
             busy={!!session?.busy}
-            attachments={session?.attachments ?? []}
+            attachments={session?.attachments ?? NO_ATTACHMENTS}
             editing={!!editing}
             prefill={prefill}
-            onPrefillConsumed={() => setPrefill(activeId ?? '', null)}
-            onCancelEdit={() => setEditing(null)}
-            onSend={handleSend}
-            onStop={() => activeId && interrupt(activeId).catch(toastError)}
+            onPrefillConsumed={onPrefillConsumed}
+            onCancelEdit={onCancelEdit}
+            onSend={onSend}
+            onStop={onStop}
             ensureSession={ensureSession}
-            onAttachImage={async (b64, name, uri) => attachImage(await ensureSession(), b64, name, uri)}
-            onAttachFile={async (dataUrl, name) => attachFile(await ensureSession(), dataUrl, name)}
-            onAttachPdf={async (b64, name) => attachPdf(await ensureSession(), b64, name)}
-            onGenerateImage={async (prompt) => generateImage(await ensureSession(), prompt)}
-            onRemoveAttachment={(key) => activeId && removeAttachment(activeId, key)}
-            pills={
-              <>
-                <Pill label={String(info.model ?? t('Model'))} onPress={() => setModelOpen(true)} />
-                <Pill icon={Brain} label={String(info.reasoning_effort || t('default'))} onPress={() => setReasoningOpen(true)} />
-                {info.yolo ? <Pill label="YOLO" tone="danger" onPress={() => setMenuOpen(true)} /> : null}
-                {session ? (
-                  <SubagentChip
-                    subagents={session.subagents}
-                    onPress={() => router.push({ pathname: '/session/agents', params: { sid: session.runtimeId } })}
-                  />
-                ) : null}
-              </>
-            }
+            onAttachImage={onAttachImage}
+            onAttachFile={onAttachFile}
+            onAttachPdf={onAttachPdf}
+            onGenerateImage={onGenerateImage}
+            onRemoveAttachment={onRemoveAttachment}
+            pills={pills}
           />
         </View>
       </KeyboardAvoidingView>
@@ -485,6 +502,31 @@ export default function ChatScreen() {
         </View>
       </Sheet>
     </View>
+  )
+}
+
+const NO_ATTACHMENTS: PendingAttachment[] = []
+
+/** Model, reasoning and subagent pills; reads the store itself so the composer need not re-render. */
+function ComposerPills({ onModel, onReasoning, onMenu }: { onModel: () => void; onReasoning: () => void; onMenu: () => void }) {
+  const t = useT()
+  // Primitive selectors: streamed tokens change the session object but none of these.
+  const runtimeId = useChat((s) => (s.activeId && s.sessions[s.activeId] ? s.activeId : null))
+  const model = useChat((s) => (s.activeId ? s.sessions[s.activeId]?.info?.model : undefined))
+  const effort = useChat((s) => (s.activeId ? s.sessions[s.activeId]?.info?.reasoning_effort : undefined))
+  const yolo = useChat((s) => (s.activeId ? s.sessions[s.activeId]?.info?.yolo : undefined))
+  const subagents = useChat((s) => (s.activeId ? s.sessions[s.activeId]?.subagents : undefined))
+  const live = !!runtimeId
+  const fallback = useRest<{ model?: string }>(['model-info'], '/api/model/info', undefined, { enabled: !live })
+  return (
+    <>
+      <Pill label={String((live ? model : fallback.data?.model) ?? t('Model'))} onPress={onModel} />
+      <Pill icon={Brain} label={String(effort || t('default'))} onPress={onReasoning} />
+      {yolo ? <Pill label="YOLO" tone="danger" onPress={onMenu} /> : null}
+      {runtimeId && subagents ? (
+        <SubagentChip subagents={subagents} onPress={() => router.push({ pathname: '/session/agents', params: { sid: runtimeId } })} />
+      ) : null}
+    </>
   )
 }
 

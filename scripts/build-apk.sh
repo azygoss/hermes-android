@@ -22,5 +22,5 @@ fi
 )
 
 mkdir -p dist
-cp android/app/build/outputs/apk/release/app-release.apk "dist/hermes-android-v${VERSION}.apk"
-echo "built dist/hermes-android-v${VERSION}.apk"
+cp android/app/build/outputs/apk/release/app-release.apk "dist/hermes-android-v${VERSION}${SUFFIX:-}.apk"
+echo "built dist/hermes-android-v${VERSION}${SUFFIX:-}.apk"

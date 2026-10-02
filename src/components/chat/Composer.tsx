@@ -16,7 +16,7 @@ import {
   X,
   Zap,
 } from 'lucide-react-native'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 
 import { prompt, Row, Sheet, Text, toast, toastError } from '@/components/ui'
@@ -89,7 +89,7 @@ function useCompletions(text: string, sessionId: string | null) {
 /** Unsent text per chat ('' = the blank new-chat composer), kept for the app session. */
 const drafts = new Map<string, string>()
 
-export function Composer(props: Props) {
+export const Composer = memo(function Composer(props: Props) {
   const { sessionId, busy, attachments, editing, prefill, onPrefillConsumed, onCancelEdit, onSend, onStop, pills } = props
   const t = useT()
   const { c } = useTheme()
@@ -427,7 +427,7 @@ export function Composer(props: Props) {
       </Sheet>
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: space.md, paddingTop: space.xs },

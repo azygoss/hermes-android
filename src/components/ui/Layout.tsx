@@ -333,7 +333,7 @@ export function Chip({
       accessibilityState={{ selected: !!selected }}
       accessibilityLabel={label}
       onPress={onPress}
-      hitSlop={6}
+      hitSlop={7}
       style={({ pressed }) => [
         styles.chip,
         {
@@ -370,6 +370,7 @@ export function Segmented<T extends string>({
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.value)}
+            hitSlop={4}
             style={[styles.segmentItem, on && { backgroundColor: c.elevated, borderColor: c.border }]}
           >
             <Text variant="small" weight={on ? 'semibold' : 'medium'} tone={on ? 'default' : 'muted'} numberOfLines={1}>

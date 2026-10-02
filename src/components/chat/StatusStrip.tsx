@@ -79,7 +79,7 @@ export function SubagentChip({ subagents, onPress }: { subagents: Record<string,
   const running = list.filter((s) => s.status === 'running' || s.status === 'queued').length
   if (!list.length) return null
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[styles.chip, { backgroundColor: c.infoSoft }]}>
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={9} style={[styles.chip, { backgroundColor: c.infoSoft }]}>
       <Users size={14} color={c.info} />
       <Text variant="caption" weight="semibold" style={{ color: c.info }}>
         {running ? t('{n} subagents running', { n: running }) : t('{n} subagents', { n: list.length })}
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     minHeight: 32,
   },
   panel: { marginHorizontal: space.md, marginBottom: space.xs, borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md },
-  panelHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, minHeight: 44 },
+  panelHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, minHeight: 48 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

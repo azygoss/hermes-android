@@ -322,6 +322,7 @@ export const Composer = memo(function Composer(props: Props) {
             accessibilityRole="button"
             accessibilityLabel={t('Attach')}
             onPress={() => setAttachOpen(true)}
+            hitSlop={4}
             style={({ pressed }) => [styles.side, pressed && { backgroundColor: c.surfaceAlt }]}
           >
             <Plus size={20} color={c.textMuted} strokeWidth={1.75} />
@@ -340,6 +341,7 @@ export const Composer = memo(function Composer(props: Props) {
               accessibilityRole="button"
               accessibilityLabel={recording ? t('Stop recording') : t('Record a voice message')}
               onPress={toggleRecording}
+              hitSlop={4}
               style={({ pressed }) => [styles.side, (recording || pressed) && { backgroundColor: recording ? c.dangerSoft : c.surfaceAlt }]}
             >
               {transcribing ? (
@@ -356,6 +358,7 @@ export const Composer = memo(function Composer(props: Props) {
             onPress={() => (showStop ? onStop() : submit())}
             onLongPress={() => (busy && canSend ? setModeOpen(true) : undefined)}
             disabled={!showStop && !canSend}
+            hitSlop={4}
             style={[styles.send, { backgroundColor: showStop ? c.text : canSend ? c.accent : c.surfaceAlt }]}
           >
             {sending ? (
@@ -437,7 +440,7 @@ const styles = StyleSheet.create({
   side: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   send: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginLeft: 2 },
   suggest: { maxHeight: 240, borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md, marginBottom: space.sm },
-  suggestRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.md, minHeight: 44 },
+  suggestRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.md, minHeight: 48 },
   attachment: {
     flexDirection: 'row',
     alignItems: 'center',

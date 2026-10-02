@@ -538,6 +538,7 @@ function Pill({ label, onPress, tone, icon: Icon }: { label: string; onPress: ()
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
+      hitSlop={7}
       style={({ pressed }) => [styles.pill, { backgroundColor: pressed ? c.surfaceAlt : tone === 'danger' ? c.dangerSoft : 'transparent' }]}
     >
       {Icon ? <Icon size={14} color={color} strokeWidth={1.75} /> : null}

@@ -41,7 +41,7 @@ function Reasoning({ text, live }: { text: string; live: boolean }) {
         accessibilityState={{ expanded: open }}
         accessibilityLabel={t('Reasoning')}
         onPress={() => setOpen(!open)}
-        hitSlop={8}
+        hitSlop={10}
         style={styles.reasonHead}
       >
         <Brain size={14} color={c.textMuted} />

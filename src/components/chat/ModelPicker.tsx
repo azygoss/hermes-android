@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Check, Lock, Search } from 'lucide-react-native'
+import { Check, Lock, Search } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import { FlatList, Pressable, View } from 'react-native'
 

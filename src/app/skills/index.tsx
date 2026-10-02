@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
-import { Download, PackageCheck, Plus, RefreshCw, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react-native'
+import { Download, PackageCheck, Plus, RefreshCw, ShieldAlert, ShieldCheck, Sparkles } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 

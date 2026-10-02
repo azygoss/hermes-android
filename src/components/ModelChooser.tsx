@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Lock, RotateCcw } from 'lucide-react-native'
+import { Lock, RotateCcw } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import { FlatList, Pressable, View } from 'react-native'
 

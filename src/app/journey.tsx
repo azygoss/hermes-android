@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router'
-import { Brain, Map as MapIcon, Pin, Sparkles } from 'lucide-react-native'
+import { Brain, Map as MapIcon, Pin, Sparkles } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 

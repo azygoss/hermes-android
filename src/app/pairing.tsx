@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router'
-import { UserCheck, UserX } from 'lucide-react-native'
+import { UserCheck, UserX } from '@/components/icons'
 
 import { Button, confirm, EmptyState, ErrorState, Loading, Row, Screen, Section, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'

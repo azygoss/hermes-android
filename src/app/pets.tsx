@@ -1,6 +1,6 @@
 import { Image } from 'expo-image'
 import { Stack } from 'expo-router'
-import { Check, PawPrint } from 'lucide-react-native'
+import { Check, PawPrint } from '@/components/icons'
 import { memo, useMemo, useState } from 'react'
 import { FlatList, Pressable, StyleSheet, View } from 'react-native'
 

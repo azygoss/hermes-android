@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, ChevronUp, Gauge } from 'lucide-react-native'
+import { ChevronDown, ChevronUp, Gauge } from '@/components/icons'
 import { useState } from 'react'
 import { LayoutAnimation, Pressable, StyleSheet, View } from 'react-native'
 

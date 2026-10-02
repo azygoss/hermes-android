@@ -21,10 +21,10 @@ import swift from 'highlight.js/lib/languages/swift'
 import typescript from 'highlight.js/lib/languages/typescript'
 import xml from 'highlight.js/lib/languages/xml'
 import yaml from 'highlight.js/lib/languages/yaml'
-import type { Element, Root, RootContent } from 'hast'
-import { createLowlight } from 'lowlight'
+import hljs from 'highlight.js/lib/core'
 
-const lowlight = createLowlight({
+// Only these grammars ship; `lowlight`'s entry point imported all ~190 of them.
+for (const [name, grammar] of Object.entries({
   bash,
   c,
   cpp,
@@ -48,8 +48,9 @@ const lowlight = createLowlight({
   typescript,
   xml,
   yaml,
-})
-lowlight.registerAlias({
+}))
+  hljs.registerLanguage(name, grammar)
+const ALIASES: Record<string, string[]> = {
   bash: ['sh', 'zsh', 'console', 'terminal'],
   javascript: ['js', 'jsx', 'mjs', 'cjs'],
   typescript: ['ts', 'tsx'],
@@ -59,7 +60,8 @@ lowlight.registerAlias({
   xml: ['html', 'svg'],
   markdown: ['md'],
   dockerfile: ['docker'],
-})
+}
+for (const [languageName, aliases] of Object.entries(ALIASES)) hljs.registerAliases(aliases, { languageName })
 
 /** Highlighting a very long block on every streamed chunk would stall the JS thread. */
 const MAX_CHARS = 12_000
@@ -70,26 +72,30 @@ export interface Token {
   scope?: string
 }
 
-function walk(nodes: RootContent[], scope: string | undefined, out: Token[]) {
-  for (const node of nodes) {
-    if (node.type === 'text') out.push({ text: node.value, scope })
-    else if (node.type === 'element') {
-      const cls = (node as Element).properties?.className
-      const name = Array.isArray(cls) ? String(cls[0] ?? '').replace(/^hljs-/, '') : undefined
-      walk(node.children, name || scope, out)
-    }
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#x27': "'", '#39': "'" }
+
+function decode(text: string) {
+  return text.replace(/&(amp|lt|gt|quot|#x27|#39);/g, (_, e: string) => ENTITIES[e])
+}
+
+/** Flattens highlight.js HTML (only nested `<span class>` and entities) into styled runs. */
+function tokensOf(html: string): Token[] {
+  const out: Token[] = []
+  const scopes: (string | undefined)[] = []
+  for (const m of html.matchAll(/<span class="([^"]+)">|<\/span>|[^<]+/g)) {
+    if (m[1] !== undefined) scopes.push(m[1].split(' ')[0].replace(/^hljs-/, '') || scopes[scopes.length - 1])
+    else if (m[0] === '</span>') scopes.pop()
+    else out.push({ text: decode(m[0]), scope: scopes[scopes.length - 1] })
   }
+  return out
 }
 
 /** Tokens for a fenced code block, or null when the language is unknown or the block too big. */
 export function highlight(code: string, language?: string): Token[] | null {
   const lang = language?.trim().toLowerCase().split(/\s+/)[0]
-  if (!lang || code.length > MAX_CHARS || !lowlight.registered(lang)) return null
+  if (!lang || code.length > MAX_CHARS || !hljs.getLanguage(lang)) return null
   try {
-    const tree: Root = lowlight.highlight(lang, code)
-    const out: Token[] = []
-    walk(tree.children, undefined, out)
-    return out
+    return tokensOf(hljs.highlight(code, { language: lang, ignoreIllegals: true }).value)
   } catch {
     return null
   }

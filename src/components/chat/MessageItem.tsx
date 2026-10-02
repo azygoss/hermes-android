@@ -15,7 +15,7 @@ import {
   ThumbsUp,
   Volume2,
   XCircle,
-} from 'lucide-react-native'
+} from '@/components/icons'
 import { memo, useEffect, useRef, useState } from 'react'
 import { Animated, Easing, Platform, Pressable, Share, StyleSheet, View } from 'react-native'
 

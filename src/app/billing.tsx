@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { CreditCard, ExternalLink, LogIn } from 'lucide-react-native'
+import { CreditCard, ExternalLink, LogIn } from '@/components/icons'
 import { View } from 'react-native'
 
 import { Badge, Button, Card, EmptyState, ErrorState, KeyValue, Loading, Screen, Section, Text, toast } from '@/components/ui'

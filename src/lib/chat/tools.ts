@@ -13,8 +13,8 @@ import {
   Users,
   Volume2,
   Wrench,
-  type LucideIcon,
-} from 'lucide-react-native'
+} from '@/components/icons'
+import type { LucideIcon } from '@/components/icons'
 
 import type { ToolPart } from './types'
 

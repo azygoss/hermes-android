@@ -1,6 +1,6 @@
 import * as Crypto from 'expo-crypto'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { CheckCircle2, KeyRound, Lock, QrCode, Server, ShieldCheck, Trash2, Wifi } from 'lucide-react-native'
+import { CheckCircle2, KeyRound, Lock, QrCode, Server, ShieldCheck, Trash2, Wifi } from '@/components/icons'
 import { useEffect, useState } from 'react'
 import { View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'

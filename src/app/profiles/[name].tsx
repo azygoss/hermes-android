@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { Cpu, Download, Pencil, Smartphone, Sparkles, Star, Terminal, Trash2, Wand2 } from 'lucide-react-native'
+import { Cpu, Download, Pencil, Smartphone, Sparkles, Star, Terminal, Trash2, Wand2 } from '@/components/icons'
 import { useEffect, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 

@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { Link2, Trash2 } from 'lucide-react-native'
+import { Link2, Trash2 } from '@/components/icons'
 import { useState } from 'react'
 
 import { Badge, Button, confirm, EmptyState, ErrorState, Loading, Row, Screen, Section, Text, toast, toastError } from '@/components/ui'

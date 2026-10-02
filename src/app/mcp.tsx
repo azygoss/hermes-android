@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { KeyRound, LogIn, Plus, RefreshCw, Server, Trash2, Zap } from 'lucide-react-native'
+import { KeyRound, LogIn, Plus, RefreshCw, Server, Trash2, Zap } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 

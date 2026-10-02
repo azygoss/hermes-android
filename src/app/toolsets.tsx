@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Stack } from 'expo-router'
-import { Check, ExternalLink, Settings2, Wrench } from 'lucide-react-native'
+import { Check, ExternalLink, Settings2, Wrench } from '@/components/icons'
 import * as WebBrowser from 'expo-web-browser'
 import { useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'

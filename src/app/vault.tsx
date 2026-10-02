@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router'
-import { CreditCard, Home, KeyRound, Lock, Plus, ShieldCheck, Trash2, Unlock } from 'lucide-react-native'
+import { CreditCard, Home, KeyRound, Lock, Plus, ShieldCheck, Trash2, Unlock } from '@/components/icons'
 import { useState } from 'react'
 import { View } from 'react-native'
 

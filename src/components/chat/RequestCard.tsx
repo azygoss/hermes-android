@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics'
-import { HelpCircle, KeyRound, ShieldAlert } from 'lucide-react-native'
+import { HelpCircle, KeyRound, ShieldAlert } from '@/components/icons'
 import { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 

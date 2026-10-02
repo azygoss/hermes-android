@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronDown, ChevronUp, Circle, CircleDot, Users } from 'lucide-react-native'
+import { CheckCircle2, ChevronDown, ChevronUp, Circle, CircleDot, Users } from '@/components/icons'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 

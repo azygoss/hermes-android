@@ -1,5 +1,5 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { Eye, Pencil, Save } from 'lucide-react-native'
+import { Eye, Pencil, Save } from '@/components/icons'
 import { useEffect, useState } from 'react'
 import { View } from 'react-native'
 

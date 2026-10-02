@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from 'expo-router'
-import { Octagon, Skull, SquareTerminal, Users } from 'lucide-react-native'
+import { Octagon, Skull, SquareTerminal, Users } from '@/components/icons'
 import { useState } from 'react'
 import { View } from 'react-native'
 

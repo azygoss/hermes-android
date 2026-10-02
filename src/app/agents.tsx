@@ -1,5 +1,5 @@
 import { router, Stack } from 'expo-router'
-import { Activity, Pause, Play, SquareTerminal, Users } from 'lucide-react-native'
+import { Activity, Pause, Play, SquareTerminal, Users } from '@/components/icons'
 import { View } from 'react-native'
 
 import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Section, Text, toastError } from '@/components/ui'

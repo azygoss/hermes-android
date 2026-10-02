@@ -21,7 +21,7 @@ import {
   TerminalSquare,
   Trash2,
   Webhook,
-} from 'lucide-react-native'
+} from '@/components/icons'
 import { useState } from 'react'
 import { Platform, View } from 'react-native'
 

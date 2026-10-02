@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router'
-import { FileCode2, Save } from 'lucide-react-native'
+import { FileCode2, Save } from '@/components/icons'
 import { useEffect, useMemo, useState } from 'react'
 import { View } from 'react-native'
 

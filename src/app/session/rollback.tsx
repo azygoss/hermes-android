@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from 'expo-router'
-import { History, RotateCcw } from 'lucide-react-native'
+import { History, RotateCcw } from '@/components/icons'
 import { useState } from 'react'
 import { ScrollView, View } from 'react-native'
 

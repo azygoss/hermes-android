@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from 'expo-router'
-import { HeartPulse, Repeat, Target, Trash2 } from 'lucide-react-native'
+import { HeartPulse, Repeat, Target, Trash2 } from '@/components/icons'
 import { View } from 'react-native'
 
 import { Badge, Button, Card, EmptyState, ErrorState, KeyValue, Loading, prompt, Screen, Section, Text, toastError } from '@/components/ui'

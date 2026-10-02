@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Smartphone,
   Wifi,
-} from 'lucide-react-native'
+} from '@/components/icons'
 import { View } from 'react-native'
 
 import { AccountLimitsSection, useAccountLimits } from '@/components/AccountLimits'

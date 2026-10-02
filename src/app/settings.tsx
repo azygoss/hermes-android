@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications'
 import { Stack } from 'expo-router'
-import { Bell, Brain, Fingerprint, Languages, Mic, Moon, Palette, Send, Smartphone, Type, Vibrate, Wrench } from 'lucide-react-native'
+import { Bell, Brain, Fingerprint, Languages, Mic, Moon, Palette, Send, Smartphone, Type, Vibrate, Wrench } from '@/components/icons'
 import { Platform, Pressable, View } from 'react-native'
 
 import { appLockSupported, authenticate, canUseAppLock } from '@/components/AppLock'

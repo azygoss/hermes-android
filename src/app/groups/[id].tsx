@@ -1,5 +1,5 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { ArrowUp, Octagon, Trash2 } from 'lucide-react-native'
+import { ArrowUp, Octagon, Trash2 } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import { FlatList, Platform, StyleSheet, TextInput, View } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'

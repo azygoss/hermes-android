@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard'
 import * as WebBrowser from 'expo-web-browser'
-import { Check, Copy } from 'lucide-react-native'
+import { Check, Copy } from '@/components/icons'
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text as RNText, View, type TextStyle, type ViewStyle } from 'react-native'
 import { Renderer, useMarkdown } from 'react-native-marked'

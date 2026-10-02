@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Stack } from 'expo-router'
-import { Download, Plug, Plus, RefreshCw, Settings2, Trash2 } from 'lucide-react-native'
+import { Download, Plug, Plus, RefreshCw, Settings2, Trash2 } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 

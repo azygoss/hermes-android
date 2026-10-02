@@ -1,4 +1,4 @@
-import { X } from 'lucide-react-native'
+import { X } from '@/components/icons'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Animated, Modal, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'

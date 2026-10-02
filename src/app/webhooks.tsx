@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard'
 import { Stack } from 'expo-router'
-import { Copy, Plus, Trash2, Webhook } from 'lucide-react-native'
+import { Copy, Plus, Trash2, Webhook } from '@/components/icons'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 

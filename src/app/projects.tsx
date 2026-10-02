@@ -11,7 +11,7 @@ import {
   Plus,
   Star,
   Trash2,
-} from 'lucide-react-native'
+} from '@/components/icons'
 import { useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 

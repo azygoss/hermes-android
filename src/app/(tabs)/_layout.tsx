@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router'
-import { Bot, CalendarClock, History, LayoutGrid, MessageSquare } from 'lucide-react-native'
+import { Bot, CalendarClock, History, LayoutGrid, MessageSquare } from '@/components/icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useT } from '@/i18n'

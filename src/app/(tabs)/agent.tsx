@@ -13,7 +13,7 @@ import {
   Sparkles,
   UserCircle2,
   Wrench,
-} from 'lucide-react-native'
+} from '@/components/icons'
 
 import { ProfileSwitcher } from '@/components/ProfileSwitcher'
 import { TabHeader } from '@/components/TabHeader'

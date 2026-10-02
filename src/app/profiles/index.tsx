@@ -1,5 +1,5 @@
 import { router, Stack } from 'expo-router'
-import { Check, Plus, UserCircle2 } from 'lucide-react-native'
+import { Check, Plus, UserCircle2 } from '@/components/icons'
 import { useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 

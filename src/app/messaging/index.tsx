@@ -1,5 +1,5 @@
 import { router, Stack } from 'expo-router'
-import { Play, RotateCw, Square } from 'lucide-react-native'
+import { Play, RotateCw, Square } from '@/components/icons'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 

@@ -1,5 +1,5 @@
 import * as WebBrowser from 'expo-web-browser'
-import { Link2 } from 'lucide-react-native'
+import { Link2 } from '@/components/icons'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 

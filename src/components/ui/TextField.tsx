@@ -1,4 +1,4 @@
-import { Eye, EyeOff } from 'lucide-react-native'
+import { Eye, EyeOff } from '@/components/icons'
 import { forwardRef, useState } from 'react'
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native'
 

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Stack } from 'expo-router'
-import { Brain, Check, RotateCcw, User } from 'lucide-react-native'
+import { Brain, Check, RotateCcw, User } from '@/components/icons'
 import { useState } from 'react'
 import { View } from 'react-native'
 

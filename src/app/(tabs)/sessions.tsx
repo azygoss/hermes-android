@@ -13,7 +13,7 @@ import {
   PinOff,
   Search,
   Trash2,
-} from 'lucide-react-native'
+} from '@/components/icons'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native'
 

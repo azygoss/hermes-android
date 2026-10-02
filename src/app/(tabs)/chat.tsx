@@ -1,16 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router'
-import {
-  ArrowDown,
-  ArrowUpRight,
-  Brain,
-  Check,
-  ChevronDown,
-  EllipsisVertical,
-  History,
-  PenSquare,
-  WifiOff,
-  type LucideIcon,
-} from 'lucide-react-native'
+import { ArrowDown, ArrowUpRight, Brain, Check, ChevronDown, EllipsisVertical, History, PenSquare, WifiOff } from '@/components/icons'
+import type { LucideIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Pencil, Trash2 } from 'lucide-react-native'
+import { Pencil, Trash2 } from '@/components/icons'
 import { useEffect, useState } from 'react'
 import { View } from 'react-native'
 

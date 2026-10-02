@@ -3,7 +3,7 @@ import { File, Paths } from 'expo-file-system'
 import { Image } from 'expo-image'
 import { Stack, useLocalSearchParams, router } from 'expo-router'
 import * as Sharing from 'expo-sharing'
-import { ArrowUp, File as FileIcon, FileImage, FileText, Folder, FolderPlus, Home, Share2, Trash2, Upload } from 'lucide-react-native'
+import { ArrowUp, File as FileIcon, FileImage, FileText, Folder, FolderPlus, Home, Share2, Trash2, Upload } from '@/components/icons'
 import { useState } from 'react'
 import { Platform, ScrollView, View } from 'react-native'
 

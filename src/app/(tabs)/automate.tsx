@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { router } from 'expo-router'
-import { Activity, CalendarClock, KanbanSquare, MessagesSquare, UserCheck, Users, Webhook } from 'lucide-react-native'
+import { Activity, CalendarClock, KanbanSquare, MessagesSquare, UserCheck, Users, Webhook } from '@/components/icons'
 import { View } from 'react-native'
 
 import { TabHeader } from '@/components/TabHeader'

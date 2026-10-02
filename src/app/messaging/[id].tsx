@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { BookOpen, Plug, QrCode, Save, Send } from 'lucide-react-native'
+import { BookOpen, Plug, QrCode, Save, Send } from '@/components/icons'
 import { useEffect, useRef, useState } from 'react'
 import { Linking, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'

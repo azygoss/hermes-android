@@ -15,7 +15,7 @@ import {
   Square,
   X,
   Zap,
-} from 'lucide-react-native'
+} from '@/components/icons'
 import { memo, useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 

@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router'
-import { Play, Trash2 } from 'lucide-react-native'
+import { Play, Trash2 } from '@/components/icons'
 import { useState } from 'react'
 import { ScrollView, View } from 'react-native'
 

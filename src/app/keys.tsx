@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard'
 import { Stack } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { Eye, LogIn, LogOut, Plus, Trash2 } from 'lucide-react-native'
+import { Eye, LogIn, LogOut, Plus, Trash2 } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import { View } from 'react-native'
 

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image'
 import { Stack } from 'expo-router'
-import { MonitorPlay, Play, Square } from 'lucide-react-native'
+import { MonitorPlay, Play, Square } from '@/components/icons'
 import { useState } from 'react'
 import { View } from 'react-native'
 

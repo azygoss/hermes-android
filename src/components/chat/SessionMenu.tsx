@@ -24,7 +24,7 @@ import {
   Undo2,
   Users,
   Zap,
-} from 'lucide-react-native'
+} from '@/components/icons'
 import { File, Paths } from 'expo-file-system'
 import { Platform, View } from 'react-native'
 

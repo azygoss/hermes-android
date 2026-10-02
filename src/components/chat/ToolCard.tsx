@@ -1,5 +1,5 @@
 import * as Clipboard from 'expo-clipboard'
-import { CheckCircle2, ChevronDown, ChevronRight, Circle, CircleDot, XCircle } from 'lucide-react-native'
+import { CheckCircle2, ChevronDown, ChevronRight, Circle, CircleDot, XCircle } from '@/components/icons'
 import { memo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 

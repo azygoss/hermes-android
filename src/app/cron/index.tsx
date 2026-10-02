@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
-import { CalendarClock, History, Pencil, Play, Plus, Trash2 } from 'lucide-react-native'
+import { CalendarClock, History, Pencil, Play, Plus, Trash2 } from '@/components/icons'
 import { useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 

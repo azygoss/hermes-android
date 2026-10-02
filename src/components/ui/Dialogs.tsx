@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react-native'
+import { AlertTriangle, CheckCircle2, Info, XCircle } from '@/components/icons'
 import { useEffect, useRef, useState } from 'react'
 import { Animated, Modal, Platform, Pressable, StyleSheet, View } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'

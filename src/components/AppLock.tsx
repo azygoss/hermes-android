@@ -1,5 +1,5 @@
 import * as LocalAuthentication from 'expo-local-authentication'
-import { Fingerprint } from 'lucide-react-native'
+import { Fingerprint } from '@/components/icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AppState, Platform, StyleSheet, View } from 'react-native'
 

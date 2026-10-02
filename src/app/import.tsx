@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
-import { Download } from 'lucide-react-native'
+import { Download } from '@/components/icons'
 import { useState } from 'react'
 import { FlatList, Pressable, StyleSheet, View } from 'react-native'
 

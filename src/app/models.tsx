@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router'
-import { Plus, RotateCcw, Trash2 } from 'lucide-react-native'
+import { Plus, RotateCcw, Trash2 } from '@/components/icons'
 import { useState } from 'react'
 import { View } from 'react-native'
 

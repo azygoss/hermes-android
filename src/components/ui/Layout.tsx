@@ -1,5 +1,5 @@
-import type { LucideIcon } from 'lucide-react-native'
-import { ChevronRight } from 'lucide-react-native'
+import type { LucideIcon } from '@/components/icons'
+import { ChevronRight } from '@/components/icons'
 import type { ReactNode } from 'react'
 import {
   ActivityIndicator,

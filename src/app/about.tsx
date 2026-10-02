@@ -1,7 +1,7 @@
 import Constants from 'expo-constants'
 import { Stack } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { BookOpen, Code2, MessageCircle } from 'lucide-react-native'
+import { BookOpen, Code2, MessageCircle } from '@/components/icons'
 import { View } from 'react-native'
 
 import { HermesMark } from '@/components/HermesMark'

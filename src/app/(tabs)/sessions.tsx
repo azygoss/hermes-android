@@ -15,7 +15,7 @@ import {
   Trash2,
 } from 'lucide-react-native'
 import { memo, useCallback, useMemo, useState } from 'react'
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native'
 
 import { TabHeader } from '@/components/TabHeader'
 import {
@@ -93,6 +93,8 @@ export default function SessionsScreen() {
     return [...all.filter((s) => s.pinned), ...all.filter((s) => !s.pinned)]
   }, [list.data, searchQuery.data, search])
 
+  const sections = useMemo(() => groupByDay(rows, search.trim().length > 1, t), [rows, search, t])
+
   const open = useCallback((row: SessionRow) => router.navigate({ pathname: '/chat', params: { stored: row.id } }), [])
 
   async function patch(row: SessionRow, body: Record<string, unknown>, message: string) {
@@ -132,9 +134,19 @@ export default function SessionsScreen() {
           <ErrorState error={list.error} onRetry={() => list.refetch()} />
         </View>
       ) : null}
-      <FlatList
-        data={rows}
+      <SectionList
+        sections={sections}
         keyExtractor={(r) => r.id}
+        stickySectionHeadersEnabled
+        renderSectionHeader={({ section }) =>
+          section.title ? (
+            <View style={[styles.dayHead, { backgroundColor: c.bg }]}>
+              <Text variant="small" weight="semibold" tone="muted" accessibilityRole="header">
+                {section.title}
+              </Text>
+            </View>
+          ) : null
+        }
         contentContainerStyle={{ paddingBottom: space.xxxl }}
         refreshControl={
           <RefreshControl refreshing={list.isRefetching} onRefresh={() => list.refetch()} tintColor={c.accent} colors={[c.accent]} />
@@ -257,6 +269,28 @@ export default function SessionsScreen() {
   )
 }
 
+const DAY = 86_400_000
+
+/** Pinned first, then Today / Yesterday / Previous 7 days / Earlier, like the desktop sidebar. */
+function groupByDay(rows: SessionRow[], searching: boolean, t: ReturnType<typeof useT>) {
+  if (searching) return rows.length ? [{ title: '', data: rows }] : []
+  const midnight = new Date().setHours(0, 0, 0, 0)
+  const buckets: { title: string; data: SessionRow[] }[] = [
+    { title: t('Pinned'), data: [] },
+    { title: t('Today'), data: [] },
+    { title: t('Yesterday'), data: [] },
+    { title: t('Previous 7 days'), data: [] },
+    { title: t('Earlier'), data: [] },
+  ]
+  for (const row of rows) {
+    const ts = row.last_active ?? row.started_at ?? 0
+    const ms = ts < 1e12 ? ts * 1000 : ts
+    const i = row.pinned ? 0 : ms >= midnight ? 1 : ms >= midnight - DAY ? 2 : ms >= midnight - 7 * DAY ? 3 : 4
+    buckets[i].data.push(row)
+  }
+  return buckets.filter((b) => b.data.length)
+}
+
 const SessionCard = memo(function SessionCard({
   row,
   onOpen,
@@ -326,6 +360,7 @@ function Separator() {
 }
 
 const styles = StyleSheet.create({
+  dayHead: { paddingLeft: space.lg + 14, paddingRight: space.lg, paddingTop: space.lg, paddingBottom: space.xs },
   row: { flexDirection: 'row', paddingVertical: space.md, paddingRight: space.lg },
   marker: { width: space.lg + 14, alignItems: 'center', paddingTop: 8 },
   dot: { width: 7, height: 7, borderRadius: 4 },

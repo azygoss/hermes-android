@@ -86,13 +86,28 @@ function useCompletions(text: string, sessionId: string | null) {
   return { items, replaceFrom, clear: () => setItems([]) }
 }
 
+/** Unsent text per chat ('' = the blank new-chat composer), kept for the app session. */
+const drafts = new Map<string, string>()
+
 export function Composer(props: Props) {
   const { sessionId, busy, attachments, editing, prefill, onPrefillConsumed, onCancelEdit, onSend, onStop, pills } = props
   const t = useT()
   const { c } = useTheme()
   const haptics = useSettings((s) => s.haptics)
   const sendOnEnter = useSettings((s) => s.sendOnEnter)
-  const [text, setText] = useState('')
+  const [text, setText] = useState(() => drafts.get(sessionId ?? '') ?? '')
+  const draftKey = useRef(sessionId ?? '')
+  // Each chat keeps its own unsent text when you switch away and back.
+  useEffect(() => {
+    const next = sessionId ?? ''
+    if (next === draftKey.current) return
+    setText((cur) => {
+      if (cur.trim()) drafts.set(draftKey.current, cur)
+      else drafts.delete(draftKey.current)
+      return drafts.get(next) ?? ''
+    })
+    draftKey.current = next
+  }, [sessionId])
   const [sending, setSending] = useState(false)
   const [attachOpen, setAttachOpen] = useState(false)
   const [modeOpen, setModeOpen] = useState(false)

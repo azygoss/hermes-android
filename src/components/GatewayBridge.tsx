@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { AppState } from 'react-native'
 
 import { useRuntime } from '@/lib/hermes'
@@ -12,9 +12,12 @@ export function GatewayBridge() {
   const hermes = useRuntime((s) => s.hermes)
   const identity = active ? `${active.id}|${active.baseUrl}|${active.authMode}` : ''
 
+  const first = useRef(true)
   useEffect(() => {
     resetChat()
-    queryClient.clear()
+    // At launch the cache was just restored from disk for this same connection (see persistOptions' buster).
+    if (!first.current) queryClient.clear()
+    first.current = false
     void useRuntime
       .getState()
       .activate(useConnections.getState().connections.find((c) => c.id === useConnections.getState().activeId) ?? null)

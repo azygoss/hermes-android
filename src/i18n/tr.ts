@@ -1208,4 +1208,20 @@ export const tr: Record<string, string> = {
   Weekly: 'Haftalık',
   'resets {when}': '{when} sıfırlanır',
   '{n}% left': '%{n} kaldı',
+  Earlier: 'Daha eski',
+  'Previous 7 days': 'Son 7 gün',
+  Today: 'Bugün',
+  Yesterday: 'Dün',
+  'Jump to the latest message': 'En son mesaja git',
+  Cancel: 'İptal',
+  'Fingerprint or screen lock when opening, and after 30 seconds away':
+    'Açılışta ve 30 saniyeden uzun ayrıldıktan sonra parmak izi veya ekran kilidi',
+  'Hermes can run commands on your server, so anyone holding your unlocked phone can too.':
+    'Hermes sunucunda komut çalıştırabilir; kilidi açık telefonunu eline alan herkes de çalıştırabilir.',
+  'Hermes is locked': 'Hermes kilitli',
+  'Lock the app': 'Uygulamayı kilitle',
+  Security: 'Güvenlik',
+  'Set up a screen lock on this phone first.': 'Önce bu telefonda bir ekran kilidi ayarla.',
+  'Unlock Hermes': "Hermes'in kilidini aç",
+  'Unlock with your fingerprint or screen lock.': 'Parmak izin veya ekran kilidinle aç.',
 }

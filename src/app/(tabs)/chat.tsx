@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router'
 import {
+  ArrowDown,
   ArrowUpRight,
   Brain,
   Check,
@@ -10,7 +11,7 @@ import {
   WifiOff,
   type LucideIcon,
 } from 'lucide-react-native'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -194,6 +195,9 @@ export default function ChatScreen() {
   const [modelOpen, setModelOpen] = useState(false)
   const [reasoningOpen, setReasoningOpen] = useState(false)
   const [editing, setEditing] = useState<ChatMessage | null>(null)
+  const [awayFromEnd, setAwayFromEnd] = useState(false)
+  const listRef = useRef<FlatList<ChatMessage>>(null)
+  useEffect(() => setAwayFromEnd(false), [activeId])
 
   useEffect(() => {
     if (!params.stored || connState !== 'open') return
@@ -336,8 +340,11 @@ export default function ChatScreen() {
           <EmptyChat onPick={(text) => handleSend(text, 'auto').catch(toastError)} />
         ) : (
           <FlatList
+            ref={listRef}
             data={data}
             inverted
+            onScroll={(e) => setAwayFromEnd(e.nativeEvent.contentOffset.y > 600)}
+            scrollEventThrottle={100}
             keyExtractor={(m) => m.id}
             renderItem={({ item }) => (
               <MessageItem message={item} streaming={item.id === session.streamingId} onReact={onReact} onEdit={onEdit} />
@@ -353,6 +360,22 @@ export default function ChatScreen() {
             windowSize={11}
           />
         )}
+        {awayFromEnd && session ? (
+          <View style={styles.jumpWrap} pointerEvents="box-none">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('Jump to the latest message')}
+              onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
+              style={({ pressed }) => [
+                styles.jump,
+                { backgroundColor: c.elevated, borderColor: c.borderStrong, opacity: pressed ? 0.8 : 1 },
+              ]}
+            >
+              <ArrowDown size={18} color={c.text} strokeWidth={2} />
+              {session.busy ? <View style={[styles.jumpDot, { backgroundColor: c.accent }]} /> : null}
+            </Pressable>
+          </View>
+        ) : null}
 
         {Object.values(connections)
           .filter((pc) => pc.sessionId === activeId)
@@ -496,6 +519,19 @@ const styles = StyleSheet.create({
   banner: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
   empty: { flexGrow: 1, justifyContent: 'flex-end', gap: space.xl, paddingHorizontal: space.xl, paddingVertical: space.lg },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  jumpWrap: { position: 'relative', height: 0, alignItems: 'flex-end', paddingRight: space.lg, zIndex: 2 },
+  jump: {
+    position: 'absolute',
+    bottom: space.md,
+    right: space.lg,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  jumpDot: { position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: 4 },
   resume: {
     flexDirection: 'row',
     alignItems: 'center',

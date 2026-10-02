@@ -1,8 +1,9 @@
 import * as Notifications from 'expo-notifications'
 import { Stack } from 'expo-router'
-import { Bell, Brain, Languages, Mic, Moon, Palette, Send, Smartphone, Type, Vibrate, Wrench } from 'lucide-react-native'
+import { Bell, Brain, Fingerprint, Languages, Mic, Moon, Palette, Send, Smartphone, Type, Vibrate, Wrench } from 'lucide-react-native'
 import { Platform, Pressable, View } from 'react-native'
 
+import { appLockSupported, authenticate, canUseAppLock } from '@/components/AppLock'
 import { Screen, Section, Segmented, Text, toast, ToggleRow } from '@/components/ui'
 import { useT } from '@/i18n'
 import { speak } from '@/lib/voice'
@@ -147,6 +148,22 @@ export default function SettingsScreen() {
         </View>
       </Section>
 
+      {appLockSupported ? (
+        <Section title={t('Security')} footer={t('Hermes can run commands on your server, so anyone holding your unlocked phone can too.')}>
+          <ToggleRow
+            icon={Fingerprint}
+            title={t('Lock the app')}
+            subtitle={t('Fingerprint or screen lock when opening, and after 30 seconds away')}
+            value={s.appLock}
+            onChange={async (on) => {
+              if (on && !(await canUseAppLock())) return toast(t('Set up a screen lock on this phone first.'), 'warn')
+              // Confirm with the lock itself, so turning it on cannot shut you out.
+              if (await authenticate()) s.set({ appLock: on })
+            }}
+            last
+          />
+        </Section>
+      ) : null}
       <Section title={t('Notifications')}>
         <ToggleRow
           icon={Bell}

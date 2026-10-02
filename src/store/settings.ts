@@ -22,6 +22,8 @@ export interface Settings {
   ttsEngine: 'hermes' | 'device'
   notifyOnComplete: boolean
   fontScale: number
+  /** Ask for the fingerprint / screen lock when the app opens or comes back after a while. */
+  appLock: boolean
 }
 
 interface SettingsState extends Settings {
@@ -43,6 +45,7 @@ export const useSettings = create<SettingsState>()(
       ttsEngine: 'hermes',
       notifyOnComplete: true,
       fontScale: 1,
+      appLock: false,
       set: (patch) => set(patch),
     }),
     { name: 'hermes.settings', storage: persistStorage, version: 1 },

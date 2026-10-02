@@ -1,6 +1,6 @@
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter'
 import { JetBrainsMono_400Regular, JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono'
-import { QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { useFonts } from 'expo-font'
 import { DarkTheme, DefaultTheme, SplashScreen, Stack, ThemeProvider } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -9,11 +9,12 @@ import { useEffect, useState } from 'react'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
+import { AppLock } from '@/components/AppLock'
 import { GatewayBridge } from '@/components/GatewayBridge'
 import { DialogHost, ToastHost } from '@/components/ui/Dialogs'
 import { TurnEffects } from '@/components/chat/TurnEffects'
 import { useT } from '@/i18n'
-import { queryClient } from '@/lib/query'
+import { persistOptions, queryClient } from '@/lib/query'
 import { useConnections } from '@/store/connections'
 import { useSettings } from '@/store/settings'
 import { AppThemeProvider, font, useTheme } from '@/theme'
@@ -62,6 +63,11 @@ export default function RootLayout() {
 
 function AppShell() {
   const { c, isDark } = useTheme()
+  // Restored data belongs to one backend; a different active connection discards it.
+  const cacheOwner = useConnections((s) => {
+    const a = s.connections.find((x) => x.id === s.activeId)
+    return a ? `${a.id}|${a.baseUrl}|${a.authMode}` : 'none'
+  })
   const t = useT()
 
   useEffect(() => {
@@ -84,7 +90,7 @@ function AppShell() {
   return (
     <SafeAreaProvider>
       <KeyboardProvider>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider client={queryClient} persistOptions={{ ...persistOptions, buster: cacheOwner }}>
           <ThemeProvider value={navTheme}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
             <GatewayBridge />
@@ -106,8 +112,9 @@ function AppShell() {
             </Stack>
             <DialogHost />
             <ToastHost />
+            <AppLock />
           </ThemeProvider>
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </KeyboardProvider>
     </SafeAreaProvider>
   )

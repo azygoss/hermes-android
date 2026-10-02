@@ -1,6 +1,19 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { router } from 'expo-router'
-import { Archive, ArchiveRestore, Download, History, MessageSquare, Pencil, Pin, PinOff, Search, Trash2 } from 'lucide-react-native'
+import {
+  Archive,
+  ArchiveRestore,
+  Download,
+  EyeOff,
+  GitBranch,
+  History,
+  MessageSquare,
+  Pencil,
+  Pin,
+  PinOff,
+  Search,
+  Trash2,
+} from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 
@@ -22,7 +35,7 @@ import {
 } from '@/components/ui'
 import { useT } from '@/i18n'
 import { relativeTime } from '@/lib/format'
-import { rest, useRuntime } from '@/lib/hermes'
+import { rest, rpc, useRuntime } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { closeRuntime, useChat } from '@/store/chat'
 import { radius, space, useTheme } from '@/theme'
@@ -173,6 +186,37 @@ export default function SessionsScreen() {
                 setSelected(null),
                 patch(selected, { archived: !selected.archived }, selected.archived ? t('Restored') : t('Archived'))
               )}
+            />
+            <Row
+              icon={GitBranch}
+              title={t('Branch into a new chat')}
+              onPress={async () => {
+                const row = selected
+                setSelected(null)
+                try {
+                  const res = await rpc().request('session.branch_stored', { parent_session_id: row.id, source: 'android', cols: 60 })
+                  await queryClient.invalidateQueries({ queryKey: ['sessions'] })
+                  router.navigate({ pathname: '/chat', params: { stored: res.stored_session_id } })
+                } catch (e) {
+                  toastError(e)
+                }
+              }}
+            />
+            <Row
+              icon={EyeOff}
+              title={t('Hide from the list')}
+              subtitle={t('Still resumable; hidden chats stay out of recents')}
+              onPress={async () => {
+                const row = selected
+                setSelected(null)
+                try {
+                  await rpc().request('session.set_hidden', { session_id: row.id, hidden: true })
+                  toast(t('Hidden'), 'success')
+                  await queryClient.invalidateQueries({ queryKey: ['sessions'] })
+                } catch (e) {
+                  toastError(e)
+                }
+              }}
             />
             <Row
               icon={Download}

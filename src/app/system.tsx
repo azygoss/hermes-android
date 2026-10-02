@@ -1,5 +1,5 @@
 import { File, Paths } from 'expo-file-system'
-import { Stack } from 'expo-router'
+import { router, Stack } from 'expo-router'
 import * as Sharing from 'expo-sharing'
 import {
   Archive,
@@ -8,13 +8,17 @@ import {
   Eraser,
   FileStack,
   Gauge,
+  Globe,
   HardDrive,
   ListX,
+  PlugZap,
+  RefreshCw,
   Ruler,
   ScanSearch,
   ShieldCheck,
   Sparkles,
   Stethoscope,
+  TerminalSquare,
   Trash2,
   Webhook,
 } from 'lucide-react-native'
@@ -43,8 +47,8 @@ import {
 } from '@/components/ui'
 import { useT } from '@/i18n'
 import { bytes, dateTime } from '@/lib/format'
-import { useRest } from '@/lib/hooks'
-import { hermes, rest } from '@/lib/hermes'
+import { useRest, useRpc } from '@/lib/hooks'
+import { hermes, rest, rpc } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { space, useTheme } from '@/theme'
 
@@ -78,6 +82,14 @@ export default function SystemScreen() {
     '/api/curator',
   )
   const checkpoints = useRest<{ sessions: unknown[]; total_bytes: number }>(['system', 'checkpoints'], '/api/ops/checkpoints')
+  const battery = useRpc(['system', 'battery'], 'system.battery', {})
+  const browser = useRpc(['system', 'browser'], 'browser.manage', { action: 'status' })
+  const [browserOpen, setBrowserOpen] = useState(false)
+  const browserState = browser.data
+    ? browser.data.connected
+      ? t('Connected: {url}', { url: browser.data.url ?? '' })
+      : t('Not connected')
+    : undefined
   const sessionStats = useRest<{ total: number; messages: number; archived: number; by_source: Record<string, number> }>(
     ['system', 'sessions'],
     '/api/sessions/stats',
@@ -136,6 +148,9 @@ export default function SystemScreen() {
           <KeyValue label={t('Disk')} value={`${bytes(s.disk.used)} / ${bytes(s.disk.total)} (${s.disk.percent}%)`} />
           <KeyValue label="Python" value={s.python_version} />
           {s.uptime_seconds ? <KeyValue label={t('Uptime')} value={`${Math.round(s.uptime_seconds / 86400)}d`} /> : null}
+          {battery.data?.available ? (
+            <KeyValue label={t('Battery')} value={`${battery.data.percent ?? '?'}%${battery.data.plugged ? ` · ${t('charging')}` : ''}`} />
+          ) : null}
         </Card>
       ) : (
         <Loading />
@@ -171,6 +186,47 @@ export default function SystemScreen() {
             last
           />
         ) : null}
+      </Section>
+
+      <Section title={t('Tools')}>
+        <Row
+          icon={TerminalSquare}
+          title={t('Hermes CLI')}
+          subtitle={t('Run hermes subcommands without a terminal')}
+          onPress={() => router.push('/cli')}
+        />
+        <Row
+          icon={RefreshCw}
+          title={t('Reload .env')}
+          subtitle={t('Pick up edited API keys without restarting')}
+          onPress={async () => {
+            try {
+              const res = await rpc().request('reload.env', {})
+              toast(t('{n} variables reloaded', { n: res.updated }), 'success')
+            } catch (e) {
+              toastError(e)
+            }
+          }}
+        />
+        <Row
+          icon={PlugZap}
+          title={t('Check provider setup')}
+          subtitle={t('Verify the model provider the agent would use')}
+          onPress={async () => {
+            try {
+              const [st, rc] = await Promise.all([rpc().request('setup.status', {}), rpc().request('setup.runtime_check', {})])
+              const lines = [
+                `${t('Provider configured')}: ${st.provider_configured ? '✓' : '✗'}`,
+                `${t('Ready')}: ${st.ready ? '✓' : '✗'}`,
+                rc.ok ? `${rc.provider} · ${rc.model}` : (rc.error ?? st.error ?? ''),
+              ]
+              toast(lines.filter(Boolean).join('\n'), rc.ok ? 'success' : 'warn')
+            } catch (e) {
+              toastError(e)
+            }
+          }}
+        />
+        <Row icon={Globe} title={t('Browser for web tools')} subtitle={browserState} onPress={() => setBrowserOpen(true)} last />
       </Section>
 
       <Section title={t('Health')}>
@@ -344,6 +400,7 @@ export default function SystemScreen() {
         }}
       />
       <HooksSheet visible={hooksOpen} onClose={() => setHooksOpen(false)} />
+      <BrowserSheet visible={browserOpen} onClose={() => setBrowserOpen(false)} connected={!!browser.data?.connected} />
     </Screen>
   )
 }
@@ -419,6 +476,42 @@ function HooksSheet({ visible, onClose }: { visible: boolean; onClose: () => voi
         helper={t('e.g. a tool name for post_tool_call')}
       />
       <Button label={t('Add hook')} onPress={add} disabled={!command.trim()} />
+    </Sheet>
+  )
+}
+
+function BrowserSheet({ visible, onClose, connected }: { visible: boolean; onClose: () => void; connected: boolean }) {
+  const t = useT()
+  const [url, setUrl] = useState('http://127.0.0.1:9222')
+  const [log, setLog] = useState<string[]>([])
+  const [busy, setBusy] = useState(false)
+  const act = async (action: 'connect' | 'disconnect') => {
+    setBusy(true)
+    try {
+      const res = await rpc().request('browser.manage', { action, url: action === 'connect' ? url : null }, { timeoutMs: 120_000 })
+      setLog(res.messages ?? [])
+      await queryClient.invalidateQueries({ queryKey: ['system', 'browser'] })
+    } catch (e) {
+      toastError(e)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Sheet visible={visible} onClose={onClose} title={t('Browser for web tools')}>
+      <Text tone="muted" variant="small">
+        {t('Attach the browser tools to a Chrome running with remote debugging (CDP) on the backend, or drop back to the built-in one.')}
+      </Text>
+      <TextField label={t('CDP address')} value={url} onChangeText={setUrl} autoCapitalize="none" mono />
+      <View style={{ flexDirection: 'row', gap: space.sm }}>
+        <Button label={t('Connect')} onPress={() => act('connect')} loading={busy} />
+        {connected ? <Button label={t('Disconnect')} variant="secondary" onPress={() => act('disconnect')} /> : null}
+      </View>
+      {log.map((l, i) => (
+        <Text key={i} variant="small" mono>
+          {l}
+        </Text>
+      ))}
     </Sheet>
   )
 }

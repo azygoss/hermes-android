@@ -9,6 +9,8 @@ import {
   FileText,
   Image as ImageIcon,
   Info,
+  ThumbsDown,
+  ThumbsUp,
   Volume2,
   XCircle,
 } from 'lucide-react-native'
@@ -63,9 +65,10 @@ interface Props {
   message: ChatMessage
   streaming: boolean
   onEdit?: (m: ChatMessage) => void
+  onReact?: (m: ChatMessage, emoji: string) => void
 }
 
-export const MessageItem = memo(function MessageItem({ message, streaming, onEdit }: Props) {
+export const MessageItem = memo(function MessageItem({ message, streaming, onEdit, onReact }: Props) {
   const { c } = useTheme()
   const t = useT()
   const showReasoning = useSettings((s) => s.showReasoning)
@@ -169,6 +172,13 @@ export const MessageItem = memo(function MessageItem({ message, streaming, onEdi
         if (!part.text) return null
         return <Markdown key={i} text={part.text} />
       })}
+      {message.images?.length ? (
+        <View style={styles.attachRow}>
+          {message.images.map((img) => (
+            <RemoteImage key={img.slice(0, 64)} src={img} size={220} />
+          ))}
+        </View>
+      ) : null}
       {streaming && !text && !message.parts.length ? <View style={[styles.cursor, { backgroundColor: c.accent }]} /> : null}
       {message.error ? (
         <View style={[styles.system, { backgroundColor: c.dangerSoft }]}>
@@ -201,6 +211,28 @@ export const MessageItem = memo(function MessageItem({ message, streaming, onEdi
           >
             <Volume2 size={15} color={c.textFaint} />
           </Pressable>
+          {onReact && !message.label ? (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('Good reply')}
+                hitSlop={10}
+                onPress={() => onReact(message, '👍')}
+                style={styles.action}
+              >
+                <ThumbsUp size={15} color={message.reaction === '👍' ? c.accentText : c.textFaint} />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('Bad reply')}
+                hitSlop={10}
+                onPress={() => onReact(message, '👎')}
+                style={styles.action}
+              >
+                <ThumbsDown size={15} color={message.reaction === '👎' ? c.danger : c.textFaint} />
+              </Pressable>
+            </>
+          ) : null}
           {message.interim ? (
             <Text variant="caption" tone="faint">
               {t('interim')}

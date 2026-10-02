@@ -4,9 +4,22 @@ import { useEffect, useMemo, useState } from 'react'
 import { View } from 'react-native'
 
 import { FieldInput } from '@/components/FieldInput'
-import { Button, Chip, ErrorState, Loading, Screen, Section, Segmented, Text, TextField, toast, toastError } from '@/components/ui'
+import {
+  Button,
+  Chip,
+  ErrorState,
+  KeyValue,
+  Loading,
+  Screen,
+  Section,
+  Segmented,
+  Text,
+  TextField,
+  toast,
+  toastError,
+} from '@/components/ui'
 import { useT } from '@/i18n'
-import { useRest } from '@/lib/hooks'
+import { useRest, useRpc } from '@/lib/hooks'
 import { hermes, rest } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { space } from '@/theme'
@@ -34,7 +47,7 @@ function setPath(obj: Record<string, unknown>, path: string, value: unknown) {
 
 export default function ConfigScreen() {
   const t = useT()
-  const [mode, setMode] = useState<'form' | 'yaml'>('form')
+  const [mode, setMode] = useState<'summary' | 'form' | 'yaml'>('summary')
   return (
     <Screen>
       <Stack.Screen options={{ title: t('Configuration') }} />
@@ -42,11 +55,12 @@ export default function ConfigScreen() {
         value={mode}
         onChange={setMode}
         options={[
+          { value: 'summary', label: t('Summary') },
           { value: 'form', label: t('Settings') },
           { value: 'yaml', label: 'config.yaml' },
         ]}
       />
-      {mode === 'form' ? <ConfigForm /> : <RawYaml />}
+      {mode === 'summary' ? <ConfigSummary /> : mode === 'form' ? <ConfigForm /> : <RawYaml />}
     </Screen>
   )
 }
@@ -198,6 +212,27 @@ function RawYaml() {
       </Text>
       <TextField value={text} onChangeText={setText} multiline minLines={24} mono autoCapitalize="none" autoCorrect={false} />
       <Button label={t('Save config.yaml')} icon={FileCode2} onPress={save} loading={saving} />
+    </>
+  )
+}
+
+function ConfigSummary() {
+  const t = useT()
+  const q = useRpc(['config', 'show'], 'config.show', {})
+  if (q.isLoading) return <Loading />
+  if (q.error) return <ErrorState error={q.error} onRetry={() => q.refetch()} />
+  return (
+    <>
+      {(q.data?.sections ?? []).map((sec) => (
+        <Section key={sec.title} title={sec.title}>
+          <View style={{ padding: space.lg }}>
+            {(sec.rows ?? []).map((row, i) => (
+              <KeyValue key={i} label={row[0] ?? ''} value={row.slice(1).join(' ') || '—'} />
+            ))}
+          </View>
+        </Section>
+      ))}
+      {!q.data?.sections?.length ? <Text tone="muted">{t('No summary available.')}</Text> : null}
     </>
   )
 }

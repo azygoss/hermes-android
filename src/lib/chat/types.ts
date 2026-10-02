@@ -33,6 +33,8 @@ export interface ChatMessage {
   files?: string[]
   /** Side answers (/btw, /background) are labelled. */
   label?: string
+  /** The user's reaction to an assistant reply (message.react). */
+  reaction?: string | null
 }
 
 export interface Todo {

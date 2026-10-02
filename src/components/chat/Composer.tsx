@@ -11,6 +11,7 @@ import {
   Loader2,
   Mic,
   Paperclip,
+  Sparkles,
   Square,
   X,
   Zap,
@@ -18,7 +19,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 
-import { Row, Sheet, Text, toast, toastError } from '@/components/ui'
+import { prompt, Row, Sheet, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
 import type { CompletionItem } from '@/lib/gateway/contract.generated'
 import { rpc } from '@/lib/hermes'
@@ -40,6 +41,7 @@ interface Props {
   onAttachImage: (base64: string, name: string, uri: string) => Promise<void>
   onAttachFile: (dataUrl: string, name: string) => Promise<void>
   onAttachPdf: (base64: string, name: string) => Promise<void>
+  onGenerateImage: (prompt: string) => Promise<void>
   onRemoveAttachment: (key: string) => void
   ensureSession: () => Promise<string>
   pills?: React.ReactNode
@@ -353,6 +355,16 @@ export function Composer(props: Props) {
           />
           <Row icon={Camera} title={t('Take a photo')} onPress={() => pickImage(true)} />
           <Row icon={FileText} title={t('PDF')} subtitle={t('Pages are sent as images')} onPress={() => pickDocument(true)} />
+          <Row
+            icon={Sparkles}
+            title={t('Generate an image')}
+            subtitle={t('Uses the image tool configured on the backend')}
+            onPress={async () => {
+              setAttachOpen(false)
+              const p = await prompt(t('Describe the image'), { multiline: true, placeholder: t('A lighthouse at dusk, watercolor') })
+              if (p) await props.onGenerateImage(p).catch(toastError)
+            }}
+          />
           <Row
             icon={Paperclip}
             title={t('Any file')}

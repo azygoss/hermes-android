@@ -3,7 +3,7 @@ import { Check, Lock, Search } from 'lucide-react-native'
 import { useMemo, useState } from 'react'
 import { FlatList, Pressable, View } from 'react-native'
 
-import { Badge, Button, confirm, ErrorState, Loading, Sheet, Text, TextField, toast, toastError, ToggleRow } from '@/components/ui'
+import { Button, confirm, ErrorState, Loading, prompt, Sheet, Text, TextField, toast, toastError, ToggleRow } from '@/components/ui'
 import { useT } from '@/i18n'
 import type { ModelOptionsResult } from '@/lib/gateway/contract.generated'
 import { rpc } from '@/lib/hermes'
@@ -85,6 +85,35 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
     return out
   }, [query.data, q, t])
 
+  async function addKey(slug: string, name: string) {
+    const key = await prompt(t('API key for {p}', { p: name }), { secret: true })
+    if (!key) return
+    try {
+      await rpc().request('model.save_key', { slug, api_key: key.trim(), session_id: sessionId })
+      toast(t('{name} is ready', { name }), 'success')
+      void query.refetch()
+    } catch (e) {
+      toastError(e)
+    }
+  }
+
+  async function disconnect(slug: string, name: string) {
+    if (
+      !(await confirm(
+        t('Remove the credentials for {name}?', { name }),
+        t('API keys and sign-ins for this provider are deleted on the backend.'),
+        { destructive: true, confirmLabel: t('Remove') },
+      ))
+    )
+      return
+    try {
+      await rpc().request('model.disconnect', { slug, session_id: sessionId })
+      void query.refetch()
+    } catch (e) {
+      toastError(e)
+    }
+  }
+
   async function pick(provider: string, model: string) {
     setBusy(`${provider}/${model}`)
     try {
@@ -130,7 +159,11 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
                 <Text variant="small" weight="semibold" tone="muted" style={{ flex: 1 }}>
                   {item.providerName}
                 </Text>
-                {!item.authed ? <Badge label={t('needs key')} tone="warn" /> : null}
+                {!item.authed ? (
+                  <Button size="sm" variant="ghost" label={t('Add key')} onPress={() => addKey(item.provider, item.providerName)} />
+                ) : (
+                  <Button size="sm" variant="ghost" label={t('Disconnect')} onPress={() => disconnect(item.provider, item.providerName)} />
+                )}
               </View>
             )
           }

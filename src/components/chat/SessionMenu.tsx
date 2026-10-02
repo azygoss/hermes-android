@@ -254,6 +254,21 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
           <Row icon={Target} title={t('Goal, loop & heartbeat')} onPress={go('/session/goals')} />
           <Row icon={History} title={t('Checkpoints & rollback')} onPress={go('/session/rollback')} />
           <Row
+            icon={FolderOpen}
+            title={t('Workspace facts')}
+            subtitle={t('Project type, git state and verification evidence')}
+            onPress={run(async () => {
+              const [facts, verification] = await Promise.all([
+                rpc().request('project.facts', { cwd: String(info.cwd ?? '') || null }),
+                rpc()
+                  .request('verification.status', { session_id: sid })
+                  .catch(() => null),
+              ])
+              const body = JSON.stringify({ facts: facts.facts, verification: verification?.verification }, null, 2)
+              addSystemMessage(sid, '```json\n' + body + '\n```', 'info', 'workspace')
+            })}
+          />
+          <Row
             icon={Info}
             title={t('Status')}
             onPress={run(async () => {
@@ -298,6 +313,18 @@ export function SessionMenu({ visible, onClose, session, onPickModel, onPickReas
               if (!platform) return
               await rpc().request('handoff.request', { session_id: sid, platform })
               toast(t('Handoff queued'), 'success')
+              for (let i = 0; i < 15; i++) {
+                await new Promise((r) => setTimeout(r, 2000))
+                const st = await rpc().request('handoff.state', { session_id: sid })
+                if (st.error || st.state === 'failed') {
+                  toast(st.error || t('Handoff failed'), 'error')
+                  return
+                }
+                if (st.state && st.state !== 'pending' && st.state !== 'queued') {
+                  toast(t('Handoff to {p}: {s}', { p: st.platform, s: st.state }), 'success')
+                  return
+                }
+              }
             })}
           />
           <Row

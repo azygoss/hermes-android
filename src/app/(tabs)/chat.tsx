@@ -16,16 +16,19 @@ import { Button, Chip, IconButton, Sheet, Text, toast, toastError } from '@/comp
 import { useT } from '@/i18n'
 import type { ChatMessage } from '@/lib/chat/types'
 import { textOf } from '@/lib/chat/types'
-import { useRest } from '@/lib/hooks'
-import { rpc, useRuntime } from '@/lib/hermes'
+import { useRest, useRpc } from '@/lib/hooks'
+import { rpc, useProfile, useRuntime } from '@/lib/hermes'
 import {
+  addSystemMessage,
   attachFile,
   attachImage,
   attachPdf,
+  generateImage,
   interrupt,
   loadHistory,
   newChat,
   openStored,
+  react,
   removeAttachment,
   runSlash,
   send,
@@ -89,6 +92,8 @@ function ConnectionBanner() {
 function EmptyChat({ onPick }: { onPick: (text: string) => void }) {
   const t = useT()
   const ready = useRuntime((s) => s.state === 'open')
+  const profile = useProfile()
+  const recent = useRpc(['session.most_recent', profile], 'session.most_recent', { profile })
   const suggestions = [
     t('What can you do?'),
     t('Summarise what we worked on yesterday'),
@@ -104,6 +109,14 @@ function EmptyChat({ onPick }: { onPick: (text: string) => void }) {
       <Text tone="muted" center style={{ maxWidth: 300 }}>
         {t('Hermes runs on your machine with its tools, memory and skills. Ask anything, or type / for commands.')}
       </Text>
+      {recent.data?.session_id ? (
+        <Button
+          label={t('Continue: {title}', { title: (recent.data.title || t('last chat')).slice(0, 40) })}
+          variant="secondary"
+          size="sm"
+          onPress={() => openStored(recent.data!.session_id!).catch(toastError)}
+        />
+      ) : null}
       <View style={styles.suggestions}>
         {suggestions.map((s) => (
           <Chip key={s} label={s} onPress={() => ready && onPick(s)} />
@@ -157,6 +170,18 @@ export default function ChatScreen() {
 
   async function handleSend(text: string, mode: 'auto' | 'steer' | 'redirect') {
     const trimmed = text.trim()
+    if (trimmed.startsWith('!') && trimmed.length > 1) {
+      const sid = await ensureSession()
+      const res = await rpc().request('shell.exec', { command: trimmed.slice(1).trim() }, { timeoutMs: 120_000 })
+      const out = [res.stdout, res.stderr].filter(Boolean).join('\n').trim()
+      addSystemMessage(
+        sid,
+        `\`$ ${trimmed.slice(1).trim()}\` → ${t('exit {code}', { code: res.code })}\n\n\`\`\`\n${out || ' '}\n\`\`\``,
+        res.code === 0 ? 'info' : 'warn',
+        'shell',
+      )
+      return true
+    }
     if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
       const [name, ...rest] = trimmed.slice(1).split(/\s+/)
       const local = LOCAL_COMMANDS[name.toLowerCase()]
@@ -257,6 +282,7 @@ export default function ChatScreen() {
               <MessageItem
                 message={item}
                 streaming={item.id === session.streamingId}
+                onReact={(m, emoji) => react(session.runtimeId, m, emoji).catch(toastError)}
                 onEdit={(m) => {
                   setEditing(m)
                   setPrefill(session.runtimeId, textOf(m))
@@ -308,6 +334,7 @@ export default function ChatScreen() {
             onAttachImage={async (b64, name, uri) => attachImage(await ensureSession(), b64, name, uri)}
             onAttachFile={async (dataUrl, name) => attachFile(await ensureSession(), dataUrl, name)}
             onAttachPdf={async (b64, name) => attachPdf(await ensureSession(), b64, name)}
+            onGenerateImage={async (prompt) => generateImage(await ensureSession(), prompt)}
             onRemoveAttachment={(key) => activeId && removeAttachment(activeId, key)}
             pills={
               <>

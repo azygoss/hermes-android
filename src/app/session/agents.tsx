@@ -3,7 +3,7 @@ import { Octagon, Skull, SquareTerminal, Users } from 'lucide-react-native'
 import { useState } from 'react'
 import { View } from 'react-native'
 
-import { Badge, Button, Card, confirm, EmptyState, prompt, Screen, Section, Sheet, Text, toast, toastError } from '@/components/ui'
+import { Badge, Button, Card, confirm, EmptyState, prompt, Row, Screen, Section, Sheet, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
 import type { ProcessEntry, SubagentSnapshot } from '@/lib/gateway/contract.generated'
 import { useRpc } from '@/lib/hooks'
@@ -23,6 +23,7 @@ export default function SessionAgents() {
   const procs = useRpc(['process.list', sid], 'process.list', { session_id: sid }, { refetchInterval: 4000 })
   const delegation = useRpc(['delegation.status'], 'delegation.status', {}, { refetchInterval: 5000 })
   const [tail, setTail] = useState<{ id: string; text: string } | null>(null)
+  const trees = useRpc(['spawn_tree.list', sid], 'spawn_tree.list', { session_id: sid, cross_session: true, limit: 10 })
 
   const snapshots = (subs.data?.subagents ?? []) as SubagentSnapshot[]
   const finished = Object.values(live).filter((s) => !snapshots.some((x) => x.subagent_id === s.subagent_id) && s.status !== 'running')
@@ -210,6 +211,35 @@ export default function SessionAgents() {
           </View>
         )}
       </Section>
+
+      {trees.data?.entries.length ? (
+        <Section title={t('Saved delegation trees')}>
+          {trees.data.entries.map((e, i, all) => (
+            <Row
+              key={e.path}
+              title={e.label || e.path.split('/').pop() || e.path}
+              subtitle={[
+                e.count != null ? t('{n} subagents', { n: e.count }) : null,
+                e.started_at ? new Date(e.started_at * 1000).toLocaleString() : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              onPress={async () => {
+                try {
+                  const tree = await rpc().request('spawn_tree.load', { path: e.path })
+                  const lines = (tree.subagents ?? []).map(
+                    (sa) => `• ${String(sa.goal ?? sa.subagent_id ?? '')} — ${String(sa.status ?? '')}`,
+                  )
+                  setTail({ id: e.path, text: lines.join('\n') || JSON.stringify(tree, null, 2) })
+                } catch (err) {
+                  toastError(err)
+                }
+              }}
+              last={i === all.length - 1}
+            />
+          ))}
+        </Section>
+      ) : null}
 
       <Sheet visible={!!tail} onClose={() => setTail(null)} title={t('Subagent transcript')}>
         <Text mono variant="caption" selectable>

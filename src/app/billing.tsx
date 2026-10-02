@@ -3,10 +3,10 @@ import * as WebBrowser from 'expo-web-browser'
 import { CreditCard, ExternalLink, LogIn } from 'lucide-react-native'
 import { View } from 'react-native'
 
-import { Badge, Button, Card, EmptyState, ErrorState, KeyValue, Loading, Screen, Section, Text } from '@/components/ui'
+import { Badge, Button, Card, EmptyState, ErrorState, KeyValue, Loading, Screen, Section, Text, toast } from '@/components/ui'
 import { useT } from '@/i18n'
 import { useRpc } from '@/lib/hooks'
-import { useProfile } from '@/lib/hermes'
+import { rpc, useProfile } from '@/lib/hermes'
 import { radius, space, useTheme } from '@/theme'
 
 /** Nous Portal plan, credits and balance for the signed-in account. */
@@ -17,6 +17,7 @@ export default function BillingScreen() {
   const billing = useRpc(['billing', profile], 'billing.state', { profile })
   const sub = useRpc(['subscription', profile], 'subscription.state', { profile })
   const bars = useRpc(['usage.bars'], 'usage.bars', {})
+  const free = useRpc(['free_tier', profile], 'free_tier.status', { profile })
 
   if (billing.isLoading || sub.isLoading) return <Loading />
   const b = billing.data
@@ -25,6 +26,29 @@ export default function BillingScreen() {
     return (
       <Screen>
         <Stack.Screen options={{ title: t('Plan & credits') }} />
+        {free.data?.available ? (
+          <Card>
+            <Text weight="semibold">{t('Nous free tier')}</Text>
+            <Text variant="small" tone="muted">
+              {free.data.enabled
+                ? t('Active: {model}', { model: free.data.label || free.data.model })
+                : t('Try Hermes on a free model without an API key.')}
+            </Text>
+            {!free.data.enabled ? (
+              <Button
+                label={t('Turn on the free tier')}
+                onPress={async () => {
+                  const r = await rpc()
+                    .request('free_tier.provision', { profile })
+                    .catch((e) => ({ enabled: false, error: e instanceof Error ? e.message : String(e) }))
+                  if (r.error) toast(r.error, 'warn')
+                  void free.refetch()
+                }}
+                style={{ alignSelf: 'flex-start' }}
+              />
+            ) : null}
+          </Card>
+        ) : null}
         <EmptyState
           icon={LogIn}
           title={t('Not signed in to Nous Portal')}

@@ -1,5 +1,17 @@
 import { router, Stack } from 'expo-router'
-import { Archive, ArchiveRestore, Check, Folder, FolderKanban, FolderPlus, MessageSquare, Plus, Star, Trash2 } from 'lucide-react-native'
+import {
+  Archive,
+  ArchiveRestore,
+  Check,
+  Folder,
+  FolderKanban,
+  FolderPlus,
+  MessageSquare,
+  Pencil,
+  Plus,
+  Star,
+  Trash2,
+} from 'lucide-react-native'
 import { useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
@@ -142,6 +154,21 @@ function ProjectSheet({
             onPress={act(() => rpc().request('projects.set_active', { id: null, profile }))}
           />
         )}
+        <Button
+          size="sm"
+          variant="secondary"
+          icon={Pencil}
+          label={t('Edit')}
+          onPress={async () => {
+            const name = await prompt(t('Project name'), { initial: project?.name ?? '' })
+            if (!name) return
+            const description = await prompt(t('Description'), { initial: project?.description ?? '', multiline: true })
+            await act(
+              () => rpc().request('projects.update', { id, name, description: description ?? project?.description ?? null, profile }),
+              t('Saved'),
+            )()
+          }}
+        />
         <Button
           size="sm"
           variant="secondary"

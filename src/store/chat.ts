@@ -924,3 +924,46 @@ export async function answerConnection(
       return { connections: rest }
     })
 }
+
+/** Thumbs up/down on an assistant reply; toggles off when the same emoji is sent again. */
+export async function react(rid: string, message: ChatMessage, emoji: string) {
+  const next = message.reaction === emoji ? null : emoji
+  update(rid, (s) => ({ messages: patchMessage(s, message.id, (m) => ({ ...m, reaction: next })) }))
+  try {
+    await hermes().gateway.request('message.react', {
+      session_id: rid,
+      ...(message.rowId != null ? { row_id: message.rowId } : { newest_role: 'assistant' }),
+      emoji: next,
+    })
+  } catch (e) {
+    update(rid, (s) => ({ messages: patchMessage(s, message.id, (m) => ({ ...m, reaction: message.reaction ?? null })) }))
+    throw e
+  }
+}
+
+/** Generate an image with the backend's image tool and show it in the chat. */
+export async function generateImage(rid: string, prompt: string, aspectRatio?: string) {
+  const pending: ChatMessage = {
+    id: localId('img'),
+    role: 'assistant',
+    parts: [{ kind: 'text', text: t('Generating: {prompt}', { prompt }) }],
+    at: Date.now(),
+    label: 'image',
+  }
+  update(rid, (s) => ({ messages: [...s.messages, pending] }))
+  try {
+    const res = await hermes().gateway.request('image.generate', { prompt, aspect_ratio: aspectRatio ?? null }, { timeoutMs: 300_000 })
+    if (!res.available) throw new Error(t('No image generation provider is configured on the backend.'))
+    if (res.success === false || !(res.image || res.image_data)) throw new Error(res.error || t('Image generation failed'))
+    const src = res.image_data
+      ? res.image_data.startsWith('data:')
+        ? res.image_data
+        : `data:image/png;base64,${res.image_data}`
+      : res.image!
+    update(rid, (s) => ({
+      messages: patchMessage(s, pending.id, (m) => ({ ...m, parts: [{ kind: 'text', text: prompt }], images: [src] })),
+    }))
+  } catch (e) {
+    update(rid, (s) => ({ messages: patchMessage(s, pending.id, (m) => ({ ...m, error: e instanceof Error ? e.message : String(e) })) }))
+  }
+}

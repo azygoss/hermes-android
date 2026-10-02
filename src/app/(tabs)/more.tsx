@@ -1,5 +1,18 @@
 import { router } from 'expo-router'
-import { BarChart3, FileCog, FolderOpen, Info, KeyRound, ScrollText, Settings2, ShieldCheck, Smartphone, Wifi } from 'lucide-react-native'
+import {
+  BarChart3,
+  CreditCard,
+  FileCog,
+  FolderOpen,
+  Info,
+  KeyRound,
+  MonitorPlay,
+  ScrollText,
+  Settings2,
+  ShieldCheck,
+  Smartphone,
+  Wifi,
+} from 'lucide-react-native'
 import { View } from 'react-native'
 
 import { TabHeader } from '@/components/TabHeader'
@@ -33,6 +46,18 @@ export default function MoreHub() {
           <Row icon={FolderOpen} title={t('Files')} subtitle={t('Browse, preview, upload and download')} onPress={go('/files')} />
           <Row icon={BarChart3} title={t('Analytics')} subtitle={t('Tokens, cost and activity')} onPress={go('/analytics')} />
           <Row icon={ScrollText} title={t('Logs')} subtitle={t('Agent, gateway and error logs')} onPress={go('/logs')} />
+          <Row
+            icon={MonitorPlay}
+            title={t('Bot screen')}
+            subtitle={t('Watch the virtual desktop the agent drives')}
+            onPress={go('/screen')}
+          />
+          <Row
+            icon={CreditCard}
+            title={t('Plan & credits')}
+            subtitle={t('Nous Portal subscription and balance')}
+            onPress={go('/billing')}
+          />
           <Row
             icon={KeyRound}
             title={t('API keys & accounts')}

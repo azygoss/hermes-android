@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { router } from 'expo-router'
-import { Activity, CalendarClock, KanbanSquare, MessagesSquare, UserCheck, Webhook } from 'lucide-react-native'
+import { Activity, CalendarClock, KanbanSquare, MessagesSquare, UserCheck, Users, Webhook } from 'lucide-react-native'
 import { View } from 'react-native'
 
 import { TabHeader } from '@/components/TabHeader'
@@ -28,6 +28,7 @@ export default function AutomateHub() {
             onPress={go('/cron')}
           />
           <Row icon={KanbanSquare} title={t('Kanban board')} subtitle={t('Tasks for a team of agent profiles')} onPress={go('/kanban')} />
+          <Row icon={Users} title={t('Group rooms')} subtitle={t('Several profiles in one conversation')} onPress={go('/groups')} />
           <Row icon={Activity} title={t('Background agents')} subtitle={t('Everything running right now')} onPress={go('/agents')} last />
         </Section>
         <Section title={t('Reach Hermes from anywhere')}>

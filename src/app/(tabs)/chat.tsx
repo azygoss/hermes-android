@@ -5,6 +5,7 @@ import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Composer } from '@/components/chat/Composer'
+import { ConnectionCard } from '@/components/chat/ConnectionCard'
 import { MessageItem } from '@/components/chat/MessageItem'
 import { ModelPicker, REASONING_LEVELS } from '@/components/chat/ModelPicker'
 import { RequestCard } from '@/components/chat/RequestCard'
@@ -120,6 +121,7 @@ export default function ChatScreen() {
   const activeId = useChat((s) => s.activeId)
   const session = useChat((s) => (s.activeId ? s.sessions[s.activeId] : undefined))
   const requests = useChat((s) => s.requests)
+  const connections = useChat((s) => s.connections)
   const prefill = useChat((s) =>
     s.composerPrefill && (s.composerPrefill.runtimeId || null) === (s.activeId || null) ? s.composerPrefill.text : null,
   )
@@ -273,6 +275,13 @@ export default function ChatScreen() {
           />
         )}
 
+        {Object.values(connections)
+          .filter((pc) => pc.sessionId === activeId)
+          .map((pc) => (
+            <View key={pc.op.op_id} style={{ paddingHorizontal: space.md, paddingBottom: space.sm }}>
+              <ConnectionCard pc={pc} />
+            </View>
+          ))}
         {myRequests.length ? (
           <View style={{ paddingHorizontal: space.md, gap: space.sm, paddingBottom: space.sm }}>
             {myRequests.map((r) => (

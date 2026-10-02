@@ -1,10 +1,12 @@
 import * as Crypto from 'expo-crypto'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { CheckCircle2, KeyRound, Lock, QrCode, Server, ShieldCheck, Trash2, Wifi } from 'lucide-react-native'
 import { useEffect, useState } from 'react'
 import { View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { reconnectActive } from '@/components/GatewayBridge'
+import { HermesMark } from '@/components/HermesMark'
 import { QrScanner } from '@/components/QrScanner'
 import { Badge, Button, Card, confirm, ErrorState, Row, Screen, Section, Segmented, Text, TextField, toast } from '@/components/ui'
 import { useT } from '@/i18n'
@@ -25,6 +27,7 @@ function parseHeaders(text: string): Record<string, string> | undefined {
 export default function ConnectScreen() {
   const t = useT()
   const { c } = useTheme()
+  const insets = useSafeAreaInsets()
   const params = useLocalSearchParams<{ url?: string; token?: string; name?: string; edit?: string }>()
   const { connections, activeId, upsert, setActive, remove } = useConnections()
   const editing = connections.find((x) => x.id === params.edit)
@@ -153,8 +156,15 @@ export default function ConnectScreen() {
     if (!r.reachable) setError(r.error ?? null)
   }
 
+  const firstRun = !connections.length
   return (
-    <Screen>
+    <Screen style={firstRun ? { paddingTop: insets.top + space.xl } : undefined}>
+      <Stack.Screen options={{ headerShown: !firstRun, title: editing ? t('Edit connection') : t('Connect to Hermes') }} />
+      {firstRun ? (
+        <View style={{ alignItems: 'center', paddingBottom: space.sm }}>
+          <HermesMark size={72} />
+        </View>
+      ) : null}
       {!editing && connections.length > 0 ? (
         <Section title={t('Saved connections')}>
           {connections.map((conn, i) => (

@@ -5,7 +5,9 @@ import {
   Cpu,
   FolderKanban,
   KeyRound,
+  Link2,
   Map as MapIcon,
+  PawPrint,
   Plug,
   Server,
   Sparkles,
@@ -55,7 +57,14 @@ export default function AgentHub() {
           <Row icon={Sparkles} title={t('Skills')} subtitle={t('Installed skills and the Skills Hub')} onPress={go('/skills')} />
           <Row icon={Wrench} title={t('Toolsets')} subtitle={t('Turn tool groups on or off')} onPress={go('/toolsets')} />
           <Row icon={Server} title={t('MCP servers')} subtitle={t('Connect external tools over MCP')} onPress={go('/mcp')} />
-          <Row icon={Plug} title={t('Plugins')} subtitle={t('Install and manage agent plugins')} onPress={go('/plugins')} last />
+          <Row icon={Plug} title={t('Plugins')} subtitle={t('Install and manage agent plugins')} onPress={go('/plugins')} />
+          <Row
+            icon={Link2}
+            title={t('Connectors')}
+            subtitle={t('Gmail, GitHub, Notion… through Nous Portal')}
+            onPress={go('/connectors')}
+          />
+          <Row icon={PawPrint} title={t('Pets')} subtitle={t('Pick a mascot for the TUI and desktop')} onPress={go('/pets')} last />
         </Section>
         <Section title={t('Workspace')}>
           <Row icon={FolderKanban} title={t('Projects')} subtitle={t('Folders and repos the agent works in')} onPress={go('/projects')} />

@@ -14,7 +14,13 @@ import {
   type ToolPart,
 } from '@/lib/chat/types'
 import type { AnyGatewayEvent, ServerRequest } from '@/lib/gateway/client'
-import type { SessionLiveInfo, SessionResumeResult, SlashExecResult, Usage } from '@/lib/gateway/contract.generated'
+import type {
+  ConnectionRequestPayload,
+  SessionLiveInfo,
+  SessionResumeResult,
+  SlashExecResult,
+  Usage,
+} from '@/lib/gateway/contract.generated'
 import { hermes, useRuntime } from '@/lib/hermes'
 import { changeSignals, queryClient } from '@/lib/query'
 
@@ -27,7 +33,13 @@ export interface PendingRequest extends ServerRequest {
   receivedAt: number
 }
 
+export interface PendingConnection {
+  sessionId: string
+  op: ConnectionRequestPayload
+}
+
 interface ChatState {
+  connections: Record<string, PendingConnection>
   sessions: Record<string, ChatSession>
   storedToRuntime: Record<string, string>
   activeId: string | null
@@ -44,6 +56,7 @@ export const onTurnComplete = (l: TurnListener) => {
 }
 
 export const useChat = create<ChatState>(() => ({
+  connections: {},
   sessions: {},
   storedToRuntime: {},
   activeId: null,
@@ -212,6 +225,18 @@ export function handleEvent(event: AnyGatewayEvent) {
   if (!rid || !get().sessions[rid]) return
 
   switch (event.type) {
+    case 'connection.request':
+      set((st) => ({ connections: { ...st.connections, [event.payload.op_id]: { sessionId: rid, op: event.payload } } }))
+      return
+    case 'connection.update': {
+      const p = event.payload
+      set((st) => {
+        const { [p.op_id]: cur, ...rest } = st.connections
+        if (p.settled || !cur) return { connections: rest }
+        return { connections: { ...rest, [p.op_id]: { ...cur, op: { ...cur.op, targets: p.targets, seq: p.seq } } } }
+      })
+      return
+    }
     case 'message.start':
       update(rid, (s0) => {
         // A server-queued prompt starts now: its bubble is no longer pending.
@@ -629,6 +654,8 @@ function applyResume(rid: string, res: SessionResumeResult) {
     title: (res.info?.title as string) || s.title,
   }))
   hermes().gateway.deliverOpenRequests(res.open_requests)
+  const pending = res.pending_connection
+  if (pending?.op_id) set((st) => ({ connections: { ...st.connections, [pending.op_id]: { sessionId: rid, op: pending } } }))
 }
 
 /** Re-bind a runtime after the backend reclaimed it. */
@@ -676,7 +703,7 @@ export function setActive(rid: string | null) {
 
 export function resetChat() {
   buffers.clear()
-  set({ sessions: {}, storedToRuntime: {}, activeId: null, requests: [], composerPrefill: null, opening: false })
+  set({ sessions: {}, storedToRuntime: {}, activeId: null, requests: [], connections: {}, composerPrefill: null, opening: false })
 }
 
 export async function closeRuntime(rid: string) {
@@ -877,4 +904,23 @@ async function applyDirective(rid: string, res: SlashExecResult, depth: number) 
       if (out) addSystemMessage(rid, out, res.warning ? 'warn' : 'info', 'command')
     }
   }
+}
+
+export async function answerConnection(
+  opId: string,
+  targets: { name: string; status: 'approved' | 'skipped'; env?: Record<string, string> }[],
+  settle: boolean,
+) {
+  const pc = get().connections[opId]
+  if (!pc) return
+  const res = await hermes().gateway.request('connection.respond', {
+    owner: { type: 'session', session_id: pc.sessionId },
+    op_id: opId,
+    result: { targets, ...(settle ? { settled_by: 'continue' as const } : {}) },
+  })
+  if (res.settled)
+    set((st) => {
+      const { [opId]: _, ...rest } = st.connections
+      return { connections: rest }
+    })
 }

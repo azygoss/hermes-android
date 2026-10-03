@@ -1290,4 +1290,20 @@ export const tr: Record<string, string> = {
   'Shows a quiet "Hermes is working" notification during a turn so Android keeps the connection open':
     'Bir tur sürerken sessiz bir "Hermes çalışıyor" bildirimi gösterir; böylece Android bağlantıyı açık tutar',
   'Working on your request': 'İsteğin üzerinde çalışıyor',
+  'Hermes reacted {emoji}': 'Hermes tepki verdi: {emoji}',
+  '{n} earlier steps': 'Önceki {n} adım',
+  '{n} failed': '{n} başarısız',
+  '{n} steps': '{n} adım',
+  'Extra high': 'Çok yüksek',
+  High: 'Yüksek',
+  'Levels {model} supports. Higher thinks longer and costs more.':
+    '{model} modelinin desteklediği seviyeler. Yükseldikçe daha uzun düşünür ve daha pahalıya gelir.',
+  Low: 'Düşük',
+  Max: 'En yüksek',
+  Medium: 'Orta',
+  Minimal: 'En düşük',
+  Off: 'Kapalı',
+  'This model': 'Bu model',
+  'this model': 'bu model',
+  '{model} has no reasoning control.': '{model} için reasoning ayarı yok.',
 }

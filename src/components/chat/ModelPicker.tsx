@@ -294,4 +294,3 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
   )
 }
 
-export const REASONING_LEVELS = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const

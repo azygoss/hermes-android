@@ -1,5 +1,5 @@
 import * as Clipboard from 'expo-clipboard'
-import { CheckCircle2, ChevronDown, ChevronRight, Circle, CircleDot, FolderOpen, XCircle } from '@/components/icons'
+import { CheckCircle2, ChevronDown, ChevronRight, Circle, CircleDot, FolderOpen, ListTree, XCircle } from '@/components/icons'
 import { router } from 'expo-router'
 import { memo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native'
@@ -112,7 +112,8 @@ function Block({ label, text, title }: { label: string; text: string; title: str
   )
 }
 
-export const ToolCard = memo(function ToolCard({ part }: { part: ToolPart }) {
+/** `grouped` cards sit inside a ToolGroup, which draws the surface and the border for all of them. */
+export const ToolCard = memo(function ToolCard({ part, grouped }: { part: ToolPart; grouped?: boolean }) {
   const { c } = useTheme()
   const t = useT()
   const expandTools = useSettings((s) => s.expandTools)
@@ -130,7 +131,7 @@ export const ToolCard = memo(function ToolCard({ part }: { part: ToolPart }) {
   const file = toolFilePath(part, typeof cwd === 'string' ? cwd : null)
 
   return (
-    <View style={[styles.card, { borderColor: part.status === 'error' ? c.danger : c.border, backgroundColor: c.surface }]}>
+    <View style={grouped ? undefined : [styles.card, { borderColor: part.status === 'error' ? c.danger : c.border, backgroundColor: c.surface }]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${toolLabel(part.name)} ${preview}`}
@@ -158,7 +159,7 @@ export const ToolCard = memo(function ToolCard({ part }: { part: ToolPart }) {
         {part.status === 'running' ? (
           <ActivityIndicator size="small" color={c.accent} />
         ) : (
-          <StatusIcon size={16} color={part.status === 'error' ? c.danger : c.textFaint} strokeWidth={1.75} />
+          <StatusIcon size={16} color={part.status === 'error' ? c.danger : c.success} strokeWidth={1.75} />
         )}
         {open ? <ChevronDown size={16} color={c.textFaint} /> : <ChevronRight size={16} color={c.textFaint} />}
       </Pressable>
@@ -218,7 +219,53 @@ export const ToolCard = memo(function ToolCard({ part }: { part: ToolPart }) {
   )
 })
 
+/** How many of a run's latest tool calls stay visible; the earlier ones fold behind one row. */
+const GROUP_TAIL = 3
+
+/** A run of consecutive tool calls as one surface, so a long agent turn does not bury the reply. */
+export const ToolGroup = memo(function ToolGroup({ parts }: { parts: ToolPart[] }) {
+  const { c } = useTheme()
+  const t = useT()
+  const [open, setOpen] = useState(false)
+  const hidden = open ? 0 : Math.max(0, parts.length - GROUP_TAIL)
+  const shown = hidden ? parts.slice(hidden) : parts
+  const hiddenErrors = hidden ? parts.slice(0, hidden).filter((p) => p.status === 'error').length : 0
+  return (
+    <View style={[styles.card, { borderColor: c.border, backgroundColor: c.surface }]}>
+      {parts.length > GROUP_TAIL ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+          onPress={() => setOpen(!open)}
+          android_ripple={{ color: c.surfaceAlt }}
+          style={[styles.groupHead, { borderBottomColor: c.border }]}
+        >
+          <ListTree size={16} color={c.textMuted} strokeWidth={1.75} />
+          <Text variant="small" tone="muted" weight="medium" style={{ flex: 1 }} numberOfLines={1}>
+            {open ? t('{n} steps', { n: parts.length }) : t('{n} earlier steps', { n: hidden })}
+            {hiddenErrors ? ` · ${t('{n} failed', { n: hiddenErrors })}` : ''}
+          </Text>
+          {open ? <ChevronDown size={16} color={c.textFaint} /> : <ChevronRight size={16} color={c.textFaint} />}
+        </Pressable>
+      ) : null}
+      {shown.map((part, i) => (
+        <View key={part.id} style={i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }}>
+          <ToolCard part={part} grouped />
+        </View>
+      ))}
+    </View>
+  )
+})
+
 const styles = StyleSheet.create({
+  groupHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    paddingHorizontal: space.md,
+    minHeight: 44,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md, overflow: 'hidden' },
   head: {
     flexDirection: 'row',

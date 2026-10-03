@@ -154,21 +154,61 @@ function useThrottled(value: string, ms: number) {
   return ms ? shown : value
 }
 
-export const Markdown = memo(function Markdown({
-  text: source,
-  muted,
-  small,
-  live,
-}: {
+/**
+ * Cuts markdown into top-level blocks at blank lines, so a streaming reply only re-parses the block
+ * still being written. Never cuts inside a code fence, before an indented line or a list item
+ * (those continue the block above), and not at all when reference-style links need the whole text.
+ */
+export function splitBlocks(text: string): string[] {
+  if (text.length < 400 || /^\[[^\]]+\]:\s/m.test(text)) return [text]
+  const lines = text.split('\n')
+  const out: string[] = []
+  let start = 0
+  let fence: string | null = null
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const mark = line.match(/^\s{0,3}(`{3,}|~{3,})/)?.[1]
+    if (mark) {
+      if (!fence) fence = mark[0]
+      else if (mark[0] === fence) fence = null
+      continue
+    }
+    if (fence || line.trim() || i + 1 >= lines.length) continue
+    const next = lines[i + 1]
+    if (!next.trim() || /^(\s|[-*+>]\s|\d+[.)]\s|\|)/.test(next)) continue
+    out.push(lines.slice(start, i).join('\n'))
+    start = i + 1
+  }
+  out.push(lines.slice(start).join('\n'))
+  return out.filter((block) => block.trim())
+}
+
+interface MarkdownProps {
   text: string
   muted?: boolean
   small?: boolean
   /** Still streaming: parse at a throttled rate. */
   live?: boolean
-}) {
+}
+
+export const Markdown = memo(function Markdown({ text, muted, small, live }: MarkdownProps) {
+  const { c, isDark } = useTheme()
+  const renderer = useMemo(() => new HermesRenderer(c, isDark), [c, isDark])
+  const blocks = useMemo(() => splitBlocks(text), [text])
+  if (blocks.length === 1) return <Block text={blocks[0]} muted={muted} small={small} live={live} renderer={renderer} />
+  return (
+    <View style={{ gap: 2 }}>
+      {blocks.map((block, i) => (
+        // Finished blocks keep their text, so the memo skips them while the last one streams.
+        <Block key={i} text={block} muted={muted} small={small} live={live && i === blocks.length - 1} renderer={renderer} />
+      ))}
+    </View>
+  )
+})
+
+const Block = memo(function Block({ text: source, muted, small, live, renderer }: MarkdownProps & { renderer: HermesRenderer }) {
   const { c, isDark, fontScale: scale } = useTheme()
   const text = useThrottled(source, live ? 90 : 0)
-  const renderer = useMemo(() => new HermesRenderer(c, isDark), [c, isDark])
   const color = muted ? c.textMuted : c.text
   const base: TextStyle = small
     ? { fontFamily: font.regular, fontSize: 13 * scale, lineHeight: 19 * scale, color }

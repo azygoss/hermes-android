@@ -1,9 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router'
 import {
-  ArrowDown,
   ArrowUpRight,
   Brain,
-  Check,
   ChevronDown,
   ChevronUp,
   EllipsisVertical,
@@ -19,8 +17,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   BackHandler,
-  FlatList,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -36,19 +32,21 @@ import ReanimatedDrawerLayout, {
 } from 'react-native-gesture-handler/ReanimatedDrawerLayout'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useShallow } from 'zustand/react/shallow'
 
 import { Composer } from '@/components/chat/Composer'
 import { ChatDrawer } from '@/components/chat/ChatDrawer'
 import { ConnectionCard } from '@/components/chat/ConnectionCard'
-import { MessageItem } from '@/components/chat/MessageItem'
-import { ModelPicker, REASONING_LEVELS } from '@/components/chat/ModelPicker'
+import { ModelPicker } from '@/components/chat/ModelPicker'
+import { ReasoningSheet } from '@/components/chat/ReasoningSheet'
 import { RequestCard } from '@/components/chat/RequestCard'
 import { SessionMenu } from '@/components/chat/SessionMenu'
 import { BusyLine, SubagentChip, TodoPanel } from '@/components/chat/StatusStrip'
+import { Transcript } from '@/components/chat/Transcript'
 import { HermesMark } from '@/components/HermesMark'
 import { Button, IconButton, Sheet, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
-import type { ChatMessage, PendingAttachment } from '@/lib/chat/types'
+import type { ChatMessage, ChatSession, PendingAttachment } from '@/lib/chat/types'
 import { textOf } from '@/lib/chat/types'
 import { relativeTime } from '@/lib/format'
 import { useRest, useRpc } from '@/lib/hooks'
@@ -60,10 +58,8 @@ import {
   attachPdf,
   generateImage,
   interrupt,
-  loadHistory,
   newChat,
   openStored,
-  react,
   removeAttachment,
   runSlash,
   send,
@@ -199,15 +195,35 @@ function EmptyChat({ onPick }: { onPick: (text: string) => void }) {
   )
 }
 
+/** Session fields the screen chrome shows; streamed tokens change none of them. */
+function useActive<T>(pick: (s: ChatSession) => T): T | undefined {
+  return useChat((s) => {
+    const session = s.activeId ? s.sessions[s.activeId] : undefined
+    return session ? pick(session) : undefined
+  })
+}
+
 export default function ChatScreen() {
   const t = useT()
   const { c } = useTheme()
   const insets = useSafeAreaInsets()
   const params = useLocalSearchParams<{ stored?: string; new?: string }>()
   const activeId = useChat((s) => s.activeId)
-  const session = useChat((s) => (s.activeId ? s.sessions[s.activeId] : undefined))
-  const requests = useChat((s) => s.requests)
-  const connections = useChat((s) => s.connections)
+  // Primitive selectors only: the screen must not re-render for every streamed token.
+  const live = useChat((s) => !!(s.activeId && s.sessions[s.activeId]))
+  const title = useActive((s) => s.title)
+  const busy = !!useActive((s) => s.busy)
+  const hasMessages = !!useActive((s) => s.messages.length > 0)
+  const blank = !!useActive((s) => s.historyLoaded && !s.messages.length && !s.loadingHistory)
+  const attachments = useActive((s) => s.attachments)
+  const liveModel = useActive((s) => s.info?.model)
+  const liveProvider = useActive((s) => s.info?.provider)
+  const effort = useActive((s) => s.info?.reasoning_effort)
+  const cwd = useActive((s) => s.info?.cwd)
+  const ctxPct = useActive((s) => s.usage?.context_percent) ?? null
+  const myRequests = useChat(useShallow((s) => s.requests.filter((r) => r.sessionId === s.activeId)))
+  const otherRequests = useChat(useShallow((s) => s.requests.filter((r) => r.sessionId !== s.activeId)))
+  const myConnections = useChat(useShallow((s) => Object.values(s.connections).filter((pc) => pc.sessionId === s.activeId)))
   const prefill = useChat((s) =>
     s.composerPrefill && (s.composerPrefill.runtimeId || null) === (s.activeId || null) ? s.composerPrefill.text : null,
   )
@@ -217,7 +233,6 @@ export default function ChatScreen() {
   const [modelOpen, setModelOpen] = useState(false)
   const [reasoningOpen, setReasoningOpen] = useState(false)
   const [editing, setEditing] = useState<ChatMessage | null>(null)
-  const [awayFromEnd, setAwayFromEnd] = useState(false)
   const { width } = useWindowDimensions()
   const drawerRef = useRef<DrawerLayoutMethods>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -235,8 +250,6 @@ export default function ChatScreen() {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => (closeDrawer(), true))
     return () => sub.remove()
   }, [drawerOpen, closeDrawer])
-  const listRef = useRef<FlatList<ChatMessage>>(null)
-  useEffect(() => setAwayFromEnd(false), [activeId])
 
   useEffect(() => {
     if (!params.stored || connState !== 'open') return
@@ -257,49 +270,25 @@ export default function ChatScreen() {
     return newChat()
   }, [])
 
-  const data = useMemo(() => (session ? [...session.messages].reverse() : []), [session?.messages])
-
-  // In-chat search: hits are indexes into `data` (newest first), stepping "older" walks down the list.
+  // In-chat search: the transcript finds the matches, the header steps through them.
   const [searching, setSearching] = useState(false)
   const [needle, setNeedle] = useState('')
   const [hitIndex, setHitIndex] = useState(0)
-  const query = needle.trim().toLowerCase()
-  const hits = useMemo(() => {
-    if (!searching || query.length < 2) return [] as number[]
-    const out: number[] = []
-    data.forEach((m, i) => {
-      if (m.role !== 'system' && textOf(m).toLowerCase().includes(query)) out.push(i)
-    })
-    return out
-  }, [searching, query, data])
-  const hitId = hits.length ? data[hits[hitIndex]]?.id : undefined
+  const [hitCount, setHitCount] = useState(0)
+  const query = searching ? needle.trim().toLowerCase() : ''
   useEffect(() => setHitIndex(0), [query])
-  useEffect(() => {
-    if (hits.length) listRef.current?.scrollToIndex({ index: hits[hitIndex], viewPosition: 0.4, animated: true })
-  }, [hits, hitIndex])
-  const stepHit = (d: number) => hits.length && setHitIndex((h) => (h + d + hits.length) % hits.length)
+  const stepHit = (d: number) => hitCount && setHitIndex((h) => (((h + d) % hitCount) + hitCount) % hitCount)
   const closeSearch = () => {
     setSearching(false)
     setNeedle('')
   }
   useEffect(closeSearch, [activeId])
-  // Stable callbacks so MessageItem's memo holds while another message streams.
-  const onReact = useCallback((m: ChatMessage, emoji: string) => {
-    const sid = useChat.getState().activeId
-    if (sid) react(sid, m, emoji).catch(toastError)
-  }, [])
-  const onRetry = useCallback(() => {
-    const sid = useChat.getState().activeId
-    if (sid) runSlash(sid, '/retry').catch(toastError)
-  }, [])
   const onEdit = useCallback((m: ChatMessage) => {
     const sid = useChat.getState().activeId
     if (!sid) return
     setEditing(m)
     setPrefill(sid, textOf(m))
   }, [])
-  const myRequests = requests.filter((r) => r.sessionId === activeId)
-  const otherRequests = requests.filter((r) => r.sessionId !== activeId)
 
   async function handleSend(text: string, mode: 'auto' | 'steer' | 'redirect') {
     const trimmed = text.trim()
@@ -369,10 +358,9 @@ export default function ChatScreen() {
     [],
   )
 
-  const defaultModel = useRest<{ model?: string; provider?: string }>(['model-info'], '/api/model/info', undefined, { enabled: !session })
-  const info = session?.info ?? { model: defaultModel.data?.model, provider: defaultModel.data?.provider }
-  const usage = session?.usage
-  const ctxPct = usage?.context_percent ?? null
+  const defaultModel = useRest<{ model?: string; provider?: string }>(['model-info'], '/api/model/info', undefined, { enabled: !live })
+  const model = live ? liveModel : defaultModel.data?.model
+  const provider = live ? liveProvider : defaultModel.data?.provider
 
   return (
     <ReanimatedDrawerLayout
@@ -403,10 +391,10 @@ export default function ChatScreen() {
               style={[styles.searchInput, { color: c.text, fontFamily: font.regular }]}
             />
             <Text variant="small" tone="muted" style={{ minWidth: 40, textAlign: 'center' }} accessibilityLiveRegion="polite">
-              {needle.trim() ? (hits.length ? `${hitIndex + 1}/${hits.length}` : '0') : ''}
+              {needle.trim() ? (hitCount ? `${(hitIndex % hitCount) + 1}/${hitCount}` : '0') : ''}
             </Text>
-            <IconButton icon={ChevronUp} label={t('Older match')} onPress={() => stepHit(1)} disabled={!hits.length} />
-            <IconButton icon={ChevronDown} label={t('Newer match')} onPress={() => stepHit(-1)} disabled={!hits.length} />
+            <IconButton icon={ChevronUp} label={t('Older match')} onPress={() => stepHit(1)} disabled={!hitCount} />
+            <IconButton icon={ChevronDown} label={t('Newer match')} onPress={() => stepHit(-1)} disabled={!hitCount} />
           </View>
         ) : (
           <View style={[styles.header, { borderBottomColor: c.border }]}>
@@ -414,35 +402,29 @@ export default function ChatScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('Chat options')}
-              onPress={() => session && setMenuOpen(true)}
+              onPress={() => live && setMenuOpen(true)}
               style={{ flex: 1, minHeight: 48, justifyContent: 'center' }}
             >
               <Text variant="title" numberOfLines={1}>
-                {session?.title || t('New chat')}
+                {title || t('New chat')}
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <View
                   style={[styles.dot, { backgroundColor: connState === 'open' ? c.success : connState === 'closed' ? c.danger : c.warn }]}
                 />
                 <Text variant="caption" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>
-                  {[
-                    info.model,
-                    ctxPct != null ? t('{pct}% context', { pct: ctxPct }) : null,
-                    info.cwd ? String(info.cwd).split('/').pop() : null,
-                  ]
+                  {[model, ctxPct != null ? t('{pct}% context', { pct: ctxPct }) : null, cwd ? String(cwd).split('/').pop() : null]
                     .filter(Boolean)
                     .join(' · ') || t('Hermes Agent')}
                 </Text>
               </View>
             </Pressable>
-            {session?.messages.length ? (
-              <IconButton icon={Search} label={t('Search this chat')} onPress={() => setSearching(true)} />
-            ) : null}
+            {hasMessages ? <IconButton icon={Search} label={t('Search this chat')} onPress={() => setSearching(true)} /> : null}
             <IconButton icon={PenSquare} label={t('New chat')} onPress={() => setActive(null)} />
             <IconButton
               icon={EllipsisVertical}
               label={t('Chat options')}
-              onPress={() => (session ? setMenuOpen(true) : toast(t('Start a chat first.'), 'info'))}
+              onPress={() => (live ? setMenuOpen(true) : toast(t('Start a chat first.'), 'info'))}
             />
           </View>
         )}
@@ -467,70 +449,21 @@ export default function ChatScreen() {
         ) : null}
 
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-          {opening && !session ? (
+          {opening && !live ? (
             <View style={styles.loading}>
               <ActivityIndicator color={c.accent} />
             </View>
-          ) : !session || (session.historyLoaded && !session.messages.length && !session.loadingHistory) ? (
+          ) : !live || !activeId || blank ? (
             <EmptyChat onPick={(text) => handleSend(text, 'auto').catch(toastError)} />
           ) : (
-            <FlatList
-              ref={listRef}
-              data={data}
-              inverted
-              onScroll={(e) => setAwayFromEnd(e.nativeEvent.contentOffset.y > 600)}
-              onScrollToIndexFailed={(info) => {
-                // Rows have different heights: jump near it, then aim again once it is measured.
-                listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: false })
-                setTimeout(() => listRef.current?.scrollToIndex({ index: info.index, viewPosition: 0.4, animated: true }), 120)
-              }}
-              scrollEventThrottle={100}
-              keyExtractor={(m) => m.id}
-              renderItem={({ item, index }) => (
-                <MessageItem
-                  message={item}
-                  streaming={item.id === session.streamingId}
-                  onReact={onReact}
-                  onEdit={onEdit}
-                  onRetry={index === 0 && item.role === 'assistant' && !session.busy ? onRetry : undefined}
-                  highlighted={item.id === hitId}
-                />
-              )}
-              contentContainerStyle={[centered, { padding: space.lg, gap: space.lg }]}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="interactive"
-              onEndReached={() => session.hasMore && loadHistory(session.runtimeId, true)}
-              onEndReachedThreshold={0.4}
-              ListFooterComponent={session.loadingHistory ? <ActivityIndicator color={c.accent} style={{ margin: space.lg }} /> : null}
-              removeClippedSubviews={Platform.OS === 'android'}
-              maxToRenderPerBatch={8}
-              windowSize={11}
-            />
+            <Transcript runtimeId={activeId} query={query} hitIndex={hitIndex} onHitCount={setHitCount} onEdit={onEdit} />
           )}
-          {awayFromEnd && session ? (
-            <View style={styles.jumpWrap} pointerEvents="box-none">
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('Jump to the latest message')}
-                onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
-                style={({ pressed }) => [
-                  styles.jump,
-                  { backgroundColor: c.elevated, borderColor: c.borderStrong, opacity: pressed ? 0.8 : 1 },
-                ]}
-              >
-                <ArrowDown size={18} color={c.text} strokeWidth={2} />
-                {session.busy ? <View style={[styles.jumpDot, { backgroundColor: c.accent }]} /> : null}
-              </Pressable>
-            </View>
-          ) : null}
 
-          {Object.values(connections)
-            .filter((pc) => pc.sessionId === activeId)
-            .map((pc) => (
-              <View key={pc.op.op_id} style={{ paddingHorizontal: space.md, paddingBottom: space.sm }}>
-                <ConnectionCard pc={pc} />
-              </View>
-            ))}
+          {myConnections.map((pc) => (
+            <View key={pc.op.op_id} style={{ paddingHorizontal: space.md, paddingBottom: space.sm }}>
+              <ConnectionCard pc={pc} />
+            </View>
+          ))}
           {myRequests.length ? (
             <View style={{ paddingHorizontal: space.md, gap: space.sm, paddingBottom: space.sm }}>
               {myRequests.map((r) => (
@@ -539,14 +472,13 @@ export default function ChatScreen() {
             </View>
           ) : null}
 
-          {session ? <TodoPanel todos={session.todos} /> : null}
-          {session?.busy ? <BusyLine status={session.status} since={session.turnStartedAt} /> : null}
+          {activeId && live ? <LiveStatus runtimeId={activeId} /> : null}
 
           <View style={{ paddingBottom: insets.bottom > 0 ? 0 : space.sm }}>
             <Composer
               sessionId={activeId}
-              busy={!!session?.busy}
-              attachments={session?.attachments ?? NO_ATTACHMENTS}
+              busy={busy}
+              attachments={attachments ?? NO_ATTACHMENTS}
               editing={!!editing}
               prefill={prefill}
               onPrefillConsumed={onPrefillConsumed}
@@ -564,11 +496,11 @@ export default function ChatScreen() {
           </View>
         </KeyboardAvoidingView>
 
-        {session ? (
-          <SessionMenu
+        {activeId && live ? (
+          <MenuHost
+            runtimeId={activeId}
             visible={menuOpen}
             onClose={() => setMenuOpen(false)}
-            session={session}
             onPickModel={() => setModelOpen(true)}
             onPickReasoning={() => setReasoningOpen(true)}
           />
@@ -577,51 +509,59 @@ export default function ChatScreen() {
           visible={modelOpen}
           onClose={() => setModelOpen(false)}
           sessionId={activeId}
-          currentModel={info.model as string | undefined}
-          currentProvider={info.provider as string | undefined}
+          currentModel={model as string | undefined}
+          currentProvider={provider as string | undefined}
         />
-        <Sheet visible={reasoningOpen} onClose={() => setReasoningOpen(false)} title={t('Reasoning effort')}>
-          <Text tone="muted" variant="small">
-            {t('How hard the model thinks before answering. Higher is slower and costs more.')}
-          </Text>
-          <View style={{ gap: space.xs }}>
-            {REASONING_LEVELS.map((level) => {
-              const on = (info.reasoning_effort || '') === level
-              return (
-                <Pressable
-                  key={level}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: on }}
-                  onPress={async () => {
-                    setReasoningOpen(false)
-                    try {
-                      const sid = await ensureSession()
-                      await rpc().request('config.set', { key: 'reasoning', value: level, session_id: sid })
-                      useChat.setState((st) => ({
-                        sessions: {
-                          ...st.sessions,
-                          [sid]: { ...st.sessions[sid], info: { ...st.sessions[sid].info, reasoning_effort: level } },
-                        },
-                      }))
-                      toast(t('Reasoning effort: {level}', { level }), 'success')
-                    } catch (e) {
-                      toastError(e)
-                    }
-                  }}
-                  style={[styles.option, { backgroundColor: on ? c.accentSoft : c.surfaceAlt }]}
-                >
-                  <Text weight={on ? 'semibold' : 'regular'} style={{ flex: 1 }}>
-                    {level}
-                  </Text>
-                  {on ? <Check size={18} color={c.accentText} /> : null}
-                </Pressable>
-              )
-            })}
-          </View>
-        </Sheet>
+        <ReasoningSheet
+          visible={reasoningOpen}
+          onClose={() => setReasoningOpen(false)}
+          sessionId={activeId}
+          model={model as string | undefined}
+          provider={provider as string | undefined}
+          effort={effort}
+          onPick={async (level) => {
+            setReasoningOpen(false)
+            try {
+              const sid = await ensureSession()
+              await rpc().request('config.set', { key: 'reasoning', value: level, session_id: sid })
+              useChat.setState((st) => ({
+                sessions: {
+                  ...st.sessions,
+                  [sid]: { ...st.sessions[sid], info: { ...st.sessions[sid].info, reasoning_effort: level } },
+                },
+              }))
+              toast(t('Reasoning effort: {level}', { level }), 'success')
+            } catch (e) {
+              toastError(e)
+            }
+          }}
+        />
       </View>
     </ReanimatedDrawerLayout>
   )
+}
+
+/** Task list and the "working" line; both change during a turn, so they subscribe on their own. */
+function LiveStatus({ runtimeId }: { runtimeId: string }) {
+  const todos = useChat((s) => s.sessions[runtimeId]?.todos)
+  const busy = useChat((s) => !!s.sessions[runtimeId]?.busy)
+  const status = useChat((s) => s.sessions[runtimeId]?.status ?? null)
+  const since = useChat((s) => s.sessions[runtimeId]?.turnStartedAt ?? null)
+  return (
+    <>
+      {todos ? <TodoPanel todos={todos} /> : null}
+      {busy ? <BusyLine status={status} since={since} /> : null}
+    </>
+  )
+}
+
+/** The chat menu reads the whole session, but only while it is open. */
+function MenuHost({ runtimeId, visible, ...rest }: { runtimeId: string } & Omit<Parameters<typeof SessionMenu>[0], 'session'>) {
+  const current = useChat((s) => (visible ? s.sessions[runtimeId] : undefined))
+  const last = useRef<ChatSession | undefined>(undefined)
+  if (current) last.current = current
+  const session = current ?? (last.current?.runtimeId === runtimeId ? last.current : undefined)
+  return session ? <SessionMenu visible={visible} session={session} {...rest} /> : null
 }
 
 const NO_ATTACHMENTS: PendingAttachment[] = []
@@ -682,19 +622,6 @@ const styles = StyleSheet.create({
   banner: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
   empty: { flexGrow: 1, justifyContent: 'flex-end', gap: space.xl, paddingHorizontal: space.xl, paddingVertical: space.lg },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  jumpWrap: { position: 'relative', height: 0, alignItems: 'flex-end', paddingRight: space.lg, zIndex: 2 },
-  jump: {
-    position: 'absolute',
-    bottom: space.md,
-    right: space.lg,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  jumpDot: { position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: 4 },
   resume: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -706,5 +633,4 @@ const styles = StyleSheet.create({
   },
   suggestion: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 48, paddingVertical: space.sm },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: radius.pill, paddingHorizontal: 10, height: 34 },
-  option: { flexDirection: 'row', alignItems: 'center', minHeight: 48, borderRadius: radius.md, paddingHorizontal: space.lg },
 })

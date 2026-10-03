@@ -22,7 +22,7 @@ export default function GoalsScreen() {
   const t = useT()
   const { c } = useTheme()
   const { sid } = useLocalSearchParams<{ sid: string }>()
-  const q = useRpc(['session.control.read', sid], 'session.control.read', { session_id: sid }, { refetchInterval: 5000 })
+  const q = useRpc(['session.control.read', sid], 'session.control.read', { session_id: sid }, { refetchInterval: 30_000 })
   const control = q.data?.control
 
   const act = async (action: string, args?: { text?: string; index?: number }) => {

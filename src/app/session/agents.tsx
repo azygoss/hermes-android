@@ -8,7 +8,7 @@ import { useT } from '@/i18n'
 import type { ProcessEntry, SubagentSnapshot } from '@/lib/gateway/contract.generated'
 import { useRpc } from '@/lib/hooks'
 import { rpc } from '@/lib/hermes'
-import { useChat } from '@/store/chat'
+import { useChat, useProcessOutput } from '@/store/chat'
 import { radius, space, useTheme } from '@/theme'
 
 const tone = (status?: string | null) =>
@@ -22,6 +22,7 @@ export default function SessionAgents() {
   const subs = useRpc(['subagent.list', sid], 'subagent.list', { session_id: sid }, { refetchInterval: 3000 })
   const procs = useRpc(['process.list', sid], 'process.list', { session_id: sid }, { refetchInterval: 4000 })
   const delegation = useRpc(['delegation.status'], 'delegation.status', {}, { refetchInterval: 5000 })
+  const liveOutput = useProcessOutput()
   const [tail, setTail] = useState<{ id: string; text: string } | null>(null)
   const trees = useRpc(['spawn_tree.list', sid], 'spawn_tree.list', { session_id: sid, cross_session: true, limit: 10 })
 
@@ -181,10 +182,10 @@ export default function SessionAgents() {
                 </Text>
                 <Badge label={p.status ?? '?'} tone={p.status === 'running' ? 'accent' : 'default'} />
               </View>
-              {p.output_tail || p.output_preview ? (
+              {liveOutput[p.session_id] || p.output_tail || p.output_preview ? (
                 <View style={{ backgroundColor: c.codeBg, borderRadius: radius.sm, padding: space.sm }}>
-                  <Text mono variant="caption" numberOfLines={8}>
-                    {p.output_tail || p.output_preview}
+                  <Text mono variant="caption" numberOfLines={8} ellipsizeMode="head">
+                    {(liveOutput[p.session_id] || p.output_tail || p.output_preview || '').trimEnd().split('\n').slice(-8).join('\n')}
                   </Text>
                 </View>
               ) : null}

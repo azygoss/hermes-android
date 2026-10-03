@@ -14,21 +14,23 @@ import {
   ThumbsDown,
   ThumbsUp,
   Volume2,
+  CheckCircle2,
   XCircle,
 } from '@/components/icons'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Animated, Easing, Platform, Pressable, Share, StyleSheet, View } from 'react-native'
 
 import { Badge, Text, toast } from '@/components/ui'
 import { useT } from '@/i18n'
-import { textOf, type ChatMessage } from '@/lib/chat/types'
+import { haptic } from '@/lib/haptics'
+import { textOf, type ChatMessage, type Part, type ToolPart } from '@/lib/chat/types'
 import { speak } from '@/lib/voice'
 import { useSettings } from '@/store/settings'
-import { radius, space, useTheme } from '@/theme'
+import { motion, radius, space, useTheme } from '@/theme'
 
 import { Markdown } from './Markdown'
 import { RemoteImage } from './RemoteImage'
-import { ToolCard } from './ToolCard'
+import { ToolCard, ToolGroup } from './ToolCard'
 
 function Reasoning({ text, live }: { text: string; live: boolean }) {
   const { c } = useTheme()
@@ -138,13 +140,49 @@ interface Props {
   highlighted?: boolean
 }
 
+/** Messages that appear while you watch ease in; history scrolled into view does not. */
+const FRESH_MS = 1500
+
+/** Fades and lifts its content in once; transform and opacity only, so the list layout never moves. */
+function Appear({ children }: { children: ReactNode }) {
+  const [anim] = useState(() => new Animated.Value(0))
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: motion.base,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: Platform.OS !== 'web',
+    }).start()
+  }, [anim])
+  return (
+    <Animated.View style={{ opacity: anim, transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
+      {children}
+    </Animated.View>
+  )
+}
+
 export const MessageItem = memo(function MessageItem(props: Props) {
-  const { highlighted } = props
+  const { highlighted, message } = props
   const { c } = useTheme()
+  const [fresh] = useState(() => Date.now() - message.at < FRESH_MS)
   const body = <MessageBody {...props} />
-  if (!highlighted) return body
-  return <View style={[styles.hit, { borderColor: c.accent, backgroundColor: c.accentSoft }]}>{body}</View>
+  const framed = highlighted ? <View style={[styles.hit, { borderColor: c.accent, backgroundColor: c.accentSoft }]}>{body}</View> : body
+  return fresh ? <Appear>{framed}</Appear> : framed
 })
+
+type Segment = { kind: 'part'; part: Exclude<Part, ToolPart>; index: number } | { kind: 'tools'; parts: ToolPart[] }
+
+/** Consecutive tool calls become one segment, so they render as a single grouped surface. */
+function segmentsOf(parts: Part[]): Segment[] {
+  const out: Segment[] = []
+  parts.forEach((part, index) => {
+    if (part.kind !== 'tool') return out.push({ kind: 'part', part, index })
+    const last = out[out.length - 1]
+    if (last?.kind === 'tools') last.parts.push(part)
+    else out.push({ kind: 'tools', parts: [part] })
+  })
+  return out
+}
 
 function MessageBody({ message, streaming, onEdit, onReact, onRetry }: Props) {
   const { c } = useTheme()
@@ -153,8 +191,8 @@ function MessageBody({ message, streaming, onEdit, onReact, onRetry }: Props) {
 
   if (message.role === 'system') {
     const tone = message.tone ?? 'info'
-    const Icon = tone === 'error' ? XCircle : tone === 'warn' ? AlertTriangle : Info
-    const color = tone === 'error' ? c.danger : tone === 'warn' ? c.warn : c.textMuted
+    const Icon = tone === 'error' ? XCircle : tone === 'warn' ? AlertTriangle : tone === 'success' ? CheckCircle2 : Info
+    const color = tone === 'error' ? c.danger : tone === 'warn' ? c.warn : tone === 'success' ? c.success : c.textMuted
     return (
       <View style={[styles.system, { borderColor: c.border }]} accessibilityRole={tone === 'error' ? 'alert' : undefined}>
         <Icon size={15} color={color} strokeWidth={1.75} style={{ marginTop: 2 }} />
@@ -173,6 +211,7 @@ function MessageBody({ message, streaming, onEdit, onReact, onRetry }: Props) {
         <Pressable
           accessibilityLabel={t('Your message: {text}', { text })}
           onLongPress={() => {
+            haptic('light')
             if (onEdit && message.rowId != null) onEdit(message)
             else {
               void Clipboard.setStringAsync(text)
@@ -213,6 +252,11 @@ function MessageBody({ message, streaming, onEdit, onReact, onRetry }: Props) {
           ) : null}
           {text ? <UserText text={text} /> : null}
         </Pressable>
+        {message.agentReactions?.length ? (
+          <Text variant="small" accessibilityLabel={t('Hermes reacted {emoji}', { emoji: message.agentReactions.join(' ') })}>
+            {message.agentReactions.join(' ')}
+          </Text>
+        ) : null}
         {message.pending === 'queued' ? (
           <View style={styles.meta}>
             <Clock size={12} color={c.textFaint} />
@@ -235,15 +279,22 @@ function MessageBody({ message, streaming, onEdit, onReact, onRetry }: Props) {
   return (
     <View style={styles.assistant}>
       {message.label ? <Badge label={message.label} tone="info" /> : null}
-      {message.parts.map((part, i) => {
+      {segmentsOf(message.parts).map((seg) => {
+        if (seg.kind === 'tools') {
+          return seg.parts.length === 1 ? (
+            <ToolCard key={seg.parts[0].id} part={seg.parts[0]} />
+          ) : (
+            <ToolGroup key={seg.parts[0].id} parts={seg.parts} />
+          )
+        }
+        const { part, index: i } = seg
         if (part.kind === 'reasoning') {
           if (!showReasoning || !part.text.trim()) return null
           const live = streaming && i === lastReasoningIdx && !message.parts.slice(i + 1).some((p) => p.kind === 'text')
           return <Reasoning key={i} text={part.text} live={live} />
         }
-        if (part.kind === 'tool') return <ToolCard key={part.id} part={part} />
         if (!part.text) return null
-        return <Markdown key={i} text={part.text} live={streaming} />
+        return <Markdown key={i} text={part.text} live={streaming && i === message.parts.length - 1} />
       })}
       {message.images?.length ? (
         <View style={styles.attachRow}>

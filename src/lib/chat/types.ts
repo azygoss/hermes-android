@@ -37,6 +37,8 @@ export interface ChatMessage {
   label?: string
   /** The user's reaction to an assistant reply (message.react). */
   reaction?: string | null
+  /** Emoji the agent put on this message with its react tool. */
+  agentReactions?: string[]
 }
 
 export interface Todo {

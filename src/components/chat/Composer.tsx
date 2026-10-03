@@ -27,6 +27,7 @@ import type { CompletionItem } from '@/lib/gateway/contract.generated'
 import { rpc } from '@/lib/hermes'
 import { fileToBase64, transcribe } from '@/lib/voice'
 import type { PendingAttachment } from '@/lib/chat/types'
+import { sessionSuccessor } from '@/store/chat'
 import { useSettings } from '@/store/settings'
 import { centered, font, radius, space, useTheme } from '@/theme'
 
@@ -103,6 +104,11 @@ export const Composer = memo(function Composer(props: Props) {
   useEffect(() => {
     const next = sessionId ?? ''
     if (next === draftKey.current) return
+    // The same chat under a new runtime id (resumed after a reconnect): keep what is being typed.
+    if (sessionSuccessor(draftKey.current) === next) {
+      draftKey.current = next
+      return
+    }
     setText((cur) => {
       if (cur.trim()) drafts.set(draftKey.current, cur)
       else drafts.delete(draftKey.current)

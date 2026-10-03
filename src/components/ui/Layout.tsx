@@ -1,6 +1,6 @@
 import type { LucideIcon } from '@/components/icons'
 import { ChevronRight } from '@/components/icons'
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import {
   ActivityIndicator,
   Platform,
@@ -13,9 +13,11 @@ import {
   type ViewStyle,
 } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useT } from '@/i18n'
+import { haptic } from '@/lib/haptics'
 import { centered, HIT, radius, space, useTheme } from '@/theme'
 
 import { Button } from './Button'
@@ -279,7 +281,10 @@ export function Toggle({
   return (
     <Switch
       value={value}
-      onValueChange={onValueChange}
+      onValueChange={(v) => {
+        haptic('select')
+        onValueChange(v)
+      }}
       disabled={disabled}
       trackColor={{ false: c.borderStrong, true: c.accent }}
       thumbColor={thumb}
@@ -383,18 +388,49 @@ export function Segmented<T extends string>({
   )
 }
 
+/**
+ * Placeholder while a screen's data loads: rows shaped like the list that is coming, so the layout
+ * does not jump when it arrives. With a label it names a specific wait and keeps the spinner.
+ */
 export function Loading({ label }: { label?: string }) {
   const { c } = useTheme()
   const t = useT()
+  const pulse = useSharedValue(0.45)
+  useEffect(() => {
+    pulse.set(withRepeat(withTiming(1, { duration: 800, easing: Easing.inOut(Easing.quad) }), -1, true))
+  }, [pulse])
+  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }))
+  if (label)
+    return (
+      <View style={styles.center} accessibilityLiveRegion="polite">
+        <ActivityIndicator color={c.accent} />
+        <Text tone="muted" variant="small">
+          {label}
+        </Text>
+      </View>
+    )
   return (
-    <View style={styles.center} accessibilityLiveRegion="polite">
-      <ActivityIndicator color={c.accent} />
-      <Text tone="muted" variant="small">
-        {label ?? t('Loading…')}
-      </Text>
-    </View>
+    <Animated.View
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={t('Loading…')}
+      accessibilityState={{ busy: true }}
+      style={[styles.card, styles.skeleton, { backgroundColor: c.surface, borderColor: c.border }, pulseStyle]}
+    >
+      {SKELETON_ROWS.map((w, i) => (
+        <View key={i} style={styles.skeletonRow}>
+          <View style={[styles.skeletonIcon, { backgroundColor: c.border }]} />
+          <View style={{ flex: 1, gap: 8 }}>
+            <View style={[styles.skeletonLine, { width: `${w}%`, backgroundColor: c.border }]} />
+            <View style={[styles.skeletonLine, { width: `${Math.min(92, w + 28)}%`, height: 8, backgroundColor: c.border, opacity: 0.6 }]} />
+          </View>
+        </View>
+      ))}
+    </Animated.View>
   )
 }
+
+const SKELETON_ROWS = [42, 58, 36, 50]
 
 export function EmptyState({ icon: Icon, title, body, action }: { icon?: LucideIcon; title: string; body?: string; action?: ReactNode }) {
   const { c } = useTheme()
@@ -497,6 +533,10 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     paddingHorizontal: space.sm,
   },
+  skeleton: { alignSelf: 'stretch', paddingVertical: space.xs },
+  skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: ROW_GAP, paddingHorizontal: space.lg, minHeight: HIT + 8 },
+  skeletonIcon: { width: 20, height: 20, borderRadius: radius.xs },
+  skeletonLine: { height: 10, borderRadius: 5 },
   center: { alignItems: 'center', justifyContent: 'center', gap: space.md, padding: space.xl },
   errorBox: { borderRadius: radius.md, borderWidth: 1, padding: space.lg, gap: space.sm },
   kv: { flexDirection: 'row', justifyContent: 'space-between', gap: space.lg, paddingVertical: space.xs },

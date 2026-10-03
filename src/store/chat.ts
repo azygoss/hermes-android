@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import { toast } from '@/components/ui/Dialogs'
+import { dismissToast, toast } from '@/components/ui/Dialogs'
 import { t } from '@/i18n'
 import { foldHistory, isToolError, type SessionMessageRow } from '@/lib/chat/history'
 import {
@@ -13,7 +13,7 @@ import {
   type Todo,
   type ToolPart,
 } from '@/lib/chat/types'
-import type { AnyGatewayEvent, ServerRequest } from '@/lib/gateway/client'
+import { RpcError, type AnyGatewayEvent, type ServerRequest } from '@/lib/gateway/client'
 import type {
   ConnectionRequestPayload,
   SessionLiveInfo,
@@ -64,6 +64,15 @@ export const useChat = create<ChatState>(() => ({
   composerPrefill: null,
   opening: false,
 }))
+
+/** Live output of background processes (agent.terminal.output), newest tail only. */
+export const useProcessOutput = create<Record<string, string>>(() => ({}))
+const PROCESS_TAIL = 8000
+
+function appendProcessOutput(id: string, chunk: string) {
+  if (!id || !chunk) return
+  useProcessOutput.setState((st) => ({ [id]: ((st[id] ?? '') + chunk).slice(-PROCESS_TAIL) }))
+}
 
 const get = useChat.getState
 const set = useChat.setState
@@ -156,31 +165,38 @@ function bufferDelta(rid: string, kind: 'text' | 'reasoning', text: string) {
   flushTimer ??= setTimeout(flushAll, 50)
 }
 
+/** One pass over the transcript for both kinds of buffered text. */
+function applyBuffered(s0: ChatSession, b: { text: string; reasoning: string }): ChatSession {
+  const [s, mid] = withStreaming(s0)
+  const messages = s.messages.map((m) => {
+    if (m.id !== mid) return m
+    const withReasoning = b.reasoning ? appendPart(m, 'reasoning', b.reasoning) : m
+    return b.text ? appendPart(withReasoning, 'text', b.text) : withReasoning
+  })
+  return { ...s, messages, status: b.text ? null : s.status }
+}
+
 function flushAll() {
   flushTimer = null
-  for (const [rid, b] of buffers) {
-    buffers.delete(rid)
-    update(rid, (s0) => {
-      const [s, mid] = withStreaming(s0)
-      let msgs = s.messages
-      if (b.reasoning) msgs = msgs.map((m) => (m.id === mid ? appendPart(m, 'reasoning', b.reasoning) : m))
-      if (b.text) msgs = msgs.map((m) => (m.id === mid ? appendPart(m, 'text', b.text) : m))
-      return { ...s, messages: msgs, status: b.text ? null : s.status }
-    })
-  }
+  if (!buffers.size) return
+  const pending = [...buffers]
+  buffers.clear()
+  // One store write for every session that streamed in this window.
+  set((state) => {
+    let sessions = state.sessions
+    for (const [rid, b] of pending) {
+      const s = sessions[rid]
+      if (s) sessions = { ...sessions, [rid]: applyBuffered(s, b) }
+    }
+    return sessions === state.sessions ? state : { sessions }
+  })
 }
 
 function flushSession(rid: string) {
-  if (!buffers.has(rid)) return
-  const b = buffers.get(rid)!
+  const b = buffers.get(rid)
+  if (!b) return
   buffers.delete(rid)
-  update(rid, (s0) => {
-    const [s, mid] = withStreaming(s0)
-    let msgs = s.messages
-    if (b.reasoning) msgs = msgs.map((m) => (m.id === mid ? appendPart(m, 'reasoning', b.reasoning) : m))
-    if (b.text) msgs = msgs.map((m) => (m.id === mid ? appendPart(m, 'text', b.text) : m))
-    return { ...s, messages: msgs }
-  })
+  update(rid, (s) => applyBuffered(s, b))
 }
 
 // ── event reducer ─────────────────────────────────────────────────────────
@@ -204,6 +220,7 @@ export function handleEvent(event: AnyGatewayEvent) {
   }
   if (event.type === 'gateway.ready') {
     useRuntime.setState({ ready: event.payload as never })
+    void rebindSessions()
     return
   }
   if (event.type === 'skin.changed') {
@@ -214,6 +231,14 @@ export function handleEvent(event: AnyGatewayEvent) {
   if (event.type === 'notification.show') {
     const p = event.payload
     toast(p.text, p.level === 'error' ? 'error' : p.level === 'warning' || p.level === 'warn' ? 'warn' : 'info', p.key ?? undefined)
+    return
+  }
+  if (event.type === 'notification.clear') {
+    if (event.payload.key) dismissToast(event.payload.key)
+    return
+  }
+  if (event.type === 'agent.terminal.output') {
+    appendProcessOutput(event.payload.process_id, event.payload.chunk)
     return
   }
   if (event.type === 'request.cancel') {
@@ -497,6 +522,42 @@ export function handleEvent(event: AnyGatewayEvent) {
       update(rid, () => ({ status: label }))
       return
     }
+    case 'moa.reference': {
+      // A reference model's answer, shown in the thought process ahead of the aggregator's reply.
+      const p = event.payload
+      const head = p.index && p.count ? `◇ ${p.index}/${p.count} · ${p.label}` : `◇ ${p.label}`
+      if (p.text) bufferDelta(rid, 'reasoning', `${head}\n${p.text.trim()}\n\n`)
+      return
+    }
+    case 'review.summary': {
+      // The background self-improvement review saved a memory or skill; keep it in the transcript.
+      const text = event.payload.text?.trim().replace(/^[^\p{L}\p{N}]+/u, '')
+      if (text) addSystemMessage(rid, text, 'success', 'review')
+      return
+    }
+    case 'browser.progress': {
+      const { message, level } = event.payload
+      if (!message?.trim()) return
+      if (level === 'warn' || level === 'error') addSystemMessage(rid, message, level, 'browser')
+      else update(rid, () => ({ status: message }))
+      return
+    }
+    case 'message.reaction': {
+      const p = event.payload
+      const emojis = (p.reactions ?? []).filter((r) => r.author === 'agent').map((r) => r.emoji)
+      update(rid, (s) =>
+        s.messages.some((m) => m.rowId === p.row_id)
+          ? { messages: s.messages.map((m) => (m.rowId === p.row_id ? { ...m, agentReactions: emojis } : m)) }
+          : undefined,
+      )
+      return
+    }
+    case 'session.control.update':
+      queryClient.setQueryData(['session.control.read', rid], (old: object | undefined) => ({ ...old, control: event.payload.control }))
+      return
+    case 'session.resume_progress':
+      update(rid, () => ({ status: event.payload.status === 'loading' ? (event.payload.message ?? null) : null }))
+      return
     case 'subagent.spawn_requested':
     case 'subagent.start':
     case 'subagent.thinking':
@@ -698,12 +759,84 @@ export async function loadHistory(rid: string, older = false) {
   }
 }
 
+// ── surviving a reconnect ─────────────────────────────────────────────────
+//
+// When the socket drops, the backend detaches this client's runtimes and reaps them 20 s later.
+// A runtime id from before the drop is then unknown ("session not found"), so every open chat is
+// resumed from its stored id on reconnect, which re-attaches the runtime or builds a new one.
+
+const SESSION_GONE = 4001
+/** Old runtime id → the one that replaced it, so in-flight UI state can follow the chat. */
+const successors = new Map<string, string>()
+let rebinding: Promise<void> | null = null
+
+export const sessionSuccessor = (rid: string) => successors.get(rid)
+
+/** Resume one open chat from its stored id; returns the runtime id it lives under now. */
+async function rebind(rid: string): Promise<string> {
+  const h = hermes()
+  const s = get().sessions[rid]
+  if (!s?.storedId) return rid
+  const res = await h.gateway.request('session.resume', {
+    session_id: s.storedId,
+    cols: COLS,
+    source: SOURCE,
+    omit_messages: true,
+    profile: h.profile,
+  })
+  const next = res.session_id
+  if (next !== rid) {
+    successors.set(rid, next)
+    h.gateway.forgetSession(rid)
+    set((st) => {
+      const { [rid]: old, ...rest } = st.sessions
+      if (!old) return st
+      return {
+        sessions: { ...rest, [next]: { ...old, runtimeId: next, streamingId: null, status: null } },
+        storedToRuntime: { ...st.storedToRuntime, [old.storedId!]: next },
+        activeId: st.activeId === rid ? next : st.activeId,
+        // Questions asked of the old runtime died with it; live ones come back with the resume.
+        requests: st.requests.filter((r) => r.sessionId !== rid),
+      }
+    })
+  }
+  update(next, () => ({ busy: !!res.running, turnStartedAt: res.turn_started_at ? res.turn_started_at * 1000 : null }))
+  applyResume(next, res)
+  // A rebuilt runtime has no event history to replay, so the transcript is read again.
+  if (next !== rid) void loadHistory(next)
+  return next
+}
+
+/** Re-attach every open chat after the socket (re)opens. */
+function rebindSessions(): Promise<void> {
+  rebinding ??= (async () => {
+    for (const rid of Object.keys(get().sessions)) await rebind(rid).catch(() => {})
+  })().finally(() => {
+    rebinding = null
+  })
+  return rebinding
+}
+
+/** Run a session-scoped call; if the backend no longer knows the runtime, resume the chat and retry once. */
+async function withSession<T>(rid: string, fn: (rid: string) => Promise<T>): Promise<T> {
+  await rebinding
+  const current = get().sessions[rid] ? rid : (successors.get(rid) ?? rid)
+  try {
+    return await fn(current)
+  } catch (e) {
+    if (!(e instanceof RpcError) || e.code !== SESSION_GONE || !get().sessions[current]?.storedId) throw e
+    return fn(await rebind(current))
+  }
+}
+
 export function setActive(rid: string | null) {
   set({ activeId: rid })
 }
 
 export function resetChat() {
   buffers.clear()
+  successors.clear()
+  useProcessOutput.setState({}, true)
   set({ sessions: {}, storedToRuntime: {}, activeId: null, requests: [], connections: {}, composerPrefill: null, opening: false })
 }
 
@@ -732,7 +865,11 @@ function composePrompt(text: string, attachments: PendingAttachment[]) {
   return refs.length ? `${refs.join('\n')}\n\n${body}` : body
 }
 
-export async function send(rid: string, text: string, mode: SendMode = 'auto', opts: { display?: string; editRowId?: number | null } = {}) {
+export function send(rid: string, text: string, mode: SendMode = 'auto', opts: { display?: string; editRowId?: number | null } = {}) {
+  return withSession(rid, (live) => sendTo(live, text, mode, opts))
+}
+
+async function sendTo(rid: string, text: string, mode: SendMode, opts: { display?: string; editRowId?: number | null }) {
   const gw = hermes().gateway
   const s = get().sessions[rid]
   if (!s) throw new Error('Session is not open')
@@ -789,8 +926,12 @@ export async function send(rid: string, text: string, mode: SendMode = 'auto', o
       })),
     }))
   } catch (e) {
+    // A dead runtime is retried by withSession under a new id; take this attempt's bubble back.
+    const gone = e instanceof RpcError && e.code === SESSION_GONE
     update(rid, (cur) => ({
-      messages: patchMessage(cur, user.id, (m) => ({ ...m, pending: null, error: e instanceof Error ? e.message : String(e) })),
+      messages: gone
+        ? cur.messages.filter((m) => m.id !== user.id)
+        : patchMessage(cur, user.id, (m) => ({ ...m, pending: null, error: e instanceof Error ? e.message : String(e) })),
       attachments,
     }))
     throw e
@@ -798,7 +939,7 @@ export async function send(rid: string, text: string, mode: SendMode = 'auto', o
 }
 
 export async function interrupt(rid: string) {
-  await hermes().gateway.request('session.interrupt', { session_id: rid })
+  await withSession(rid, (live) => hermes().gateway.request('session.interrupt', { session_id: live }))
 }
 
 // ── attachments ───────────────────────────────────────────────────────────
@@ -872,13 +1013,18 @@ export function setPrefill(rid: string, text: string | null) {
 }
 
 /** Run "/name args" through the backend and apply its directive. Returns false if nothing ran. */
-export async function runSlash(rid: string, command: string, depth = 0): Promise<void> {
+export function runSlash(rid: string, command: string, depth = 0): Promise<void> {
+  return withSession(rid, (live) => runSlashOn(live, command, depth))
+}
+
+async function runSlashOn(rid: string, command: string, depth: number): Promise<void> {
   const gw = hermes().gateway
   const body = command.replace(/^\//, '').trim()
   let res: SlashExecResult
   try {
     res = await gw.request('slash.exec', { session_id: rid, command: body }, { timeoutMs: 180_000 })
   } catch (e) {
+    if (e instanceof RpcError && e.code === SESSION_GONE) throw e
     const [name, ...rest] = body.split(/\s+/)
     res = await gw.request('command.dispatch', { session_id: rid, name, arg: rest.join(' ') || null })
   }

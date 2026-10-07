@@ -86,7 +86,7 @@ qrencode -t ansiutf8 "hermes://connect?url=http://127.0.0.1:9119&token=$HERMES_D
 - **Automate**: cron jobs and blueprints, kanban board, group rooms with several profiles, background agents, messaging platforms with guided Telegram/WhatsApp setup, pairing approvals, webhooks.
 - **Backend**: file browser with preview, upload and download, analytics, live logs, API keys, OAuth accounts and key pools, config (summary, form, raw YAML), system health (doctor, security audit, backups, updates, curator, hooks, CDP browser), Hermes CLI console, bot screen viewer, plan and credits.
 - **Plan limits**: what is left on each subscription the backend is signed in to (Codex 5-hour and weekly windows, OpenCode Go rolling/weekly/monthly, Anthropic, OpenRouter credits; Command Code with the plugin in [`extras/hermes-plugins`](extras/hermes-plugins)), under More.
-- **App**: multiple backends, profile switching, dark/light themes with accent colours or the backend's skin, text size, fingerprint/screen-lock app lock, read-aloud with backend or on-device TTS, notifications when a turn finishes or needs you in the background, sessions and model info shown instantly from a local cache.
+- **App**: multiple backends, profile switching, dark/light themes with accent colours or the backend's skin, text size, fingerprint/screen-lock app lock, read-aloud with backend or on-device TTS, notifications when a turn finishes, a scheduled job runs, or the agent needs you, sessions and model info shown instantly from a local cache.
 
 ## Build from source
 

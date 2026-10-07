@@ -14,6 +14,16 @@ class HermesKeepAliveModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("HermesKeepAlive")
 
+    OnCreate {
+      CrashReporter.install(context)
+    }
+
+    /** Last unacknowledged crash/ANR as a map, or null. */
+    Function("lastExit") { CrashReporter.lastExit(context) }
+
+    /** Mark the last crash report as seen. */
+    Function("acknowledgeExit") { CrashReporter.acknowledge(context) }
+
     /** Start (or refresh) the foreground service. Returns false when Android refused it. */
     Function("start") { title: String, text: String ->
       val intent = Intent(context, KeepAliveService::class.java)

@@ -15,6 +15,7 @@ import { GatewayBridge } from '@/components/GatewayBridge'
 import { DialogHost, ToastHost } from '@/components/ui/Dialogs'
 import { TurnEffects } from '@/components/chat/TurnEffects'
 import { useT } from '@/i18n'
+import { promptLastExit } from '@/lib/crashReport'
 import { persistOptions, queryClient } from '@/lib/query'
 import { useConnections } from '@/store/connections'
 import { useSettings } from '@/store/settings'
@@ -76,6 +77,11 @@ function AppShell() {
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(c.bg)
   }, [c.bg])
+
+  // Once per launch, after hydration: offer the previous run's crash/ANR report.
+  useEffect(() => {
+    void promptLastExit()
+  }, [])
 
   const navTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),

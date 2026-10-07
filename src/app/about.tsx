@@ -1,20 +1,26 @@
 import Constants from 'expo-constants'
 import { Stack } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { BookOpen, Code2, MessageCircle } from '@/components/icons'
+import { BookOpen, Bug, Code2, MessageCircle } from '@/components/icons'
+import { useState } from 'react'
 import { View } from 'react-native'
 
 import { HermesMark } from '@/components/HermesMark'
-import { KeyValue, Row, Screen, Section, Text } from '@/components/ui'
+import { KeyValue, Row, Screen, Section, Text, toast } from '@/components/ui'
 import { useT } from '@/i18n'
+import { acknowledgeExit, copyExitReport, lastExit } from '@/lib/crashReport'
+import { relativeTime } from '@/lib/format'
 import { useRest } from '@/lib/hooks'
 import { useRuntime } from '@/lib/hermes'
 import { space } from '@/theme'
+
+import type { LastExit } from '../../modules/hermes-keepalive'
 
 export default function AboutScreen() {
   const t = useT()
   const health = useRest<{ version?: string; displayVersion?: string }>(['health'], '/api/health')
   const conn = useRuntime((s) => s.hermes?.conn)
+  const [crash, setCrash] = useState<LastExit | null>(() => lastExit())
   return (
     <Screen>
       <Stack.Screen options={{ title: t('About') }} />
@@ -33,6 +39,22 @@ export default function AboutScreen() {
           <KeyValue label={t('Gateway protocol')} value="tui_gateway JSON-RPC v1" />
         </View>
       </Section>
+      {crash ? (
+        <Section title={t('Diagnostics')}>
+          <Row
+            icon={Bug}
+            title={t('Last crash report')}
+            subtitle={`${crash.description} · ${relativeTime(crash.timestamp)}`}
+            onPress={async () => {
+              await copyExitReport(crash)
+              acknowledgeExit()
+              setCrash(null)
+              toast(t('Copied'), 'success')
+            }}
+            last
+          />
+        </Section>
+      ) : null}
       <Section title={t('Links')}>
         <Row
           icon={Code2}

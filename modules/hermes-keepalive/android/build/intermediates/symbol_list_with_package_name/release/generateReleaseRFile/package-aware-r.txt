@@ -1,2 +1,0 @@
-expo.modules.hermeskeepalive
-drawable ic_stat_hermes

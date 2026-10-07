@@ -40,3 +40,7 @@ yarn-error.*
 /ios
 /android
 /dist
+
+# local module build outputs and build logs
+modules/*/android/build/
+build*.log

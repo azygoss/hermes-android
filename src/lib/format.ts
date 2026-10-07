@@ -1,4 +1,5 @@
-import { t } from '@/i18n'
+import { resolveLanguage, t } from '@/i18n'
+import { useSettings } from '@/store/settings'
 
 /** Epoch seconds or ms → "5m ago" / "yesterday" / date. */
 export function relativeTime(ts?: number | string | null) {
@@ -80,6 +81,22 @@ export function sourceLabel(source?: string | null): string {
   if (!source) return ''
   const named = SOURCE_NAMES[source.toLowerCase()]
   return named ? named() : source
+}
+
+const appLocale = () => resolveLanguage(useSettings.getState().language)
+
+/** "14:32" in the app's language. */
+export function hhmm(ts: number) {
+  return new Date(ts).toLocaleTimeString(appLocale(), { hour: '2-digit', minute: '2-digit' })
+}
+
+/** "Today" / "Yesterday" / weekday + date in the app's language — transcript day separators. */
+export function dayLabel(ts: number) {
+  const day = new Date(ts).setHours(0, 0, 0, 0)
+  const today = new Date().setHours(0, 0, 0, 0)
+  if (day === today) return t('Today')
+  if (day === today - 86_400_000) return t('Yesterday')
+  return new Date(day).toLocaleDateString(appLocale(), { weekday: 'long', day: 'numeric', month: 'short' })
 }
 
 const END_REASONS: Record<string, () => string> = {

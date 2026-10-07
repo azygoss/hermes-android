@@ -20,12 +20,20 @@ import { FeatureSearchButton } from '@/components/FeatureSearch'
 import { TabHeader } from '@/components/TabHeader'
 import { Row, Screen, Section } from '@/components/ui'
 import { useT } from '@/i18n'
+import { useProfile } from '@/lib/hermes'
+import { useRest, useRpc } from '@/lib/hooks'
 import { View } from 'react-native'
 import { useTheme } from '@/theme'
 
 export default function AgentHub() {
   const t = useT()
   const { c } = useTheme()
+  const info = useRest<{ model?: string }>(['model-info'], '/api/model/info')
+  const skills = useRest<{ enabled?: boolean }[]>(['skills'], '/api/skills')
+  const profile = useProfile()
+  const mcp = useRpc(['mcp', 'status', profile], 'mcp.servers.status', { profile })
+  const enabledSkills = skills.data?.filter((s) => s.enabled).length
+  const connectedMcp = mcp.data?.servers?.length ? mcp.data.servers.filter((s) => s.connected).length : undefined
   const go = (path: string) => () => router.push(path as never)
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -37,6 +45,7 @@ export default function AgentHub() {
             icon={Cpu}
             title={t('Models & providers')}
             subtitle={t('Main model, auxiliary models, Mixture of Agents')}
+            value={info.data?.model}
             onPress={go('/models')}
           />
           <Row icon={Brain} title={t('Memory')} subtitle={t('What Hermes remembers about you and your work')} onPress={go('/memory')} />
@@ -55,9 +64,21 @@ export default function AgentHub() {
           />
         </Section>
         <Section title={t('Capabilities')}>
-          <Row icon={Sparkles} title={t('Skills')} subtitle={t('Installed skills and the Skills Hub')} onPress={go('/skills')} />
+          <Row
+            icon={Sparkles}
+            title={t('Skills')}
+            subtitle={t('Installed skills and the Skills Hub')}
+            value={enabledSkills != null ? t('{n} enabled', { n: enabledSkills }) : undefined}
+            onPress={go('/skills')}
+          />
           <Row icon={Wrench} title={t('Toolsets')} subtitle={t('Turn tool groups on or off')} onPress={go('/toolsets')} />
-          <Row icon={Server} title={t('MCP servers')} subtitle={t('Connect external tools over MCP')} onPress={go('/mcp')} />
+          <Row
+            icon={Server}
+            title={t('MCP servers')}
+            subtitle={t('Connect external tools over MCP')}
+            value={connectedMcp != null ? t('{n} connected', { n: connectedMcp }) : undefined}
+            onPress={go('/mcp')}
+          />
           <Row icon={Plug} title={t('Plugins')} subtitle={t('Install and manage agent plugins')} onPress={go('/plugins')} />
           <Row
             icon={Link2}

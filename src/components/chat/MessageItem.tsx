@@ -23,6 +23,7 @@ import { Animated, Easing, Platform, Pressable, Share, StyleSheet, View } from '
 import { Badge, Text, toast } from '@/components/ui'
 import { useT } from '@/i18n'
 import { haptic } from '@/lib/haptics'
+import { hhmm } from '@/lib/format'
 import { textOf, type ChatMessage, type Part, type ToolPart } from '@/lib/chat/types'
 import { speak } from '@/lib/voice'
 import { useSettings } from '@/store/settings'
@@ -257,19 +258,30 @@ function MessageBody({ message, streaming, onEdit, onReact, onRetry }: Props) {
             {message.agentReactions.join(' ')}
           </Text>
         ) : null}
-        {message.pending === 'queued' ? (
+        {message.pending === 'queued' || message.error ? (
           <View style={styles.meta}>
-            <Clock size={12} color={c.textFaint} />
-            <Text variant="caption" tone="faint">
-              {t('Queued — runs after the current turn')}
+            {message.pending === 'queued' ? (
+              <>
+                <Clock size={12} color={c.textFaint} />
+                <Text variant="caption" tone="faint">
+                  {t('Queued — runs after the current turn')}
+                </Text>
+              </>
+            ) : null}
+            {message.error ? (
+              <Text variant="caption" tone="danger">
+                {message.error}
+              </Text>
+            ) : null}
+            <Text variant="caption" tone="faint" style={{ marginLeft: 'auto' }}>
+              {hhmm(message.at)}
             </Text>
           </View>
-        ) : null}
-        {message.error ? (
-          <Text variant="caption" tone="danger" style={{ alignSelf: 'flex-end' }}>
-            {message.error}
+        ) : (
+          <Text variant="caption" tone="faint" style={{ alignSelf: 'flex-end' }}>
+            {hhmm(message.at)}
           </Text>
-        ) : null}
+        )}
       </View>
     )
   }
@@ -382,11 +394,16 @@ function MessageBody({ message, streaming, onEdit, onReact, onRetry }: Props) {
               {t('interim')}
             </Text>
           ) : null}
-          {message.elapsedMs && message.elapsedMs >= 2000 ? (
-            <Text variant="caption" tone="faint" style={{ marginLeft: 'auto' }}>
-              {t('Worked for {time}', { time: formatElapsed(message.elapsedMs) })}
+          <View style={styles.metaRight}>
+            <Text variant="caption" tone="faint">
+              {hhmm(message.at)}
             </Text>
-          ) : null}
+            {message.elapsedMs && message.elapsedMs >= 2000 ? (
+              <Text variant="caption" tone="faint">
+                {t('Worked for {time}', { time: formatElapsed(message.elapsedMs) })}
+              </Text>
+            ) : null}
+          </View>
         </View>
       ) : null}
     </View>
@@ -421,6 +438,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: space.xs, alignItems: 'center' },
   action: { width: 36, height: 32, alignItems: 'center', justifyContent: 'center' },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: space.sm },
   attachRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
   fileChip: {
     flexDirection: 'row',

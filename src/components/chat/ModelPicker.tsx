@@ -120,10 +120,30 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
     }[] = []
     const needle = q.trim().toLowerCase()
     const providers = query.data?.providers ?? []
+    // Current model first — pinned under its own header while not searching.
+    const cur =
+      !needle && currentModel
+        ? providers.find((p) => (!currentProvider || p.slug === currentProvider) && p.models?.includes(currentModel))
+        : undefined
+    if (cur && currentModel) {
+      out.push({ key: 'h-current', provider: '', providerName: t('Current'), model: '', authed: true, header: true, plain: true })
+      out.push({
+        key: `current-${cur.slug}/${currentModel}`,
+        provider: cur.slug,
+        providerName: cur.name,
+        model: currentModel,
+        authed: !!cur.authenticated,
+        caps: cur.name,
+      })
+    }
     // Recently used models first, while not searching; only ones the backend still offers.
     const recent = needle
       ? []
-      : recentModels.filter((r) => providers.some((p) => p.slug === r.provider && p.authenticated && p.models?.includes(r.model)))
+      : recentModels.filter(
+          (r) =>
+            !(cur && r.provider === cur.slug && r.model === currentModel) &&
+            providers.some((p) => p.slug === r.provider && p.authenticated && p.models?.includes(r.model)),
+        )
     if (recent.length) {
       out.push({ key: 'h-recent', provider: '', providerName: t('Recent'), model: '', authed: true, header: true, plain: true })
       for (const r of recent) {
@@ -139,7 +159,11 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
       }
     }
     for (const p of providers) {
-      const models = (p.models ?? []).filter((m) => !needle || m.toLowerCase().includes(needle) || p.name.toLowerCase().includes(needle))
+      const models = (p.models ?? []).filter(
+        (m) =>
+          !(cur && p.slug === cur.slug && m === currentModel) &&
+          (!needle || m.toLowerCase().includes(needle) || p.name.toLowerCase().includes(needle)),
+      )
       if (!models.length) continue
       out.push({ key: `h-${p.slug}`, provider: p.slug, providerName: p.name, model: '', authed: !!p.authenticated, header: true })
       for (const m of models) {
@@ -159,7 +183,7 @@ export function ModelPicker({ visible, onClose, sessionId, currentModel, current
       }
     }
     return out
-  }, [query.data, q, t, recentModels])
+  }, [query.data, q, t, recentModels, currentModel, currentProvider])
 
   async function addKey(slug: string, name: string) {
     const key = await prompt(t('API key for {p}', { p: name }), { secret: true })

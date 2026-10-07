@@ -1364,4 +1364,11 @@ export const tr: Record<string, string> = {
   'This model': 'Bu model',
   'this model': 'bu model',
   '{model} has no reasoning control.': '{model} için reasoning ayarı yok.',
+  'Hermes closed unexpectedly last time': 'Hermes bir önceki sefer beklenmedik şekilde kapandı',
+  'Copy report': 'Raporu kopyala',
+  'Last crash report': 'Son çökme raporu',
+  Diagnostics: 'Tanılama',
+  Current: 'Geçerli',
+  '{n} enabled': '{n} etkin',
+  '{n} connected': '{n} bağlı',
 }

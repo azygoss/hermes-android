@@ -96,6 +96,7 @@
       ],
       "expo-localization",
       "./plugins/withReleaseSigning",
+      "./plugins/withShortcuts",
       "expo-background-task"
     ]
   }

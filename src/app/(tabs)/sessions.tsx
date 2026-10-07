@@ -20,7 +20,7 @@ import {
   X,
 } from '@/components/icons'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, BackHandler, Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, BackHandler, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 import { Pressable as GHPressable } from 'react-native-gesture-handler'
 import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -118,7 +118,15 @@ export default function SessionsScreen() {
     return [...all.filter((s) => s.pinned), ...all.filter((s) => !s.pinned)]
   }, [list.data, searchQuery.data, searching])
 
-  const sections = useMemo(() => groupByDay(rows, searching, t), [rows, searching, t])
+  // Flat data, not SectionList: sticky native headers crash on detach while reloading (RN #37126).
+  const items = useMemo<ListItem[]>(() => {
+    const out: ListItem[] = []
+    for (const section of groupByDay(rows, searching, t)) {
+      if (section.title) out.push({ kind: 'header', key: `h-${section.title}`, title: section.title })
+      for (const row of section.data) out.push({ kind: 'row', key: row.id, row })
+    }
+    return out
+  }, [rows, searching, t])
 
   const open = useCallback((row: SessionRow) => router.navigate({ pathname: '/chat', params: { stored: row.id } }), [])
 
@@ -241,19 +249,9 @@ export default function SessionsScreen() {
           <ErrorState error={list.error} onRetry={() => list.refetch()} />
         </View>
       ) : null}
-      <SectionList
-        sections={sections}
-        keyExtractor={(r) => r.id}
-        stickySectionHeadersEnabled
-        renderSectionHeader={({ section }) =>
-          section.title ? (
-            <View style={[styles.dayHead, { backgroundColor: c.bg }]}>
-              <Text variant="small" weight="semibold" tone="muted" accessibilityRole="header">
-                {section.title}
-              </Text>
-            </View>
-          ) : null
-        }
+      <FlatList
+        data={items}
+        keyExtractor={(i) => i.key}
         contentContainerStyle={[centered, { paddingBottom: space.xxxl }]}
         refreshControl={
           <RefreshControl refreshing={list.isRefetching} onRefresh={() => list.refetch()} tintColor={c.accent} colors={[c.accent]} />
@@ -274,18 +272,28 @@ export default function SessionsScreen() {
             />
           ) : null
         }
-        ItemSeparatorComponent={Separator}
+        ItemSeparatorComponent={({ leadingItem, trailingItem }) =>
+          leadingItem?.kind === 'row' && trailingItem?.kind === 'row' ? <Separator /> : null
+        }
         extraData={picked}
-        renderItem={({ item }) => (
-          <SessionCard
-            row={item}
-            onOpen={selecting ? toggle : open}
-            onMenu={selecting ? toggle : setSelected}
-            selecting={selecting}
-            checked={!!picked?.has(item.id)}
-            onSwipe={swipe}
-          />
-        )}
+        renderItem={({ item }) =>
+          item.kind === 'header' ? (
+            <View style={[styles.dayHead, { backgroundColor: c.bg }]}>
+              <Text variant="small" weight="semibold" tone="muted" accessibilityRole="header">
+                {item.title}
+              </Text>
+            </View>
+          ) : (
+            <SessionCard
+              row={item.row}
+              onOpen={selecting ? toggle : open}
+              onMenu={selecting ? toggle : setSelected}
+              selecting={selecting}
+              checked={!!picked?.has(item.row.id)}
+              onSwipe={swipe}
+            />
+          )
+        }
       />
       <Sheet visible={!!selected} onClose={() => setSelected(null)} title={previewText(selected?.title || selected?.preview) || t('Session')}>
         {selected ? (
@@ -382,6 +390,8 @@ export default function SessionsScreen() {
 }
 
 const DAY = 86_400_000
+
+type ListItem = { kind: 'header'; key: string; title: string } | { kind: 'row'; key: string; row: SessionRow }
 
 /** Pinned first, then Today / Yesterday / Previous 7 days / Earlier, like the desktop sidebar. */
 function groupByDay(rows: SessionRow[], searching: boolean, t: ReturnType<typeof useT>) {

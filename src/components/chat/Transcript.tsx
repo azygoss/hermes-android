@@ -1,12 +1,13 @@
 import { ArrowDown } from '@/components/icons'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
 
-import { toastError } from '@/components/ui'
+import { toastError, Text } from '@/components/ui'
 import { useT } from '@/i18n'
 import type { ChatMessage } from '@/lib/chat/types'
 import { textOf } from '@/lib/chat/types'
+import { dayLabel } from '@/lib/format'
 import { loadHistory, react, runSlash, useChat } from '@/store/chat'
 import { centered, motion, space, useTheme } from '@/theme'
 
@@ -70,17 +71,31 @@ export const Transcript = memo(function Transcript({ runtimeId, query, hitIndex,
   }, [runtimeId])
 
   const renderItem = useCallback(
-    ({ item, index }: { item: ChatMessage; index: number }) => (
-      <MessageItem
-        message={item}
-        streaming={item.id === streamingId}
-        onReact={onReact}
-        onEdit={onEdit}
-        onRetry={index === 0 && item.role === 'assistant' && !busy ? onRetry : undefined}
-        highlighted={item.id === hitId}
-      />
-    ),
-    [streamingId, busy, hitId, onReact, onEdit, onRetry],
+    ({ item, index }: { item: ChatMessage; index: number }) => {
+      // data is newest-first: the item above (visually) is data[index+1]. A separator sits on
+      // top of a message when the next-older one belongs to a different calendar day — or it is
+      // the oldest message loaded. Kept out of `data` so search-hit indexes stay aligned.
+      const older = data[index + 1]
+      const sep = !older || new Date(item.at).toDateString() !== new Date(older.at).toDateString() ? dayLabel(item.at) : null
+      return (
+        <View>
+          {sep ? (
+            <Text variant="caption" tone="faint" style={styles.daySep}>
+              {sep}
+            </Text>
+          ) : null}
+          <MessageItem
+            message={item}
+            streaming={item.id === streamingId}
+            onReact={onReact}
+            onEdit={onEdit}
+            onRetry={index === 0 && item.role === 'assistant' && !busy ? onRetry : undefined}
+            highlighted={item.id === hitId}
+          />
+        </View>
+      )
+    },
+    [data, streamingId, busy, hitId, onReact, onEdit, onRetry],
   )
 
   return (
@@ -104,7 +119,7 @@ export const Transcript = memo(function Transcript({ runtimeId, query, hitIndex,
         onEndReached={() => hasMore && loadHistory(runtimeId, true)}
         onEndReachedThreshold={0.4}
         ListFooterComponent={loadingHistory ? <ActivityIndicator color={c.accent} style={{ margin: space.lg }} /> : null}
-        removeClippedSubviews={Platform.OS === 'android'}
+        // No removeClippedSubviews: getChildDrawingOrder races row detach on Android and crashes.
         initialNumToRender={8}
         maxToRenderPerBatch={8}
         windowSize={11}
@@ -132,6 +147,7 @@ const keyOf = (m: ChatMessage) => m.id
 
 const styles = StyleSheet.create({
   content: { padding: space.lg, gap: space.lg },
+  daySep: { alignSelf: 'center', marginBottom: space.sm },
   jumpWrap: { position: 'absolute', right: space.lg, bottom: space.md },
   jump: {
     width: 44,

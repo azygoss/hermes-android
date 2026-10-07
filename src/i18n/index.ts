@@ -1,3 +1,5 @@
+import { useCallback } from 'react'
+
 import { getLocales } from 'expo-localization'
 
 import { useSettings, type Language } from '@/store/settings'
@@ -28,5 +30,6 @@ export const t = (text: string, vars?: Record<string, string | number>) => trans
 
 export function useT() {
   const lang = useSettings((s) => s.language)
-  return (text: string, vars?: Record<string, string | number>) => translate(lang, text, vars)
+  // Stable across renders so it can sit in memo deps app-wide.
+  return useCallback((text: string, vars?: Record<string, string | number>) => translate(lang, text, vars), [lang])
 }

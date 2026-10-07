@@ -1,6 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
-import { QueryClient, type Query } from '@tanstack/react-query'
+import { focusManager, QueryClient, type Query } from '@tanstack/react-query'
+import { AppState, Platform } from 'react-native'
+
+// RN has no window focus; feed AppState instead so refetchInterval polling (agents, logs, kanban…)
+// pauses in the background, where the keep-alive service would otherwise keep JS running.
+if (Platform.OS !== 'web') {
+  focusManager.setEventListener((setFocused) => {
+    setFocused(AppState.currentState === 'active')
+    const sub = AppState.addEventListener('change', (state) => setFocused(state === 'active'))
+    return () => sub.remove()
+  })
+}
 
 export const queryClient = new QueryClient({
   defaultOptions: {

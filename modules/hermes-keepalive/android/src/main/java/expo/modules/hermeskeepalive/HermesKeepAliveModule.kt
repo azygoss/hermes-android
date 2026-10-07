@@ -8,8 +8,6 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 class HermesKeepAliveModule : Module() {
-  private var running = false
-
   private val context: Context
     get() = requireNotNull(appContext.reactContext) { "React context is not available" }
 
@@ -22,18 +20,19 @@ class HermesKeepAliveModule : Module() {
         .putExtra(KeepAliveService.EXTRA_TITLE, title)
         .putExtra(KeepAliveService.EXTRA_TEXT, text)
       try {
+        KeepAliveService.state = ServiceState.STARTING
         ContextCompat.startForegroundService(context, intent)
-        running = true
         true
       } catch (e: Exception) {
         // ForegroundServiceStartNotAllowedException and friends: the app is not in the foreground.
+        KeepAliveService.state = ServiceState.IDLE
         false
       }
     }
 
-    /** Change the notification text without restarting the service. */
+    /** Change the notification text without restarting the service. False when the service is gone. */
     Function("update") { title: String, text: String ->
-      if (!running) return@Function false
+      if (KeepAliveService.state == ServiceState.IDLE) return@Function false
       KeepAliveService.ensureChannel(context)
       val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
       manager.notify(KeepAliveService.notificationId(), KeepAliveService.build(context, title, text))
@@ -41,12 +40,11 @@ class HermesKeepAliveModule : Module() {
     }
 
     Function("stop") {
-      running = false
       context.stopService(Intent(context, KeepAliveService::class.java))
     }
 
     OnDestroy {
-      if (running) context.stopService(Intent(context, KeepAliveService::class.java))
+      if (KeepAliveService.state != ServiceState.IDLE) context.stopService(Intent(context, KeepAliveService::class.java))
     }
   }
 }

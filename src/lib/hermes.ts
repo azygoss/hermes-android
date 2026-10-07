@@ -12,12 +12,14 @@ export class HermesConnection {
   private session: PasswordSession | null = null
   private token: string | null = null
   private refreshing: Promise<boolean> | null = null
+  /** Set only when the backend answered "session_expired"; a phone that was merely offline is not expired. */
+  private expired = false
 
   constructor(readonly conn: Connection) {
     this.gateway = new GatewayClient({
       getUrl: () => this.socketUrl(),
       headers: conn.headers,
-      onAuthFailure: () => this.refresh(),
+      onAuthFailure: async () => (await this.refresh()) || (this.conn.authMode === 'password' && !this.expired),
     })
     this.rest = new RestClient({
       baseUrl: conn.baseUrl,
@@ -42,7 +44,12 @@ export class HermesConnection {
     if (!this.session) throw new AuthError('Sign in to this Hermes backend again.')
     if (this.session.expiresAt - Date.now() < 60_000) {
       const ok = await this.refresh()
-      if (!ok) throw new AuthError('Your Hermes login expired. Sign in again.')
+      if (!ok) {
+        if (this.expired) throw new AuthError('Your Hermes login expired. Sign in again.')
+        // A transient failure with a still-valid access token can ride on the old token.
+        if (this.session.expiresAt > Date.now()) return
+        throw new Error('Could not refresh the Hermes login.')
+      }
     }
   }
 
@@ -70,16 +77,35 @@ export class HermesConnection {
 
   refresh(): Promise<boolean> {
     if (this.conn.authMode !== 'password' || !this.session) return Promise.resolve(false)
-    this.refreshing ??= refreshSession(this.conn.baseUrl, this.session, this.conn.headers)
-      .then(async (s) => {
+    this.refreshing ??= (async () => {
+      try {
+        // The background task refreshes in the same storage but another promise; a rotated
+        // refresh token already on disk is newer than ours — adopt it instead of failing.
+        const stored = await connectionSecrets.getSession(this.conn.id).catch(() => null)
+        if (stored && stored.refreshToken !== this.session!.refreshToken && stored.expiresAt - Date.now() > 60_000) {
+          this.session = stored
+          return true
+        }
+        const s = await refreshSession(this.conn.baseUrl, this.session!, this.conn.headers)
         this.session = s
+        this.expired = false
         await connectionSecrets.setSession(this.conn.id, s)
         return true
-      })
-      .catch(() => false)
-      .finally(() => {
-        this.refreshing = null
-      })
+      } catch (e) {
+        if (e instanceof Error && e.message === 'session_expired') {
+          // One last check: a concurrent refresh may have landed while ours was in flight.
+          const newer = await connectionSecrets.getSession(this.conn.id).catch(() => null)
+          if (newer && newer.refreshToken !== this.session!.refreshToken && newer.expiresAt - Date.now() > 60_000) {
+            this.session = newer
+            return true
+          }
+          this.expired = true
+        }
+        return false
+      }
+    })().finally(() => {
+      this.refreshing = null
+    })
     return this.refreshing
   }
 
@@ -98,12 +124,16 @@ interface RuntimeState {
 
 type GatewayReady = NonNullable<GatewayClient['ready']>
 
+/** Serialises activate() calls: a superseded activation must not open a second socket. */
+let activationSeq = 0
+
 export const useRuntime = create<RuntimeState>((set, get) => ({
   hermes: null,
   state: 'idle',
   error: null,
   ready: null,
   activate: async (conn) => {
+    const seq = ++activationSeq
     get().hermes?.dispose()
     if (!conn) {
       set({ hermes: null, state: 'idle', error: null, ready: null })
@@ -111,6 +141,11 @@ export const useRuntime = create<RuntimeState>((set, get) => ({
     }
     const h = new HermesConnection(conn)
     await h.load()
+    // A newer activate() arrived while secrets loaded; leave its runtime alone.
+    if (seq !== activationSeq) {
+      h.dispose()
+      return
+    }
     h.gateway.onState((state) => {
       if (get().hermes !== h) return
       set({ state, error: h.gateway.lastError, ready: h.gateway.ready })

@@ -18,6 +18,8 @@ import androidx.core.app.ServiceCompat
  * app may be in the background. Its job is to keep the process, and with it the gateway WebSocket,
  * from being frozen or killed, so "turn finished" and approval notifications still arrive.
  */
+enum class ServiceState { IDLE, STARTING, RUNNING }
+
 class KeepAliveService : Service() {
   override fun onBind(intent: Intent?): IBinder? = null
 
@@ -31,11 +33,20 @@ class KeepAliveService : Service() {
       ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, type)
     } catch (e: Exception) {
       // Android 12+ refuses to start foreground services from the background; nothing to keep alive then.
+      state = ServiceState.IDLE
       stopSelf()
       return START_NOT_STICKY
     }
+    state = ServiceState.RUNNING
     // Not sticky: if the system kills us, the app has gone with us and has nothing to resume.
     return START_NOT_STICKY
+  }
+
+  override fun onDestroy() {
+    // Drop the ongoing notification so it cannot outlive the service it belongs to.
+    ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+    state = ServiceState.IDLE
+    super.onDestroy()
   }
 
   /** Android 15 caps dataSync services at six hours a day; bow out cleanly when told to. */
@@ -55,6 +66,15 @@ class KeepAliveService : Service() {
   }
 
   companion object {
+    /**
+     * Owned by the service, read by the module: the module's start() marks STARTING, a successful
+     * onStartCommand marks RUNNING, and every way the service ends funnels through onDestroy → IDLE.
+     * Without this the module kept posting updates for a service that was already gone, leaving an
+     * orphaned ongoing notification.
+     */
+    @Volatile
+    var state: ServiceState = ServiceState.IDLE
+
     const val EXTRA_TITLE = "title"
     const val EXTRA_TEXT = "text"
     private const val CHANNEL_ID = "hermes-working"

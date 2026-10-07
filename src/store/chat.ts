@@ -593,6 +593,42 @@ export function handleEvent(event: AnyGatewayEvent) {
 
 const WINDOW_ONLY = new Set(['preview.act', 'preview.read', 'terminal.read', 'window.read', 'tour'])
 
+// ── answers given while offline ───────────────────────────────────────────
+// The card is dismissed at once and the answer waits here; a replayed request carrying the same
+// gateway id (or the same approval request_id) gets answered on arrival instead of shown again.
+
+const ANSWER_TTL = 10 * 60_000
+interface QueuedAnswer {
+  requestId?: string
+  result: unknown
+  at: number
+}
+const queuedAnswers = new Map<string, QueuedAnswer>()
+
+function pruneQueuedAnswers() {
+  const cutoff = Date.now() - ANSWER_TTL
+  for (const [key, entry] of queuedAnswers) if (entry.at < cutoff) queuedAnswers.delete(key)
+}
+
+function queueAnswer(id: string, requestId: string | undefined, result: unknown) {
+  pruneQueuedAnswers()
+  const entry: QueuedAnswer = { requestId, result, at: Date.now() }
+  queuedAnswers.set(id, entry)
+  if (requestId) queuedAnswers.set(requestId, entry)
+}
+
+/** The queued answer matching this incoming request, if any; removes it from the queue. */
+function takeQueuedAnswer(request: ServerRequest): { hit: boolean; result?: unknown } {
+  pruneQueuedAnswers()
+  const requestId = String((request.params as { request_id?: string }).request_id ?? '')
+  const entry = queuedAnswers.get(request.id) ?? (requestId ? queuedAnswers.get(requestId) : undefined)
+  if (!entry) return { hit: false }
+  queuedAnswers.delete(request.id)
+  if (entry.requestId) queuedAnswers.delete(entry.requestId)
+  if (requestId) queuedAnswers.delete(requestId)
+  return { hit: true, result: entry.result }
+}
+
 export function handleServerRequest(request: ServerRequest) {
   const gw = hermes().gateway
   if (WINDOW_ONLY.has(request.method)) {
@@ -600,6 +636,16 @@ export function handleServerRequest(request: ServerRequest) {
     if (gw.capabilities?.declines_not_shown) gw.respondError(request.id, 4404, 'not shown')
     else gw.respond(request.id, { value: '' })
     return
+  }
+  // Answered while the socket was down; the replay just needs the response, not the card.
+  const queued = takeQueuedAnswer(request)
+  if (queued.hit) {
+    try {
+      gw.respond(request.id, queued.result)
+      return
+    } catch {
+      queueAnswer(request.id, String((request.params as { request_id?: string }).request_id ?? '') || undefined, queued.result)
+    }
   }
   const sessionId = String((request.params as { session_id?: string }).session_id ?? '')
   set((st) => ({
@@ -611,9 +657,24 @@ export function handleServerRequest(request: ServerRequest) {
   }
 }
 
-export function answerRequest(id: string, result: unknown) {
-  hermes().gateway.respond(id, result)
-  set((st) => ({ requests: st.requests.filter((r) => r.id !== id) }))
+export function answerRequest(id: string, result: unknown, approvalId?: string) {
+  const request = get().requests.find((r) => r.id === id)
+  // Answered from a notification after the app restarted: the request comes back with the resume.
+  if (!request) return queueAnswer(id, approvalId, result)
+  const requestId = String((request.params as { request_id?: string }).request_id ?? '')
+  const offline = () => {
+    set((st) => ({ requests: st.requests.filter((r) => r.id !== id) }))
+    queueAnswer(id, requestId || undefined, result)
+    toast(t('Not connected. Your answer will be sent when Hermes reconnects.'), 'warn')
+  }
+  const gw = useRuntime.getState().hermes?.gateway
+  if (!gw || gw.state !== 'open') return offline()
+  try {
+    gw.respond(id, result)
+    set((st) => ({ requests: st.requests.filter((r) => r.id !== id) }))
+  } catch {
+    offline()
+  }
 }
 
 export function dropRequest(id: string) {
@@ -836,6 +897,7 @@ export function setActive(rid: string | null) {
 export function resetChat() {
   buffers.clear()
   successors.clear()
+  queuedAnswers.clear()
   useProcessOutput.setState({}, true)
   set({ sessions: {}, storedToRuntime: {}, activeId: null, requests: [], connections: {}, composerPrefill: null, opening: false })
 }
@@ -849,7 +911,12 @@ export async function closeRuntime(rid: string) {
   hermes().gateway.forgetSession(rid)
   set((st) => {
     const { [rid]: _, ...rest } = st.sessions
-    return { sessions: rest, activeId: st.activeId === rid ? null : st.activeId }
+    return {
+      sessions: rest,
+      requests: st.requests.filter((r) => r.sessionId !== rid),
+      connections: Object.fromEntries(Object.entries(st.connections).filter(([, pc]) => pc.sessionId !== rid)),
+      activeId: st.activeId === rid ? null : st.activeId,
+    }
   })
 }
 

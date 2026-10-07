@@ -264,10 +264,15 @@ export default function ChatScreen() {
     }
   }, [params.new])
 
-  const ensureSession = useCallback(async () => {
+  // Attach+send in one gesture fired this twice and created two chats; share the in-flight one.
+  const creating = useRef<Promise<string> | null>(null)
+  const ensureSession = useCallback(() => {
     const current = useChat.getState().activeId
-    if (current) return current
-    return newChat()
+    if (current) return Promise.resolve(current)
+    creating.current ??= newChat().finally(() => {
+      creating.current = null
+    })
+    return creating.current
   }, [])
 
   // In-chat search: the transcript finds the matches, the header steps through them.
@@ -283,6 +288,13 @@ export default function ChatScreen() {
     setNeedle('')
   }
   useEffect(closeSearch, [activeId])
+  // An edit draft truncated the new chat at a foreign row id after a chat switch; drop it.
+  const storedId = useActive((s) => s.storedId)
+  const [editStored, setEditStored] = useState(storedId)
+  if (editStored !== storedId) {
+    setEditStored(storedId)
+    setEditing(null)
+  }
   const onEdit = useCallback((m: ChatMessage) => {
     const sid = useChat.getState().activeId
     if (!sid) return

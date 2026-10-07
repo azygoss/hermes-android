@@ -86,6 +86,8 @@ export interface ChatSession {
   attachments: PendingAttachment[]
   historyLoaded: boolean
   historyOffset: number
+  /** Smallest row id folded into the transcript so far; older pages drop anything >= this. */
+  oldestRowId: number | null
   hasMore: boolean
   loadingHistory: boolean
   error: string | null

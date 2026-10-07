@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { router, Stack } from 'expo-router'
-import { CalendarClock, History, Pencil, Play, Plus, Trash2 } from '@/components/icons'
+import { AlertTriangle, CalendarClock, History, Pencil, Play, Plus, Trash2 } from '@/components/icons'
 import { useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import {
+  Badge,
   Button,
+  Card,
   confirm,
   EmptyState,
   ErrorState,
@@ -21,7 +23,8 @@ import {
   Toggle,
 } from '@/components/ui'
 import { useT } from '@/i18n'
-import { relativeTime } from '@/lib/format'
+import { describeSchedule, jobOverdue, schedulerStalled } from '@/lib/cron'
+import { endReasonLabel, relativeTime } from '@/lib/format'
 import { useRest } from '@/lib/hooks'
 import { rest } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
@@ -30,13 +33,44 @@ import { radius, space, useTheme } from '@/theme'
 import { BlueprintsTab } from '@/components/cron/Blueprints'
 import type { CronJob } from '@/components/cron/types'
 
+/** Priority: paused > overdue > running > last result. */
+function statusPill(job: CronJob, t: (s: string) => string): { label: string; tone: 'default' | 'accent' | 'success' | 'danger' | 'warn' } | null {
+  if (!job.enabled) return { label: t('Paused'), tone: 'default' }
+  if (job.next_run_at && Date.parse(String(job.next_run_at)) < Date.now() - 3 * 60_000) return { label: t('Overdue'), tone: 'warn' }
+  if (job.latest_execution?.started_at && !job.latest_execution.finished_at) return { label: t('Running'), tone: 'accent' }
+  if (!job.last_status) return null
+  return ['ok', 'success'].includes(job.last_status)
+    ? { label: t('OK'), tone: 'success' }
+    : { label: t('Failed'), tone: 'danger' }
+}
+
 export default function CronScreen() {
   const t = useT()
   const { c } = useTheme()
   const [tab, setTab] = useState<'jobs' | 'blueprints'>('jobs')
   const jobs = useRest<CronJob[]>(['cron', 'jobs'], '/api/cron/jobs')
+  const targets = useRest<{ targets: { id: string; name: string }[] }>(['cron', 'targets'], '/api/cron/delivery-targets')
   const [selected, setSelected] = useState<CronJob | null>(null)
+  const [startingGw, setStartingGw] = useState(false)
+  const stalled = schedulerStalled(jobs.data ?? [])
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['cron'] })
+  const deliveryName = (id?: string | null) =>
+    !id ? null : id === 'local' ? t('Saved on the backend') : ((targets.data?.targets ?? []).find((x) => x.id === id)?.name ?? id)
+
+  async function startGateway() {
+    setStartingGw(true)
+    try {
+      await rest().post('/api/gateway/start', undefined, { noProfile: true, timeoutMs: 120_000 })
+      setTimeout(() => {
+        void queryClient.invalidateQueries({ queryKey: ['status'] })
+        void queryClient.invalidateQueries({ queryKey: ['cron'] })
+      }, 3000)
+    } catch (e) {
+      toastError(e)
+    } finally {
+      setStartingGw(false)
+    }
+  }
 
   async function setEnabled(job: CronJob, enabled: boolean) {
     queryClient.setQueryData<CronJob[]>(['cron', 'jobs'], (old) => old?.map((j) => (j.id === job.id ? { ...j, enabled } : j)))
@@ -70,6 +104,20 @@ export default function CronScreen() {
         <>
           {jobs.isLoading ? <Loading /> : null}
           {jobs.error ? <ErrorState error={jobs.error} onRetry={() => jobs.refetch()} /> : null}
+          {stalled ? (
+            <Card>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                <AlertTriangle size={18} color={c.warn} strokeWidth={1.75} />
+                <Text weight="semibold" tone="warn" style={{ flex: 1 }}>
+                  {t('Scheduled jobs are not running')}
+                </Text>
+              </View>
+              <Text variant="small" tone="muted">
+                {t('Jobs fire only while the Hermes gateway is running on the backend. It looks stopped.')}
+              </Text>
+              <Button size="sm" label={t('Start gateway')} loading={startingGw} onPress={startGateway} style={{ alignSelf: 'flex-start' }} />
+            </Card>
+          ) : null}
           {!jobs.isLoading && !jobs.data?.length ? (
             <EmptyState
               icon={CalendarClock}
@@ -92,36 +140,31 @@ export default function CronScreen() {
                   {job.name || job.prompt?.slice(0, 60) || job.id}
                 </Text>
                 <Text variant="small" tone="muted">
-                  {job.schedule_display || job.schedule?.display || job.schedule?.expr}
-                  {job.next_run_at && job.enabled
-                    ? ` · ${Date.parse(String(job.next_run_at)) > Date.now() ? t('next {when}', { when: relativeTime(job.next_run_at) }) : t('due now')}`
-                    : ''}
+                  {describeSchedule(job)}
+                  {job.next_run_at && job.enabled ? (
+                    jobOverdue(job) ? (
+                      <Text variant="small" tone="warn">
+                        {` · ${t('overdue {when}', { when: relativeTime(job.next_run_at) })}`}
+                      </Text>
+                    ) : (
+                      ` · ${t('next {when}', { when: relativeTime(job.next_run_at) })}`
+                    )
+                  ) : null}
                 </Text>
                 {job.prompt ? (
                   <Text variant="small" tone="faint" numberOfLines={2}>
                     {job.prompt}
                   </Text>
                 ) : null}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  {job.last_status ? (
-                    <View
-                      style={[
-                        styles.dot,
-                        {
-                          backgroundColor:
-                            job.last_status === 'ok' || job.last_status === 'success'
-                              ? c.success
-                              : job.last_status === 'error'
-                                ? c.danger
-                                : c.textFaint,
-                        },
-                      ]}
-                    />
-                  ) : null}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {(() => {
+                    const pill = statusPill(job, t)
+                    return pill ? <Badge label={pill.label} tone={pill.tone} /> : null
+                  })()}
                   <Text variant="caption" tone="faint" numberOfLines={1}>
                     {[
-                      job.last_status ? t('last: {s}', { s: job.last_status }) : null,
-                      job.deliver ? `→ ${job.deliver}` : null,
+                      job.last_run_at ? t('Last run {when}', { when: relativeTime(job.last_run_at) }) : null,
+                      deliveryName(job.deliver),
                       job.no_agent ? t('script') : null,
                     ]
                       .filter(Boolean)
@@ -179,7 +222,7 @@ function JobSheet({ job, onClose, onChanged }: { job: CronJob | null; onClose: (
         </Text>
       ) : null}
       <Text variant="small" tone="muted">
-        {[job?.schedule_display, job?.model, job?.workdir, job?.skills?.length ? t('skills: {s}', { s: job.skills.join(', ') }) : null]
+        {[job ? describeSchedule(job) : null, job?.model, job?.workdir, job?.skills?.length ? t('skills: {s}', { s: job.skills.join(', ') }) : null]
           .filter(Boolean)
           .join(' · ')}
       </Text>
@@ -229,7 +272,7 @@ function JobSheet({ job, onClose, onChanged }: { job: CronJob | null; onClose: (
           <Row
             icon={History}
             title={relativeTime(r.started_at)}
-            subtitle={[r.end_reason, r.message_count ? t('{n} msgs', { n: r.message_count }) : null].filter(Boolean).join(' · ')}
+            subtitle={[endReasonLabel(r.end_reason), r.message_count ? t('{n} msgs', { n: r.message_count }) : null].filter(Boolean).join(' · ')}
             onPress={() => (onClose(), router.navigate({ pathname: '/chat', params: { stored: r.id } }))}
             last={i === all.length - 1}
           />

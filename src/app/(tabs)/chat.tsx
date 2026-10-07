@@ -233,7 +233,7 @@ export default function ChatScreen() {
   const [modelOpen, setModelOpen] = useState(false)
   const [reasoningOpen, setReasoningOpen] = useState(false)
   const [editing, setEditing] = useState<ChatMessage | null>(null)
-  const { width } = useWindowDimensions()
+  const { width, height } = useWindowDimensions()
   const drawerRef = useRef<DrawerLayoutMethods>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   // Keep the drawer's content mounted after the first open so later swipes show it at once.
@@ -471,17 +471,20 @@ export default function ChatScreen() {
             <Transcript runtimeId={activeId} query={query} hitIndex={hitIndex} onHitCount={setHitCount} onEdit={onEdit} />
           )}
 
-          {myConnections.map((pc) => (
-            <View key={pc.op.op_id} style={{ paddingHorizontal: space.md, paddingBottom: space.sm }}>
-              <ConnectionCard pc={pc} />
-            </View>
-          ))}
-          {myRequests.length ? (
-            <View style={{ paddingHorizontal: space.md, gap: space.sm, paddingBottom: space.sm }}>
+          {myConnections.length || myRequests.length ? (
+            // Long commands and multi-question clarifies scroll instead of pushing the composer away.
+            <ScrollView
+              style={{ maxHeight: height * 0.45, flexGrow: 0 }}
+              contentContainerStyle={{ paddingHorizontal: space.md, gap: space.sm, paddingBottom: space.sm }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {myConnections.map((pc) => (
+                <ConnectionCard key={pc.op.op_id} pc={pc} />
+              ))}
               {myRequests.map((r) => (
                 <RequestCard key={r.id} req={r} />
               ))}
-            </View>
+            </ScrollView>
           ) : null}
 
           {activeId && live ? <LiveStatus runtimeId={activeId} /> : null}

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 import { dismissToast, toast } from '@/components/ui/Dialogs'
 import { t } from '@/i18n'
-import { foldHistory, isToolError, type SessionMessageRow } from '@/lib/chat/history'
+import { dropKnownRows, foldHistory, isToolError, type SessionMessageRow } from '@/lib/chat/history'
 import {
   localId,
   type ChatMessage,
@@ -95,6 +95,7 @@ function blankSession(runtimeId: string, storedId: string | null, info: SessionL
     attachments: [],
     historyLoaded: false,
     historyOffset: 0,
+    oldestRowId: null,
     hasMore: false,
     loadingHistory: false,
     error: null,
@@ -798,20 +799,34 @@ export async function loadHistory(rid: string, older = false) {
   if (!s?.storedId || s.loadingHistory) return
   update(rid, () => ({ loadingHistory: true }))
   try {
-    const offset = older ? s.historyOffset : 0
-    const res = await hermes().rest.get<{ messages: SessionMessageRow[]; pagination?: { returned?: number } }>(
-      `/api/sessions/${encodeURIComponent(s.storedId)}/messages`,
-      { query: { limit: HISTORY_PAGE, offset, order: 'latest', include_compacted: true } },
-    )
-    const rows = res.messages ?? []
+    // The offset is counted from the newest row, so turns added since the first page shift it
+    // forward. Rows already folded are dropped by id; a page that was entirely known is skipped
+    // and the offset advanced (bounded, so a flood of new turns cannot loop forever).
+    let offset = older ? s.historyOffset : 0
+    const cutoff = s.oldestRowId
+    let rows: SessionMessageRow[] = []
+    let fetched = 0
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await hermes().rest.get<{ messages: SessionMessageRow[]; pagination?: { returned?: number } }>(
+        `/api/sessions/${encodeURIComponent(s.storedId)}/messages`,
+        { query: { limit: HISTORY_PAGE, offset, order: 'latest', include_compacted: true } },
+      )
+      const page = res.messages ?? []
+      offset += page.length
+      fetched = page.length
+      rows = older ? dropKnownRows(page, cutoff) : page
+      if (!older || page.length < HISTORY_PAGE || rows.length) break
+    }
     const folded = foldHistory(rows, { running: get().sessions[rid]?.busy })
     update(rid, (cur) => {
+      const ids = rows.map((r) => r.id).filter((x): x is number => x != null)
       const live = older ? [] : cur.messages.filter((m) => m.id === cur.streamingId || m.role === 'system' || m.pending)
       return {
         messages: older ? [...folded, ...cur.messages] : [...folded, ...live],
         historyLoaded: true,
-        historyOffset: offset + rows.length,
-        hasMore: rows.length >= HISTORY_PAGE,
+        historyOffset: offset,
+        oldestRowId: ids.length ? Math.min(cur.oldestRowId ?? Infinity, ...ids) : cur.oldestRowId,
+        hasMore: fetched >= HISTORY_PAGE,
         loadingHistory: false,
       }
     })

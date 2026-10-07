@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import {
   Archive,
@@ -41,7 +41,8 @@ import {
   toastError,
 } from '@/components/ui'
 import { useT } from '@/i18n'
-import { relativeTime } from '@/lib/format'
+import { previewText } from '@/lib/chat/history'
+import { relativeTime, sourceLabel } from '@/lib/format'
 import { rest, rpc, useRuntime } from '@/lib/hermes'
 import { queryClient } from '@/lib/query'
 import { closeRuntime, useChat } from '@/store/chat'
@@ -70,10 +71,17 @@ export default function SessionsScreen() {
   const t = useT()
   const { c } = useTheme()
   const connected = useRuntime((s) => !!s.hermes)
-  const [filter, setFilter] = useState<'recent' | 'archived'>('recent')
+  const [filter, setFilter] = useState<'recent' | 'scheduled' | 'archived'>('recent')
   const [search, setSearch] = useState('')
+  // Keystrokes do not hit the API; results below swap in only once this settles.
+  const [term, setTerm] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [selected, setSelected] = useState<SessionRow | null>(null)
+
+  useEffect(() => {
+    const id = setTimeout(() => setTerm(search), 300)
+    return () => clearTimeout(id)
+  }, [search])
 
   const list = useInfiniteQuery({
     queryKey: ['sessions', filter],
@@ -81,27 +89,36 @@ export default function SessionsScreen() {
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       rest().get<{ sessions: SessionRow[]; total: number }>('/api/sessions', {
-        query: { limit: PAGE, offset: pageParam, order: 'recent', archived: filter === 'archived' ? 'only' : 'exclude', min_messages: 1 },
+        query: {
+          limit: PAGE,
+          offset: pageParam,
+          order: 'recent',
+          archived: filter === 'archived' ? 'only' : 'exclude',
+          min_messages: 1,
+          ...(filter === 'recent' ? { exclude_sources: 'cron' } : filter === 'scheduled' ? { source: 'cron' } : {}),
+        },
       }),
     getNextPageParam: (last, pages) => (last.sessions.length < PAGE ? undefined : pages.length * PAGE),
   })
 
+  const searching = term.trim().length > 1
   const searchQuery = useQuery({
-    queryKey: ['sessions', 'search', search],
-    enabled: connected && search.trim().length > 1,
-    queryFn: () => rest().get<{ results: SessionRow[] }>('/api/sessions/search', { query: { q: search.trim(), limit: 40 } }),
+    queryKey: ['sessions', 'search', term],
+    enabled: connected && searching,
+    placeholderData: keepPreviousData,
+    queryFn: () => rest().get<{ results: SessionRow[] }>('/api/sessions/search', { query: { q: term.trim(), limit: 40 } }),
   })
 
   const rows = useMemo(() => {
-    if (search.trim().length > 1) {
+    if (searching) {
       const seen = new Set<string>()
       return (searchQuery.data?.results ?? []).filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)))
     }
     const all = list.data?.pages.flatMap((p) => p.sessions) ?? []
     return [...all.filter((s) => s.pinned), ...all.filter((s) => !s.pinned)]
-  }, [list.data, searchQuery.data, search])
+  }, [list.data, searchQuery.data, searching])
 
-  const sections = useMemo(() => groupByDay(rows, search.trim().length > 1, t), [rows, search, t])
+  const sections = useMemo(() => groupByDay(rows, searching, t), [rows, searching, t])
 
   const open = useCallback((row: SessionRow) => router.navigate({ pathname: '/chat', params: { stored: row.id } }), [])
 
@@ -213,6 +230,7 @@ export default function SessionsScreen() {
             onChange={setFilter}
             options={[
               { value: 'recent', label: t('Recent') },
+              { value: 'scheduled', label: t('Scheduled') },
               { value: 'archived', label: t('Archived') },
             ]}
           />
@@ -269,7 +287,7 @@ export default function SessionsScreen() {
           />
         )}
       />
-      <Sheet visible={!!selected} onClose={() => setSelected(null)} title={selected?.title || selected?.preview || t('Session')}>
+      <Sheet visible={!!selected} onClose={() => setSelected(null)} title={previewText(selected?.title || selected?.preview) || t('Session')}>
         {selected ? (
           <View style={{ marginHorizontal: -space.lg }}>
             <Row icon={MessageSquare} title={t('Open')} onPress={() => (setSelected(null), open(selected))} />
@@ -406,11 +424,11 @@ const SessionCard = memo(function SessionCard({
   const swipeRef = useRef<SwipeableMethods>(null)
   const { c } = useTheme()
   const t = useT()
-  const title = row.title || row.preview || t('Untitled')
+  const title = previewText(row.title || row.preview) || t('Untitled')
   const snippet = row.snippet?.replace(/>>>|<<</g, '')
-  const body = snippet || (row.preview && row.preview !== title ? row.preview : null)
+  const body = snippet || (row.preview && row.preview !== (row.title || row.preview) ? previewText(row.preview) : null)
   const meta = [
-    row.source,
+    sourceLabel(row.source) || null,
     row.message_count ? t('{n} messages', { n: row.message_count }) : null,
     row.profile && row.profile !== 'default' ? row.profile : null,
   ]

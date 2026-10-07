@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics'
 import { HelpCircle, KeyRound, ShieldAlert } from '@/components/icons'
 import { useEffect, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 
 import { Button, Chip, Text, TextField } from '@/components/ui'
 import { useT } from '@/i18n'
@@ -65,25 +65,46 @@ function Approval({ req }: { req: PendingRequest }) {
         </Text>
       ) : null}
       {p.command ? (
-        <View style={[styles.cmd, { backgroundColor: c.codeBg }]}>
+        <ScrollView style={[styles.cmd, { backgroundColor: c.codeBg }]} nestedScrollEnabled>
           <Text mono variant="small" selectable>
             {p.command}
           </Text>
-        </View>
+        </ScrollView>
       ) : null}
-      <View style={styles.wrap}>
-        {choices.map((choice) => (
-          <Button
-            key={choice}
-            label={labels[choice] ?? choice}
-            size="sm"
-            variant={choice === 'deny' ? 'dangerGhost' : choice === 'once' ? 'primary' : 'secondary'}
-            onPress={() => {
-              if (useSettings.getState().haptics) void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-              answerRequest(req.id, { choice })
-            }}
-          />
-        ))}
+      {/* Two rows of equal-width buttons: Allow once + Deny, then the scoped choices. */}
+      <View style={{ gap: space.sm }}>
+        <View style={styles.gridRow}>
+          {[...choices.filter((choice) => choice === 'once'), ...choices.filter((choice) => choice === 'deny')].map((choice) => (
+            <Button
+              key={choice}
+              label={labels[choice] ?? choice}
+              size="sm"
+              variant={choice === 'deny' ? 'dangerGhost' : 'primary'}
+              style={{ flex: 1 }}
+              onPress={() => {
+                if (useSettings.getState().haptics) void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+                answerRequest(req.id, { choice })
+              }}
+            />
+          ))}
+        </View>
+        <View style={styles.gridRow}>
+          {choices
+            .filter((choice) => choice !== 'once' && choice !== 'deny')
+            .map((choice) => (
+              <Button
+                key={choice}
+                label={labels[choice] ?? choice}
+                size="sm"
+                variant="secondary"
+                style={{ flex: 1 }}
+                onPress={() => {
+                  if (useSettings.getState().haptics) void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+                  answerRequest(req.id, { choice })
+                }}
+              />
+            ))}
+        </View>
       </View>
     </Shell>
   )
@@ -99,7 +120,17 @@ function Clarify({ req }: { req: PendingRequest }) {
     // Replayed requests carry the answers already locked.
     if (p.answers) {
       const init: Record<string, string[]> = {}
-      for (const [qid, v] of Object.entries(p.answers)) if (v) init[qid] = v.startsWith('[') ? JSON.parse(v) : [v]
+      for (const [qid, v] of Object.entries(p.answers))
+        if (v) {
+          if (!v.startsWith('[')) init[qid] = [v]
+          else {
+            try {
+              init[qid] = JSON.parse(v)
+            } catch {
+              init[qid] = [v]
+            }
+          }
+        }
       setPicked(init)
     }
   }, [p.answers])
@@ -196,11 +227,11 @@ function Secret({ req }: { req: PendingRequest }) {
         onChangeText={setValue}
         secret={req.method !== 'vault.code'}
         keyboardType={req.method === 'vault.code' ? 'number-pad' : 'default'}
-        onSubmitEditing={submit}
+        onSubmitEditing={() => value.trim() && submit()}
         helper={t('Sent only to your Hermes backend for this request.')}
       />
       <View style={styles.wrap}>
-        <Button label={t('Submit')} size="sm" disabled={!value} onPress={submit} />
+        <Button label={t('Submit')} size="sm" disabled={!value.trim()} onPress={submit} />
         <Button label={t('Skip')} size="sm" variant="ghost" onPress={() => answerRequest(req.id, { value: '' })} />
       </View>
     </Shell>
@@ -216,6 +247,7 @@ export function RequestCard({ req }: { req: PendingRequest }) {
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: radius.lg, padding: space.lg, gap: space.md },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  cmd: { borderRadius: radius.sm, padding: space.md },
+  cmd: { borderRadius: radius.sm, padding: space.md, maxHeight: 160 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  gridRow: { flexDirection: 'row', gap: space.sm },
 })

@@ -4,6 +4,8 @@
  * timestamp the server produced). Natural-language schedules are left to the server: no preview.
  */
 
+import { t } from '@/i18n'
+
 const DAY = 86_400_000
 
 function parseField(field: string, min: number, max: number): Set<number> | null {
@@ -128,4 +130,73 @@ export function offsetLabel(min: number) {
   const sign = min < 0 ? '-' : '+'
   const a = Math.abs(min)
   return `UTC${sign}${Math.floor(a / 60)}${a % 60 ? `:${String(a % 60).padStart(2, '0')}` : ''}`
+}
+
+// ── job status helpers ─────────────────────────────────────────────────
+
+interface ScheduledJob {
+  enabled?: boolean
+  next_run_at?: string | null
+  scheduler_heartbeat_age_s?: number | null
+}
+
+/**
+ * The ticker only runs while the gateway (or a desktop-owned serve) is up, so a job whose
+ * next_run_at sits more than a few minutes in the past is stuck, not just running late.
+ */
+/** Enabled job whose next scheduled fire time has already passed. */
+export function jobOverdue(job: ScheduledJob, now = Date.now()): boolean {
+  return !!job.enabled && !!job.next_run_at && Date.parse(String(job.next_run_at)) <= now
+}
+
+export function schedulerStalled(jobs: ScheduledJob[], now = Date.now()): boolean {
+  return jobs.some(
+    (j) =>
+      j.enabled &&
+      j.next_run_at &&
+      Date.parse(j.next_run_at) < now - 3 * 60_000 &&
+      (j.scheduler_heartbeat_age_s == null || j.scheduler_heartbeat_age_s > 180),
+  )
+}
+
+function describeInterval(minutes: number): string {
+  if (minutes < 60) return t('Every {n} minutes', { n: minutes })
+  if (minutes % 1440 === 0) return minutes === 1440 ? t('Every day') : t('Every {n} days', { n: minutes / 1440 })
+  if (minutes % 60 === 0) return minutes === 60 ? t('Every hour') : t('Every {n} hours', { n: minutes / 60 })
+  return t('Every {n} minutes', { n: minutes })
+}
+
+const dayName = (dow: number) =>
+  [t('Sunday'), t('Monday'), t('Tuesday'), t('Wednesday'), t('Thursday'), t('Friday'), t('Saturday')][dow % 7]
+
+const single = (field: string) => (/^\d+$/.test(field) ? Number(field) : null)
+const hhmm = (m: number, h: number) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+
+/** Human label for an "every Nm/h/d" or five-field cron expression; null when it can't be read. */
+export function describeScheduleText(schedule: string): string | null {
+  const every = parseInterval(schedule)
+  if (every != null) return describeInterval(every)
+  const f = schedule.trim().split(/\s+/)
+  if (f.length !== 5) return null
+  const [min, hour, dom, mon, dow] = f
+  const m = single(min)
+  const h = single(hour)
+  if (m === 0 && hour === '*' && dom === '*' && mon === '*' && dow === '*') return t('Every hour')
+  if (m == null || h == null) return null
+  const time = hhmm(m, h)
+  if (dom === '*' && mon === '*' && dow === '*') return t('Every day at {time}', { time })
+  if (dom === '*' && mon === '*' && dow === '1-5') return t('Weekdays at {time}', { time })
+  if (dom === '*' && mon === '*' && single(dow) != null) return t('Every {day} at {time}', { day: dayName(Number(dow)), time })
+  if (mon === '*' && dow === '*' && single(dom) != null) return t('Monthly on day {d} at {time}', { d: Number(dom), time })
+  return null
+}
+
+/** Best human label for a job's schedule, falling back to whatever the backend displays. */
+export function describeSchedule(job: {
+  schedule?: { kind?: string; expr?: string; display?: string; minutes?: number }
+  schedule_display?: string | null
+}): string {
+  if (job.schedule?.kind === 'interval' && job.schedule.minutes) return describeInterval(job.schedule.minutes)
+  const expr = job.schedule?.expr ?? job.schedule_display ?? ''
+  return (expr && describeScheduleText(expr)) || job.schedule_display || job.schedule?.display || job.schedule?.expr || ''
 }

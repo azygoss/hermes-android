@@ -167,7 +167,7 @@ export function Row({
     <>
       {Icon ? <Icon size={20} color={iconColor ?? (danger ? c.danger : c.textMuted)} strokeWidth={1.75} /> : null}
       <View style={{ flex: 1, gap: 2 }}>
-        <Text variant="body" weight="medium" tone={danger ? 'danger' : 'default'} numberOfLines={1} mono={mono}>
+        <Text variant="body" weight="medium" tone={danger ? 'danger' : 'default'} numberOfLines={2} mono={mono}>
           {title}
         </Text>
         {subtitle ? (

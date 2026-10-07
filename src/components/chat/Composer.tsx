@@ -18,7 +18,10 @@ import {
   Zap,
 } from '@/components/icons'
 import { memo, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native'
+
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
 
 import { prompt, Row, Sheet, Text, toast, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
@@ -27,7 +30,7 @@ import type { CompletionItem } from '@/lib/gateway/contract.generated'
 import { rpc } from '@/lib/hermes'
 import { fileToBase64, transcribe } from '@/lib/voice'
 import type { PendingAttachment } from '@/lib/chat/types'
-import { sessionSuccessor } from '@/store/chat'
+import { sessionSuccessor, useChat } from '@/store/chat'
 import { useSettings } from '@/store/settings'
 import { centered, font, radius, space, useTheme } from '@/theme'
 
@@ -89,8 +92,50 @@ function useCompletions(text: string, sessionId: string | null) {
   return { items, replaceFrom, clear: () => setItems([]) }
 }
 
-/** Unsent text per chat ('' = the blank new-chat composer), kept for the app session. */
+/** Unsent text per chat ('' = the blank new-chat composer), persisted across restarts. */
 const drafts = new Map<string, string>()
+const DRAFTS_KEY = 'hermes.drafts'
+const DRAFTS_MAX = 50
+let draftSave: ReturnType<typeof setTimeout> | null = null
+
+function persistDrafts() {
+  if (draftSave) clearTimeout(draftSave)
+  draftSave = setTimeout(() => {
+    draftSave = null
+    const entries = [...drafts.entries()].filter(([, v]) => v.trim())
+    while (entries.length > DRAFTS_MAX) entries.shift()
+    void AsyncStorage.setItem(DRAFTS_KEY, JSON.stringify(Object.fromEntries(entries))).catch(() => {})
+  }, 500)
+}
+
+void AsyncStorage.getItem(DRAFTS_KEY)
+  .then((raw) => {
+    const parsed: unknown = raw ? JSON.parse(raw) : null
+    if (parsed && typeof parsed === 'object')
+      for (const [k, v] of Object.entries(parsed)) if (typeof v === 'string') drafts.set(k, v)
+  })
+  .catch(() => {})
+
+/** Re-encode a picked image as ≤2048px JPEG so it does not blow up the socket frame. */
+async function shrinkImage(uri: string, name: string, mimeType?: string): Promise<{ base64: string; uri: string; name: string } | null> {
+  // GIFs lose their animation when re-encoded.
+  if (/gif/i.test(`${mimeType ?? ''} ${name}`)) return null
+  try {
+    const size = await new Promise<{ w: number; h: number }>((resolve, reject) =>
+      Image.getSize(uri, (w, h) => resolve({ w, h }), reject),
+    )
+    const ctx = ImageManipulator.manipulate(uri)
+    if (Math.max(size.w, size.h) > 2048) ctx.resize(size.w >= size.h ? { width: 2048 } : { height: 2048 })
+    const ref = await ctx.renderAsync()
+    const out = await ref.saveAsync({ base64: true, compress: 0.82, format: SaveFormat.JPEG })
+    ref.release()
+    ctx.release()
+    if (!out.base64) return null
+    return { base64: out.base64, uri: out.uri, name: name.replace(/\.[a-z0-9]+$/i, '') + '.jpg' }
+  } catch {
+    return null
+  }
+}
 
 export const Composer = memo(function Composer(props: Props) {
   const { sessionId, busy, attachments, editing, prefill, onPrefillConsumed, onCancelEdit, onSend, onStop, pills } = props
@@ -98,24 +143,42 @@ export const Composer = memo(function Composer(props: Props) {
   const { c } = useTheme()
   const haptics = useSettings((s) => s.haptics)
   const sendOnEnter = useSettings((s) => s.sendOnEnter)
-  const [text, setText] = useState(() => drafts.get(sessionId ?? '') ?? '')
-  const draftKey = useRef(sessionId ?? '')
+  // Drafts are keyed by the stored id once the session has one, so they survive runtime-id
+  // churn (reconnects, process death); '' is the new-chat composer.
+  const storedId = useChat((s) => (sessionId ? s.sessions[sessionId]?.storedId : null))
+  const key = storedId ?? sessionId ?? ''
+  const [text, setText] = useState(() => drafts.get(key) ?? '')
+  const draftKey = useRef(key)
   // Each chat keeps its own unsent text when you switch away and back.
   useEffect(() => {
-    const next = sessionId ?? ''
-    if (next === draftKey.current) return
-    // The same chat under a new runtime id (resumed after a reconnect): keep what is being typed.
-    if (sessionSuccessor(draftKey.current) === next) {
-      draftKey.current = next
+    if (key === draftKey.current) return
+    const prev = draftKey.current
+    // The same chat under a new runtime id (reconnect) or rekeyed to its stored id once the
+    // session info landed: keep what is being typed, and move the draft under the new key.
+    if (sessionSuccessor(prev) === key || useChat.getState().sessions[prev]?.storedId === key) {
+      draftKey.current = key
+      const cur = drafts.get(prev)
+      if (cur) {
+        drafts.set(key, cur)
+        drafts.delete(prev)
+        persistDrafts()
+      }
       return
     }
     setText((cur) => {
-      if (cur.trim()) drafts.set(draftKey.current, cur)
-      else drafts.delete(draftKey.current)
-      return drafts.get(next) ?? ''
+      if (cur.trim()) drafts.set(prev, cur)
+      else drafts.delete(prev)
+      persistDrafts()
+      return drafts.get(key) ?? ''
     })
-    draftKey.current = next
-  }, [sessionId])
+    draftKey.current = key
+  }, [key])
+  // The map only updates on a switch above; keep it (and the store) in sync as you type.
+  useEffect(() => {
+    if (text.trim()) drafts.set(draftKey.current, text)
+    else drafts.delete(draftKey.current)
+    persistDrafts()
+  }, [text])
   const [sending, setSending] = useState(false)
   const [attachOpen, setAttachOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -212,8 +275,10 @@ export const Composer = memo(function Composer(props: Props) {
       const res = camera ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts)
       if (res.canceled) return
       for (const asset of res.assets) {
-        const b64 = asset.base64 ?? (await fileToBase64(asset.uri))
-        await props.onAttachImage(b64, asset.fileName ?? `photo-${Date.now()}.jpg`, asset.uri)
+        const name = asset.fileName ?? `photo-${Date.now()}.jpg`
+        const shrunk = await shrinkImage(asset.uri, name, asset.mimeType)
+        if (shrunk) await props.onAttachImage(shrunk.base64, shrunk.name, shrunk.uri)
+        else await props.onAttachImage(asset.base64 ?? (await fileToBase64(asset.uri)), name, asset.uri)
       }
     } catch (e) {
       toastError(e)
@@ -232,10 +297,14 @@ export const Composer = memo(function Composer(props: Props) {
       if (res.canceled) return
       const asset = res.assets[0]
       if ((asset.size ?? 0) > 50 * 1024 * 1024) return toast(t('That file is larger than 50 MB.'), 'warn')
+      if (pdf) return props.onAttachPdf(await fileToBase64(asset.uri), asset.name)
+      if ((asset.mimeType ?? '').startsWith('image/')) {
+        const shrunk = await shrinkImage(asset.uri, asset.name, asset.mimeType)
+        if (shrunk) return props.onAttachImage(shrunk.base64, shrunk.name, shrunk.uri)
+        return props.onAttachImage(await fileToBase64(asset.uri), asset.name, asset.uri)
+      }
       const b64 = await fileToBase64(asset.uri)
-      if (pdf) await props.onAttachPdf(b64, asset.name)
-      else if ((asset.mimeType ?? '').startsWith('image/')) await props.onAttachImage(b64, asset.name, asset.uri)
-      else await props.onAttachFile(`data:${asset.mimeType ?? 'application/octet-stream'};base64,${b64}`, asset.name)
+      await props.onAttachFile(`data:${asset.mimeType ?? 'application/octet-stream'};base64,${b64}`, asset.name)
     } catch (e) {
       toastError(e)
     }

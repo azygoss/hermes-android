@@ -113,6 +113,19 @@ class HermesRenderer extends Renderer {
     super({ selectable: true })
   }
 
+  // Header cells read as body text otherwise; the library's own table already scrolls wide
+  // tables horizontally, so the fix is only to wrap the header content in the bold face.
+  table(header: ReactNode[][], rows: ReactNode[][][], tableStyle?: ViewStyle, rowStyle?: ViewStyle, cellStyle?: ViewStyle): ReactNode {
+    const bold = header.map((cells) =>
+      cells.map((cell, i) => (
+        <RNText key={i} style={{ fontFamily: font.bold }}>
+          {cell}
+        </RNText>
+      )),
+    )
+    return super.table(bold, rows, tableStyle, rowStyle, cellStyle)
+  }
+
   code(text: string, language?: string, _container?: ViewStyle, _textStyle?: TextStyle): ReactNode {
     return <CodeBlock key={this.getKey()} code={text} language={language} c={this.c} isDark={this.isDark} />
   }

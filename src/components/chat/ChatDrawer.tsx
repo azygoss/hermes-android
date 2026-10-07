@@ -10,7 +10,8 @@ import { Check, ChevronDown, ChevronUp, History, PenSquare, Pin, Search, Server,
 import { switchProfile, useProfiles } from '@/components/ProfileSwitcher'
 import { Chip, Text, toastError } from '@/components/ui'
 import { useT } from '@/i18n'
-import { relativeTime } from '@/lib/format'
+import { previewText } from '@/lib/chat/history'
+import { relativeTime, sourceLabel } from '@/lib/format'
 import { rest, useRuntime } from '@/lib/hermes'
 import { openStored, setActive, useChat } from '@/store/chat'
 import { useConnections } from '@/store/connections'
@@ -39,7 +40,7 @@ export function ChatDrawer({ onClose }: { onClose: () => void }) {
     staleTime: 15_000,
     queryFn: () =>
       rest().get<{ sessions: SessionRow[] }>('/api/sessions', {
-        query: { limit: 60, offset: 0, order: 'recent', archived: 'exclude', min_messages: 1 },
+        query: { limit: 60, offset: 0, order: 'recent', archived: 'exclude', min_messages: 1, exclude_sources: 'cron' },
       }),
   })
   const rows = useMemo(() => {
@@ -228,10 +229,10 @@ const DrawerRow = memo(function DrawerRow({
     >
       <View style={{ flex: 1, gap: 1 }}>
         <Text weight={current ? 'semibold' : 'regular'} numberOfLines={1}>
-          {row.title || row.preview || t('Untitled')}
+          {previewText(row.title || row.preview) || t('Untitled')}
         </Text>
         <Text variant="caption" tone="faint" numberOfLines={1}>
-          {[relativeTime(row.last_active ?? row.started_at), row.source].filter(Boolean).join(' · ')}
+          {[relativeTime(row.last_active ?? row.started_at), sourceLabel(row.source)].filter(Boolean).join(' · ')}
         </Text>
       </View>
       {row.is_active ? <View style={[styles.dot, { backgroundColor: c.success }]} /> : null}

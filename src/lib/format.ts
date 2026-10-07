@@ -57,3 +57,50 @@ export function bytes(n?: number | null) {
 export function errorText(e: unknown) {
   return e instanceof Error ? e.message : String(e)
 }
+
+const SOURCE_NAMES: Record<string, () => string> = {
+  android: () => t('Phone'),
+  cron: () => t('Scheduled'),
+  cli: () => t('Terminal'),
+  tui: () => t('Terminal'),
+  desktop: () => t('Desktop'),
+  web: () => t('Web'),
+  dashboard: () => t('Web'),
+  telegram: () => 'Telegram',
+  discord: () => 'Discord',
+  slack: () => 'Slack',
+  whatsapp: () => 'WhatsApp',
+  signal: () => 'Signal',
+  matrix: () => 'Matrix',
+  email: () => 'Email',
+}
+
+/** Display name for a session's source (android → Phone, cron → Scheduled, brands capitalised). */
+export function sourceLabel(source?: string | null): string {
+  if (!source) return ''
+  const named = SOURCE_NAMES[source.toLowerCase()]
+  return named ? named() : source
+}
+
+const END_REASONS: Record<string, () => string> = {
+  cron_complete: () => t('Completed'),
+  cron_incomplete_no_output: () => t('No output'),
+  complete: () => t('Completed'),
+  completed: () => t('Completed'),
+  done: () => t('Completed'),
+  error: () => t('Error'),
+  interrupted: () => t('Interrupted'),
+  timeout: () => t('Timed out'),
+  idle_timeout: () => t('Timed out'),
+  compression: () => t('Compressed'),
+  orphaned_compression: () => t('Compressed'),
+  session_reset: () => t('Reset'),
+  setup_reset: () => t('Reset'),
+  branched: () => t('Branched'),
+}
+
+/** Human label for a run's end_reason; unknown snake_case internals stay hidden. */
+export function endReasonLabel(reason?: string | null): string {
+  if (!reason) return ''
+  return END_REASONS[reason.toLowerCase()]?.() ?? ''
+}

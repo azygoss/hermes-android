@@ -24,6 +24,20 @@ function parseHeaders(text: string): Record<string, string> | undefined {
   return Object.keys(out).length ? out : undefined
 }
 
+/**
+ * A bare hostname (no scheme typed, and not an IP literal, localhost or *.local) is probed over
+ * https first — a backend behind a tunnel or reverse proxy usually only answers TLS.
+ */
+function preferHttps(input: string): boolean {
+  const raw = input.trim()
+  if (!raw || /^https?:\/\//i.test(raw)) return false
+  const host = raw.replace(/\/.*$/, '').replace(/:\d+$/, '').toLowerCase()
+  if (!host || host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.local')) return false
+  // IPv4 literals, bracketed/colon-separated IPv6, and non-numeric "ports" stay on http.
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(':')) return false
+  return true
+}
+
 export default function ConnectScreen() {
   const t = useT()
   const { c } = useTheme()
@@ -47,6 +61,8 @@ export default function ConnectScreen() {
   )
   const [showAdvanced, setShowAdvanced] = useState(!!editing?.headers)
   const [probed, setProbed] = useState<ProbeResult | null>(null)
+  // The address the last probe actually reached; may differ from the typed one (https-first).
+  const [resolvedBase, setResolvedBase] = useState<string | null>(null)
   const [busy, setBusy] = useState<null | 'probe' | 'save' | 'detect'>(null)
   const [error, setError] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
@@ -56,6 +72,7 @@ export default function ConnectScreen() {
 
   useEffect(() => {
     setProbed(null)
+    setResolvedBase(null)
     setError(null)
   }, [url])
 
@@ -64,6 +81,16 @@ export default function ConnectScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.url])
 
+  async function probeResolved(raw: string) {
+    const b = normalizeBaseUrl(raw)
+    if (preferHttps(raw)) {
+      const https = b.replace(/^http:/, 'https:')
+      const r = await probe(https, headers)
+      if (r.reachable) return { base: https, r }
+    }
+    return { base: b, r: await probe(b, headers) }
+  }
+
   async function runProbe() {
     if (!baseUrl) {
       setError(t('Enter the address of your Hermes backend.'))
@@ -71,8 +98,9 @@ export default function ConnectScreen() {
     }
     setBusy('probe')
     setError(null)
-    const r = await probe(baseUrl, headers)
+    const { base, r } = await probeResolved(url)
     setBusy(null)
+    setResolvedBase(base)
     setProbed(r)
     if (!r.reachable) setError(r.error ?? t('Hermes did not answer.'))
     else if (r.authRequired && r.providers[0] && !r.providers.some((p) => p.name === provider)) setProvider(r.providers[0].name)
@@ -80,7 +108,7 @@ export default function ConnectScreen() {
 
   async function runDetect() {
     setBusy('detect')
-    const found = await detectToken(baseUrl)
+    const found = await detectToken(resolvedBase ?? baseUrl)
     setBusy(null)
     if (found) {
       setToken(found)
@@ -94,11 +122,12 @@ export default function ConnectScreen() {
     setError(null)
     try {
       const id = editing?.id ?? Crypto.randomUUID()
-      const host = baseUrl.replace(/^https?:\/\//, '')
+      const base = resolvedBase ?? baseUrl
+      const host = base.replace(/^https?:\/\//, '')
       const conn: Connection = {
         id,
         name: name.trim() || host,
-        baseUrl,
+        baseUrl: base,
         authMode: probed.authRequired ? 'password' : 'token',
         username: probed.authRequired ? username.trim() : undefined,
         provider: probed.authRequired ? provider : undefined,
@@ -108,7 +137,7 @@ export default function ConnectScreen() {
       }
       if (conn.authMode === 'token') {
         if (!token.trim()) throw new Error(t('Paste the session token, or tap Detect.'))
-        if (!(await verifyToken(baseUrl, token.trim(), headers))) {
+        if (!(await verifyToken(base, token.trim(), headers))) {
           throw new Error(
             t(
               'The backend rejected this token. Token mode only works from the same machine or through a tunnel (SSH, adb reverse, Termux).',
@@ -118,7 +147,7 @@ export default function ConnectScreen() {
         await connectionSecrets.setToken(id, token.trim())
       } else {
         if (!username.trim() || !password) throw new Error(t('Enter your username and password.'))
-        const session = await passwordLogin(baseUrl, provider, username.trim(), password, headers)
+        const session = await passwordLogin(base, provider, username.trim(), password, headers)
         await connectionSecrets.setSession(id, session)
       }
       upsert(conn)
@@ -148,10 +177,10 @@ export default function ConnectScreen() {
   }
 
   async function runProbeFor(raw: string) {
-    const b = normalizeBaseUrl(raw)
     setBusy('probe')
-    const r = await probe(b, headers)
+    const { base, r } = await probeResolved(raw)
     setBusy(null)
+    setResolvedBase(base)
     setProbed(r)
     if (!r.reachable) setError(r.error ?? null)
   }

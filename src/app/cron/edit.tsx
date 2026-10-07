@@ -7,7 +7,7 @@ import type { CronJob } from '@/components/cron/types'
 import { ModelChooser } from '@/components/ModelChooser'
 import { Button, Chip, ErrorState, Loading, Row, Screen, Section, Text, TextField, toast, toastError, ToggleRow } from '@/components/ui'
 import { useT } from '@/i18n'
-import { nextRuns, offsetFromIso, offsetLabel, serverWallClock } from '@/lib/cron'
+import { describeScheduleText, nextRuns, offsetFromIso, offsetLabel, serverWallClock } from '@/lib/cron'
 import { relativeTime } from '@/lib/format'
 import { useRest } from '@/lib/hooks'
 import { rest } from '@/lib/hermes'
@@ -116,7 +116,7 @@ export default function CronEdit() {
         />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
           {PRESETS.map((p) => (
-            <Chip key={p} label={p} selected={schedule === p} onPress={() => setSchedule(p)} />
+            <Chip key={p} label={describeScheduleText(p) ?? p} selected={schedule === p} onPress={() => setSchedule(p)} />
           ))}
         </View>
         <NextRunsPreview schedule={schedule} />

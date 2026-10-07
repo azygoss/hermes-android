@@ -33,6 +33,22 @@ import { radius, space, useTheme } from '@/theme'
 
 const BASE = '/api/plugins/kanban'
 
+/** Workflow column names come back lowercase from the backend; show proper labels. */
+function columnLabel(t: (s: string) => string, name: string): string {
+  switch (name) {
+    case 'triage': return t('Triage')
+    case 'todo': return t('To do')
+    case 'scheduled': return t('Scheduled')
+    case 'ready': return t('Ready')
+    case 'running': return t('Running')
+    case 'blocked': return t('Blocked')
+    case 'review': return t('Review')
+    case 'done': return t('Done')
+    case 'archived': return t('Archived')
+    default: return name
+  }
+}
+
 interface Task {
   id: string
   title: string
@@ -111,7 +127,7 @@ export default function KanbanScreen() {
       if (!task || !target || target === task.status) return
       try {
         await rest().patch(`${BASE}/tasks/${task.id}`, { status: target }, { query: { board } })
-        toast(t('Moved to {col}', { col: target }), 'success')
+        toast(t('Moved to {col}', { col: columnLabel(t, target) }), 'success')
         if (useSettings.getState().haptics) void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       } catch (e) {
         toastError(e)
@@ -149,17 +165,18 @@ export default function KanbanScreen() {
             collapsable={false}
             style={[
               styles.dropTarget,
+              !col.tasks.length && { opacity: 0.45 },
               drag && hover === col.name && col.name !== drag.task.status && { borderColor: c.accent, backgroundColor: c.accentSoft },
             ]}
           >
-            <Chip label={`${col.name} · ${col.tasks.length}`} selected={col.name === column} onPress={() => setColumn(col.name)} />
+            <Chip label={`${columnLabel(t, col.name)} · ${col.tasks.length}`} selected={col.name === column} onPress={() => setColumn(col.name)} />
           </View>
         ))}
       </ScrollView>
       <Screen refreshing={q.isRefetching} onRefresh={refresh}>
         {q.isLoading ? <Loading /> : null}
         {q.error ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : null}
-        {!q.isLoading && !tasks.length ? <EmptyState icon={KanbanSquare} title={t('Nothing in {col}', { col: column })} /> : null}
+        {!q.isLoading && !tasks.length ? <EmptyState icon={KanbanSquare} title={t('Nothing in {col}', { col: columnLabel(t, column) })} /> : null}
         {tasks.map((task) => (
           <DraggableTask key={task.id} task={task} dragging={drag?.task.id === task.id} onOpen={setSelected} drag={dragApi} />
         ))}
@@ -170,7 +187,7 @@ export default function KanbanScreen() {
             {drag.task.title}
           </Text>
           <Text variant="caption" tone="muted">
-            {hover && hover !== drag.task.status ? t('Drop to move to {col}', { col: hover }) : t('Drag onto a column above')}
+            {hover && hover !== drag.task.status ? t('Drop to move to {col}', { col: columnLabel(t, hover) }) : t('Drag onto a column above')}
           </Text>
         </Animated.View>
       ) : null}
@@ -254,9 +271,9 @@ function TaskSheet({
         {columns.map((col) => (
           <Chip
             key={col}
-            label={col}
+            label={columnLabel(t, col)}
             selected={d?.status === col}
-            onPress={act(() => patch({ status: col }), t('Moved to {col}', { col }))}
+            onPress={act(() => patch({ status: col }), t('Moved to {col}', { col: columnLabel(t, col) }))}
           />
         ))}
       </View>

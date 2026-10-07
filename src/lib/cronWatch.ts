@@ -5,6 +5,7 @@ import { AppState } from 'react-native'
 import type { CronJob } from '@/components/cron/types'
 import { toast } from '@/components/ui/Dialogs'
 import { t } from '@/i18n'
+import { previewText } from '@/lib/chat/history'
 import { CHANNELS, notify } from '@/lib/notify'
 import { useRuntime, type HermesConnection } from '@/lib/hermes'
 import { useSettings } from '@/store/settings'
@@ -48,7 +49,9 @@ async function announceRun(h: HermesConnection, job: CronJob, foreground: boolea
   const failed = !['ok', 'success'].includes(job.last_status ?? '')
   const name = job.name || job.prompt?.slice(0, 40) || job.id
   const title = failed ? t('Scheduled job failed: {name}', { name }) : t('Scheduled job finished: {name}', { name })
-  const raw = failed ? job.last_error || job.last_delivery_error || job.last_status : run?.preview || run?.title || t('Tap to see the result.')
+  const raw = failed
+    ? job.last_error || job.last_delivery_error || job.last_status
+    : previewText(run?.preview || run?.title) || t('Tap to see the result.')
   const body = raw ? String(raw).slice(0, 180) : undefined
   if (foreground) {
     toast(title, failed ? 'warn' : 'success')

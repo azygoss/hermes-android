@@ -20,5 +20,12 @@ export interface CronJob {
   last_status?: string | null
   last_error?: string | null
   last_delivery_error?: string | null
+  /** Seconds since the scheduler ticker last ran; null when it never did (no gateway). */
+  scheduler_heartbeat_age_s?: number | null
+  latest_execution?: {
+    status?: string | null
+    started_at?: string | null
+    finished_at?: string | null
+  } | null
   profile_name?: string | null
 }

@@ -11,6 +11,7 @@ export { default as ArrowUpCircle } from 'lucide-react-native/icons/circle-arrow
 export { default as ArrowUpRight } from 'lucide-react-native/icons/arrow-up-right'
 export { default as BarChart3 } from 'lucide-react-native/icons/chart-column'
 export { default as Bell } from 'lucide-react-native/icons/bell'
+export { default as BellOff } from 'lucide-react-native/icons/bell-off'
 export { default as Blocks } from 'lucide-react-native/icons/blocks'
 export { default as BookOpen } from 'lucide-react-native/icons/book-open'
 export { default as Bot } from 'lucide-react-native/icons/bot'

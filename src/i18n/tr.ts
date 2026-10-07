@@ -1,5 +1,6 @@
 // Turkish translations keyed by the English source string (see scripts/extract-strings.mjs).
 export const tr: Record<string, string> = {
+  '"{title}" finished': '"{title}" bitirdi',
   '(default)': '(varsayılan)',
   '(empty)': '(boş)',
   '(one per line)': '(her satıra bir tane)',
@@ -86,6 +87,7 @@ export const tr: Record<string, string> = {
   'Approve this command?': 'Bu komut onaylansın mı?',
   Approved: 'Onaylandı',
   'Approved people': 'Onaylanan kişiler',
+  'Approvals and questions': 'Onaylar ve sorular',
   Archive: 'Arşivle',
   'Archive this skill?': 'Bu yetenek arşivlensin mi?',
   Archived: 'Arşivlendi',
@@ -148,6 +150,8 @@ export const tr: Record<string, string> = {
   'Check connection': 'Bağlantıyı denetle',
   'Check the disk usage on the server': 'Sunucudaki disk kullanımını denetle',
   'Check the install, providers and dependencies': 'Kurulumu, sağlayıcıları ve bağımlılıkları denetle',
+  'Checked about every 15 minutes in the background, right away while Hermes is open':
+    'Arka planda yaklaşık 15 dakikada bir, Hermes açıkken anında denetlenir',
   Checkpoints: 'Kontrol noktaları',
   'Checkpoints & rollback': 'Kontrol noktaları ve geri alma',
   'Checkpoints are off': 'Kontrol noktaları kapalı',
@@ -530,6 +534,8 @@ export const tr: Record<string, string> = {
   'None yet.': 'Henüz yok.',
   'Not affiliated with Nous Research. MIT licensed.': 'Nous Research ile bağlantılı değildir. MIT lisanslı.',
   'Not connected': 'Bağlı değil',
+  'Not connected. Your answer will be sent when Hermes reconnects.':
+    'Bağlı değil. Yanıtın, Hermes yeniden bağlandığında gönderilecek.',
   'Not installed on the backend': 'Sunucuda yüklü değil',
   'Not set': 'Ayarlanmadı',
   'Nothing in {col}': '{col} içinde hiçbir şey yok',
@@ -538,7 +544,9 @@ export const tr: Record<string, string> = {
   'Nothing scheduled in this chat': 'Bu sohbette zamanlanmış bir şey yok',
   'Nothing to import': 'İçe aktarılacak bir şey yok',
   Notifications: 'Bildirimler',
+  'Notifications are blocked': 'Bildirimler engelli',
   'Notify when a reply finishes in the background': 'Arka planda yanıt bittiğinde bildir',
+  'Notify when a scheduled job runs': 'Zamanlanmış bir iş çalıştığında bildir',
   'Nous Research Discord': 'Nous Research Discord',
   'On the phone with WhatsApp: Settings → Linked devices → Link a device, and scan this code.':
     "Telefonda WhatsApp'ta: Ayarlar → Bağlı cihazlar → Cihaz bağla yolunu izleyin ve bu kodu tarayın.",
@@ -548,6 +556,7 @@ export const tr: Record<string, string> = {
   'Only these people can talk to Hermes. Others can ask through pairing.':
     'Hermes ile yalnızca bu kişiler konuşabilir. Diğerleri eşleştirme ile isteyebilir.',
   Open: 'Aç',
+  'Open Hermes to review it.': "İncelemek için Hermes'i aç.",
   'Open Telegram': "Telegram'ı aç",
   'Open image': 'Görseli aç',
   'Open session': 'Oturumu aç',
@@ -627,6 +636,7 @@ export const tr: Record<string, string> = {
   Reload: 'Yeniden yükle',
   'Reload MCP servers': 'MCP sunucularını yeniden yükle',
   'Reload MCP servers?': 'MCP sunucuları yeniden yüklensin mi?',
+  Replies: 'Yanıtlar',
   'Remote (HTTP)': 'Uzak (HTTP)',
   Remove: 'Kaldır',
   'Remove this connection': 'Bu bağlantıyı kaldır',
@@ -708,6 +718,8 @@ export const tr: Record<string, string> = {
   'Scan a connection QR code': 'Bağlantı QR kodunu tara',
   Schedule: 'Zamanla',
   'Schedule a daily news digest at 9am': "Her gün 9'da günlük haber özeti zamanla",
+  'Scheduled job failed: {name}': 'Zamanlanmış iş başarısız oldu: {name}',
+  'Scheduled job finished: {name}': 'Zamanlanmış iş tamamlandı: {name}',
   'Scheduled jobs': 'Zamanlanmış işler',
   Scheduling: 'Zamanlama',
   'Script (runs without the agent)': 'Betik (ajan olmadan çalışır)',
@@ -818,6 +830,8 @@ export const tr: Record<string, string> = {
   'Take a photo': 'Fotoğraf çek',
   'Tap the button, then press Start in Telegram. BotFather creates the bot and hands it to Hermes.':
     "Düğmeye dokunun, sonra Telegram'da Start'a basın. BotFather botu oluşturur ve Hermes'e verir.",
+  'Tap to allow them in Android settings': 'Android ayarlarında izin vermek için dokun',
+  'Tap to see the result.': 'Sonucu görmek için dokun.',
   'Task created': 'Görev oluşturuldu',
   'Tasks for a team of agent profiles': 'Ajan profillerinden oluşan bir ekip için görevler',
   'Tasks {done}/{total}': 'Görevler {done}/{total}',
@@ -1043,6 +1057,7 @@ export const tr: Record<string, string> = {
   '{n} conversations': '{n} konuşma',
   '{n} folders': '{n} klasör',
   '{n} min ago': '{n} dk önce',
+  '{n} more scheduled jobs ran': '{n} zamanlanmış iş daha çalıştı',
   '{n} msgs': '{n} mesaj',
   '{n} of them are open in this app.': 'Bunların {n} tanesi bu uygulamada açık.',
   '{n} profiles': '{n} profil',

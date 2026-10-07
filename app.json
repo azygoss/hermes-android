@@ -95,7 +95,8 @@
         }
       ],
       "expo-localization",
-      "./plugins/withReleaseSigning"
+      "./plugins/withReleaseSigning",
+      "expo-background-task"
     ]
   }
 }

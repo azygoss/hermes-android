@@ -21,6 +21,8 @@ export interface Settings {
   /** "hermes" = backend TTS (/api/audio/speak), "device" = Android TTS. */
   ttsEngine: 'hermes' | 'device'
   notifyOnComplete: boolean
+  /** Notify when a cron/scheduled job finishes a run (polled, also in the background). */
+  notifyCron: boolean
   fontScale: number
   /** Ask for the fingerprint / screen lock when the app opens or comes back after a while. */
   appLock: boolean
@@ -48,6 +50,7 @@ export const useSettings = create<SettingsState>()(
       autoSpeak: false,
       ttsEngine: 'hermes',
       notifyOnComplete: true,
+      notifyCron: true,
       fontScale: 1,
       appLock: false,
       recentModels: [],

@@ -1,9 +1,12 @@
 import * as Notifications from 'expo-notifications'
 import { Stack } from 'expo-router'
+import { useEffect, useState } from 'react'
 import {
   Activity,
   Bell,
+  BellOff,
   Brain,
+  CalendarClock,
   Fingerprint,
   Languages,
   Mic,
@@ -15,10 +18,10 @@ import {
   Vibrate,
   Wrench,
 } from '@/components/icons'
-import { Platform, Pressable, View } from 'react-native'
+import { AppState, Linking, Platform, Pressable, View } from 'react-native'
 
 import { appLockSupported, authenticate, canUseAppLock } from '@/components/AppLock'
-import { Screen, Section, Segmented, Text, toast, ToggleRow } from '@/components/ui'
+import { Row, Screen, Section, Segmented, Text, toast, ToggleRow } from '@/components/ui'
 import { useT } from '@/i18n'
 import { speak } from '@/lib/voice'
 import { useSettings, type Language, type ThemeMode } from '@/store/settings'
@@ -38,6 +41,15 @@ export default function SettingsScreen() {
   const t = useT()
   const { c, isDark } = useTheme()
   const s = useSettings()
+  const [permGranted, setPermGranted] = useState(Platform.OS === 'web')
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return
+    const check = () => void Notifications.getPermissionsAsync().then((p) => setPermGranted(p.granted))
+    check()
+    const sub = AppState.addEventListener('change', (state) => state === 'active' && check())
+    return () => sub.remove()
+  }, [])
 
   return (
     <Screen>
@@ -191,7 +203,20 @@ export default function SettingsScreen() {
               if (!perm.granted) toast(t('Allow notifications for Hermes in Android settings.'), 'warn')
             }
           }}
-          last={Platform.OS !== 'android'}
+        />
+        <ToggleRow
+          icon={CalendarClock}
+          title={t('Notify when a scheduled job runs')}
+          subtitle={t('Checked about every 15 minutes in the background, right away while Hermes is open')}
+          value={s.notifyCron}
+          onChange={async (v) => {
+            s.set({ notifyCron: v })
+            if (v && Platform.OS !== 'web') {
+              const perm = await Notifications.requestPermissionsAsync()
+              if (!perm.granted) toast(t('Allow notifications for Hermes in Android settings.'), 'warn')
+            }
+          }}
+          last={Platform.OS !== 'android' && permGranted}
         />
         {Platform.OS === 'android' ? (
           <ToggleRow
@@ -200,6 +225,15 @@ export default function SettingsScreen() {
             subtitle={t('Shows a quiet "Hermes is working" notification during a turn so Android keeps the connection open')}
             value={s.keepAlive}
             onChange={(v) => s.set({ keepAlive: v })}
+            last={permGranted}
+          />
+        ) : null}
+        {!permGranted ? (
+          <Row
+            icon={BellOff}
+            title={t('Notifications are blocked')}
+            subtitle={t('Tap to allow them in Android settings')}
+            onPress={() => void Linking.openSettings()}
             last
           />
         ) : null}

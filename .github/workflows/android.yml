@@ -5,6 +5,7 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  workflow_dispatch:
 
 jobs:
   check:
@@ -20,7 +21,7 @@ jobs:
 
   apk:
     needs: check
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -34,17 +35,44 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
+      # The hosted runner already ships the Android SDK. Install the versions
+      # this project pins directly with sdkmanager instead of relying on a
+      # third-party setup action (android-actions/setup-android@v3 currently
+      # fails before doing any work).
+      - name: Android SDK packages
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" "platforms;android-36" "build-tools;36.0.0" \
+            "ndk;27.1.12297006" "cmake;3.22.1"
       - run: npm ci
       - name: Decode keystore
         if: env.KEYSTORE_B64 != ''
         env:
           KEYSTORE_B64: ${{ secrets.HERMES_KEYSTORE_B64 }}
         run: echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore" && echo "HERMES_KEYSTORE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+      - name: Prebuild
+        run: npx expo prebuild --platform android --clean
+      # expo prebuild writes a Gradle 9 wrapper, but React Native still ships
+      # AGP 8.12, and that combination fails at configuration time with
+      # "SoftwareComponent with name 'release' not found". Pin Gradle 8.x.
+      - name: Pin Gradle 8.x
+        run: |
+          sed -i -E 's#gradle-9\.[0-9.]+-bin\.zip#gradle-8.14.3-bin.zip#' android/gradle/wrapper/gradle-wrapper.properties
+          grep distributionUrl android/gradle/wrapper/gradle-wrapper.properties
       - name: Build release APK
         env:
           HERMES_KEYSTORE_PASSWORD: ${{ secrets.HERMES_KEYSTORE_PASSWORD }}
+          SKIP_PREBUILD: "1"
         run: bash scripts/build-apk.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hermes-android-apk
+          path: dist/*.apk
       - uses: softprops/action-gh-release@v2
+        continue-on-error: true
         with:
           files: dist/*.apk
